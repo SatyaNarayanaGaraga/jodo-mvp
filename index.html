@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>JODO — Start Squad</title>
+  <meta name="theme-color" content="#059669" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{font-family:'Poppins',sans-serif} .card{border-radius:14px}</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<header class="bg-white sticky top-0 z-30 border-b">
+  <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="font-black text-xl text-slate-900">JODO — Start Squad</div>
+    <div class="text-sm text-slate-500">2-hour squads</div>
+  </div>
+</header>
+
+<main class="max-w-md mx-auto p-4 pb-36">
+
+  <p class="text-sm text-slate-600 mb-3">Tap a product → Start Squad → Invite on WhatsApp. The link you share carries the live squad state (no server required).</p>
+
+  <div id="productList" class="space-y-4"></div>
+
+  <!-- modal: create squad -->
+  <div id="createModal" class="fixed inset-0 bg-black/40 hidden items-end justify-center p-4 z-40">
+    <div class="bg-white w-full rounded-t-2xl max-w-md p-4">
+      <div class="flex items-center justify-between mb-2">
+        <div class="font-bold text-lg">Start Squad</div>
+        <button id="closeCreate" class="text-slate-500">✕</button>
+      </div>
+
+      <div id="createProductInfo" class="mb-3"></div>
+
+      <label class="text-xs font-semibold text-slate-600">Your name</label>
+      <input id="creatorName" class="w-full p-3 mt-1 mb-3 border rounded-lg" placeholder="e.g. Raju"/>
+
+      <label class="text-xs font-semibold text-slate-600">Quantity (packs)</label>
+      <div class="flex gap-2 mt-1 items-center mb-4">
+        <button id="qtyMinus" class="px-3 py-2 bg-slate-100 rounded-lg">−</button>
+        <div id="qtyDisplay" class="font-bold">1</div>
+        <button id="qtyPlus" class="px-3 py-2 bg-slate-100 rounded-lg">+</button>
+        <div class="text-sm text-slate-500 ml-auto">You pay per pack; final price determined at expiry.</div>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="startSquadBtn" class="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold">Start & Share</button>
+        <button id="cancelStart" class="flex-1 py-3 bg-gray-100 rounded-lg font-semibold">Cancel</button>
+      </div>
+
+      <p class="text-xs text-slate-400 mt-3">Note: Squad link encodes the current members. Every time someone joins they produce a newer link — share the newest link in the chat.</p>
+    </div>
+  </div>
+
+</main>
+
+<footer id="hint" class="fixed bottom-4 left-0 right-0 max-w-md mx-auto px-4 z-30">
+  <div class="bg-white rounded-2xl p-3 shadow">Pro tip: Use WhatsApp group chats — ask friends to click the shared link and press JOIN.</div>
+</footer>
+
+<script>
+/* ---------- CONFIG ---------- */
+const SQUAD_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours
+const WHATSAPP_PHONE = ''; // optional: put merchant phone without + if you want direct wa link for checkout
+
+const PRODUCTS = [
+  { id:'tomato', name:'Tomato', p1:43, p2:39, p5:33, unitLabel:'per kg', img:'https://i.postimg.cc/qR4pSKwK/tomato.jpg' },
+  { id:'onion',  name:'Onion',  p1:30, p2:26, p5:22, unitLabel:'per kg', img:'https://i.postimg.cc/yx1mycZW/onion.jpg' },
+  { id:'potato', name:'Potato', p1:36, p2:32, p5:28, unitLabel:'per kg', img:'https://i.postimg.cc/YCHq0Zq3/potato.jpg' }
+];
+
+/* ---------- UTIL (encode/decode squad payload in URL) ---------- */
+function enc(obj){ return btoa(encodeURIComponent(JSON.stringify(obj))); }
+function dec(s){ try{ return JSON.parse(decodeURIComponent(atob(s))); }catch(e){ return null; } }
+function uid(prefix='G'){ return prefix + '-' + Math.random().toString(36).slice(2,9).toUpperCase(); }
+function now(){ return Date.now(); }
+
+/* ---------- UI: render product cards ---------- */
+const productList = document.getElementById('productList');
+function renderProducts(){
+  productList.innerHTML = '';
+  PRODUCTS.forEach(p=>{
+    const el = document.createElement('div');
+    el.className = 'card bg-white p-3 shadow-sm flex gap-3 items-center';
+    el.innerHTML = `
+      <img src="${p.img}" class="w-20 h-20 rounded-lg object-cover">
+      <div class="flex-1">
+        <div class="font-bold text-slate-900">${p.name}</div>
+        <div class="text-sm text-slate-500">Start a squad — final price unlocks at 2 & 5 members</div>
+        <div class="mt-2 text-sm text-green-600 font-bold">1: ₹${p.p1} • 2: ₹${p.p2} • 5: ₹${p.p5}</div>
+      </div>
+      <div>
+        <button class="startBtn px-4 py-2 bg-green-600 text-white rounded-lg" data-id="${p.id}">Start Squad</button>
+      </div>
+    `;
+    productList.appendChild(el);
+  });
+}
+renderProducts();
+
+/* ---------- Create modal logic ---------- */
+let activeProduct=null, qty=1;
+const createModal = document.getElementById('createModal');
+const createProductInfo = document.getElementById('createProductInfo');
+const creatorName = document.getElementById('creatorName');
+const qtyDisplay = document.getElementById('qtyDisplay');
+
+document.addEventListener('click', e=>{
+  if(e.target.matches('.startBtn')) {
+    const id = e.target.dataset.id;
+    activeProduct = PRODUCTS.find(x=>x.id===id);
+    qty = 1;
+    creatorName.value = '';
+    qtyDisplay.textContent = qty;
+    createProductInfo.innerHTML = `<div class="font-bold">${activeProduct.name}</div><div class="text-sm text-slate-500">Target: unlock best price at 5 joins</div>`;
+    createModal.classList.remove('hidden');
+  }
+});
+document.getElementById('closeCreate').onclick = ()=> createModal.classList.add('hidden');
+document.getElementById('cancelStart').onclick = ()=> createModal.classList.add('hidden');
+document.getElementById('qtyPlus').onclick = ()=> { qty = Math.min(10, qty+1); qtyDisplay.textContent = qty; }
+document.getElementById('qtyMinus').onclick = ()=> { qty = Math.max(1, qty-1); qtyDisplay.textContent = qty; }
+
+/* ---------- Start Squad: create squad object + share link ---------- */
+document.getElementById('startSquadBtn').onclick = ()=>{
+  const name = (creatorName.value || '').trim();
+  if(!name){ alert('Enter your name'); creatorName.focus(); return; }
+  const groupId = uid('JODO');
+  const createdAt = now();
+  const squad = {
+    id: groupId,
+    productId: activeProduct.id,
+    createdAt,
+    expiresAt: createdAt + SQUAD_DURATION_MS,
+    members: [ { name, qty } ]
+  };
+
+  // encode into URL (payload)
+  const payload = enc(squad);
+  const link = `${location.origin}${location.pathname.replace(/index\\.html$/,'') }squad.html?g=${groupId}&d=${payload}`;
+
+  // copy + open WhatsApp share
+  const msg = `Join my JODO squad for *${activeProduct.name}* — final price unlocks if more join.\n\nCurrent: *1/${5}* joined\nTime to unlock: 2 hours\nJoin here: ${link}`;
+  shareWhatsApp(msg, link);
+
+  // close modal
+  createModal.classList.add('hidden');
+};
+
+/* ---------- share helper ---------- */
+function shareWhatsApp(msg, link){
+  // copy link to clipboard for convenience
+  try{ navigator.clipboard.writeText(link); }catch(e){}
+  const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(url,'_blank');
+}
+
+</script>
+</body>
+</html>
