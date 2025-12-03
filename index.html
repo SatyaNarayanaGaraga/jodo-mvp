@@ -328,6 +328,8 @@
 
         window.openFullFeed = (startPid) => {
             const user = getUser();
+            
+            // CHECK ACTIVE STATUS
             let activeGid = null;
             if (user.name && user.phone) {
                 Object.values(state.groups).forEach(g => {
@@ -371,13 +373,13 @@
                 let buttonHtml;
                 if (slideActiveGid) {
                     buttonHtml = `
-                        <button onclick="openGroup('${slideActiveGid}')" class="w-full bg-white text-slate-900 py-3.5 rounded-xl font-bold text-base shadow-lg flex items-center justify-center gap-2 tap-effect">
-                            <span>View Your Squad</span><i data-lucide="arrow-right" size="18"></i>
+                        <button onclick="openGroup('${slideActiveGid}')" class="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect">
+                            <span>View Squad</span><i data-lucide="arrow-right" size="16"></i>
                         </button>
                     `;
                 } else {
                     buttonHtml = `
-                        <button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-3.5 rounded-xl font-bold text-base shadow-lg flex items-center justify-center gap-2 tap-effect transition-all active:scale-95">
+                        <button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect transition-all active:scale-95">
                             <span>Start Live Squad</span>
                             <span class="bg-black/20 text-[10px] px-1.5 py-0.5 rounded border border-white/10 font-medium ml-1">Save ₹${p.price1 - p.price5}</span>
                         </button>
@@ -388,7 +390,8 @@
                     <div id="slide-${p.id}" class="snap-center shrink-0 relative w-full h-full bg-black overflow-hidden flex flex-col">
                         <div class="absolute inset-0 z-0">
                             ${backgroundContent}
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-10 pointer-events-none"></div>
+                            <!-- Taller gradient for better text readability -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div>
                         </div>
 
                         <div class="absolute top-6 left-4 right-4 z-40 flex justify-between items-start">
@@ -400,15 +403,44 @@
                             </div>
                         </div>
 
-                        <div class="absolute bottom-0 left-0 right-0 p-4 pb-8 z-30 flex flex-col gap-3">
-                            <div class="text-white drop-shadow-md mb-1">
-                                <div class="flex items-center gap-1.5 mb-1">
-                                    <div class="bg-white/20 backdrop-blur px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">@${p.farmer}</div>
+                        <!-- REEL STYLE COMPACT LAYOUT -->
+                        <div class="absolute bottom-0 left-0 right-0 p-4 pb-6 z-30 flex flex-col gap-3">
+                            
+                            <!-- 1. Farmer & Product Info (Tight Stack) -->
+                            <div class="text-white drop-shadow-md flex flex-col gap-1">
+                                <div class="flex items-center gap-2">
+                                    <div class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">@${p.farmer}</div>
                                 </div>
-                                <h3 class="font-black text-2xl leading-tight mb-0.5">${p.name}</h3>
-                                <div class="text-slate-200 text-xs font-medium opacity-90">${p.unit} Bundle • ${p.nameTe}</div>
+                                <h3 class="font-black text-xl leading-tight">${p.name}</h3>
+                                <div class="text-slate-200 text-xs font-medium opacity-90 truncate">${p.unit} Bundle • ${p.nameTe}</div>
                             </div>
-                            ${getPricingRoadmapHTML(p, 'glass')}
+
+                            <!-- 2. COMPACT PRICING ROADMAP (Transparent Row) -->
+                            <div class="flex items-center justify-between bg-black/20 backdrop-blur-sm border border-white/5 rounded-lg p-2.5 text-white/90">
+                                <!-- Step 1 -->
+                                <div class="flex flex-col items-center min-w-[3.5rem]">
+                                    <span class="text-[9px] uppercase opacity-60 font-bold">1 Person</span>
+                                    <span class="text-sm font-bold opacity-70">₹${p.price1}</span>
+                                </div>
+                                
+                                <div class="h-6 w-px bg-white/10"></div>
+                                
+                                <!-- Step 2 -->
+                                <div class="flex flex-col items-center min-w-[3.5rem]">
+                                    <span class="text-[9px] uppercase text-emerald-300 font-bold">2 Ppl</span>
+                                    <span class="text-sm font-bold text-emerald-300">₹${p.price2}</span>
+                                </div>
+                                
+                                <div class="h-6 w-px bg-white/10"></div>
+                                
+                                <!-- Step 3 (Goal) -->
+                                <div class="flex flex-col items-center min-w-[3.5rem]">
+                                    <span class="bg-yellow-500 text-black text-[8px] font-black px-1 rounded-sm leading-tight mb-0.5">GOAL</span>
+                                    <span class="text-lg font-black text-white leading-none">₹${p.price5}</span>
+                                </div>
+                            </div>
+
+                            <!-- 3. ACTION BUTTON -->
                             ${buttonHtml}
                         </div>
                     </div>
