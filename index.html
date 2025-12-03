@@ -3,10 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title>JODO - 1-2-5 Pricing</title>
-    <!-- Tailwind CSS (Utility) -->
+    <title>JODO - 1-2-5 Pricing (Local)</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥬</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons (Visual Language) -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script>
         tailwind.config = {
@@ -31,17 +30,29 @@
     </script>
     <style>
         :root { --action-green: #059669; --urgency-red: #ef4444; --reward-gold: #f59e0b; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; color: #0f172a; -webkit-tap-highlight-color: transparent; min-height: 100dvh; }
-        
-        .btn-press { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background: #0f172a; 
+            color: #0f172a; 
+            -webkit-tap-highlight-color: transparent; 
+            min-height: 100dvh; 
+            display: flex;
+            justify-content: center;
+        }
+        #app {
+            width: 100%;
+            max-width: 28rem;
+            background: #f8fafc;
+            min-height: 100dvh;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .btn-press { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
         .btn-press:active:not(:disabled) { transform: scale(0.96); }
-        
         .card-modern { background: white; border-radius: 1.5rem; box-shadow: 0 10px 30px -10px rgba(6, 78, 59, 0.08); border: 1px solid rgba(255,255,255,0.5); }
         .glass-header { background: rgba(2, 44, 34, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-        
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         .ticker-slide { animation: slideUpFade 5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
         @keyframes slideUpFade { 
             0%, 20% { transform: translateY(0); opacity: 1; } 
@@ -49,40 +60,19 @@
             50%, 70% { transform: translateY(100%); opacity: 0; } 
             75%, 100% { transform: translateY(0); opacity: 1; } 
         }
-
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* SLIDER CSS */
-        input[type=range].slider-lock {
-            -webkit-appearance: none; width: 100%; background: transparent; cursor: pointer;
-        }
-        input[type=range].slider-lock::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 56px; width: 56px; border-radius: 50%;
-            background: #ffffff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            margin-top: -4px;
-            position: relative; z-index: 50;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: center;
-        }
-        input[type=range].slider-lock::-webkit-slider-runnable-track {
-            width: 100%; height: 48px; cursor: pointer;
-            background: rgba(0,0,0,0.05); border-radius: 99px; border: 2px solid rgba(255,255,255,0.5);
-        }
-
+        input[type=range].slider-lock { -webkit-appearance: none; width: 100%; background: transparent; cursor: pointer; }
+        input[type=range].slider-lock::-webkit-slider-thumb { -webkit-appearance: none; height: 56px; width: 56px; border-radius: 50%; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-top: -4px; position: relative; z-index: 50; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
+        input[type=range].slider-lock::-webkit-slider-runnable-track { width: 100%; height: 48px; cursor: pointer; background: rgba(0,0,0,0.05); border-radius: 99px; border: 2px solid rgba(255,255,255,0.5); }
         .video-onion { background: linear-gradient(-45deg, #7f1d1d, #b91c1c, #991b1b, #450a0a); }
         .video-oil { background: linear-gradient(-45deg, #d97706, #f59e0b, #fbbf24, #b45309); }
         .video-sugar { background: linear-gradient(-45deg, #2563eb, #60a5fa, #3b82f6, #1e40af); }
         .video-grain { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E"); }
-
-        /* SQUAD RING CSS */
         .squad-ring { position: relative; width: 260px; height: 260px; margin: 0 auto; }
         .ring-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 110px; height: 110px; border-radius: 50%; background: white; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.15); border: 4px solid #f8fafc; }
         .ring-track { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; border: 2px dashed #cbd5e1; border-radius: 50%; z-index: 0; }
         .ring-seat { position: absolute; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 30; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        
-        /* Seat Positions (Star Shape) */
         .seat-0 { top: 0; left: 50%; transform: translate(-50%, -10%); }
         .seat-1 { top: 32%; right: 0; transform: translate(10%, -10%); }
         .seat-2 { bottom: 8%; right: 12%; transform: translate(0, 0); }
@@ -92,7 +82,7 @@
 </head>
 <body class="pb-10 antialiased selection:bg-brand-100">
 
-    <div id="app" class="max-w-md mx-auto min-h-screen bg-slate-50/50 shadow-2xl relative overflow-hidden ring-1 ring-slate-900/5"></div>
+    <div id="app"></div>
 
     <div id="modal-overlay" class="fixed inset-0 bg-brand-900/60 hidden z-[60] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
         <div id="modal-content" class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl transform transition-all relative overflow-hidden"></div>
@@ -100,111 +90,93 @@
 
     <div id="toast" aria-live="polite" role="status" class="fixed top-6 left-1/2 -translate-x-1/2 bg-brand-900/90 backdrop-blur-md text-white px-6 py-3.5 rounded-full text-sm font-semibold shadow-2xl hidden z-[70] flex items-center gap-2 pointer-events-none border border-white/10 transition-all duration-300"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- 1. INFRASTRUCTURE ---
-        let firebaseConfig;
-        try { firebaseConfig = (typeof __firebase_config !== 'undefined') ? JSON.parse(__firebase_config) : null; } catch(e) { firebaseConfig = null; }
-        const appId = (typeof __app_id !== 'undefined') ? __app_id : 'jodo-app';
-        let app, auth, db;
-        let useMock = false;
-
-        if (firebaseConfig) {
-            try {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-            } catch(e) { useMock = true; }
-        } else { useMock = true; }
-
+    <script>
+        // --- 1. LOCAL DATA INFRASTRUCTURE ---
         const COMPANY_PHONE = "919999999999"; 
-
-        // --- 2. DATA (UPDATED: 500g Base Units) ---
+        
+        // Products Configuration (500g Base)
         const PRODUCTS = [
-            { 
-                id: 'onion', 
-                name: 'Red Onions', 
-                nameTe: 'ఎర్ర ఉల్లిపాయలు', 
-                unit: '500g', 
-                baseWeight: 0.5, // 0.5 kg
-                weightUnit: 'kg',
-                price1: 25, price2: 22, price5: 18, // Prices per 500g
-                icon: 'layers', 
-                imageColor: 'bg-red-50 text-red-500', 
-                farmer: 'Raju Bhai', 
-                location: 'Duvva Fields', 
-                liveViewers: '1.2k', 
-                videoClass: 'video-onion', 
-                videoSrc: 'https://videos.pexels.com/video-files/5725790/5725790-uhd_1440_2732_25fps.mp4' 
-            },
-            { 
-                id: 'oil', 
-                name: 'Sunflower Oil', 
-                nameTe: 'పొద్దుతిరుగుడు నూనె', 
-                unit: '500ml', 
-                baseWeight: 0.5, // 0.5 L
-                weightUnit: 'L',
-                price1: 60, price2: 55, price5: 50, // Prices per 500ml
-                icon: 'droplet', 
-                imageColor: 'bg-harvest-100 text-harvest-500', 
-                farmer: 'Sunil Oil Mills', 
-                location: 'Factory Direct', 
-                liveViewers: '850', 
-                videoClass: 'video-oil', 
-                videoSrc: 'oil.mp4' 
-            },
-            { 
-                id: 'sugar', 
-                name: 'Sugar', 
-                nameTe: 'చక్కెర', 
-                unit: '500g', 
-                baseWeight: 0.5, // 0.5 kg
-                weightUnit: 'kg',
-                price1: 24, price2: 22, price5: 20, // Prices per 500g
-                icon: 'package', 
-                imageColor: 'bg-blue-50 text-blue-500', 
-                farmer: 'Co-op Society', 
-                location: 'Local Stock', 
-                liveViewers: '340', 
-                videoClass: 'video-sugar', 
-                videoSrc: 'sugar.mp4' 
-            }
+            { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price2: 22, price5: 18, icon: 'layers', imageColor: 'bg-red-50 text-red-500', farmer: 'Raju Bhai', location: 'Duvva Fields', liveViewers: '1.2k', videoClass: 'video-onion', videoSrc: 'https://videos.pexels.com/video-files/5725790/5725790-uhd_1440_2732_25fps.mp4' },
+            { id: 'oil', name: 'Sunflower Oil', nameTe: 'పొద్దుతిరుగుడు నూనె', unit: '500ml', baseWeight: 0.5, weightUnit: 'L', price1: 60, price2: 55, price5: 50, icon: 'droplet', imageColor: 'bg-harvest-100 text-harvest-500', farmer: 'Sunil Oil Mills', location: 'Factory Direct', liveViewers: '850', videoClass: 'video-oil', videoSrc: 'oil.mp4' },
+            { id: 'sugar', name: 'Sugar', nameTe: 'చక్కెర', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 24, price2: 22, price5: 20, icon: 'package', imageColor: 'bg-blue-50 text-blue-500', farmer: 'Co-op Society', location: 'Local Stock', liveViewers: '340', videoClass: 'video-sugar', videoSrc: 'sugar.mp4' }
         ];
 
-        const state = { view: 'home', currentGroupId: null, groups: {}, members: {}, user: { uid: 'guest' }, timerInterval: null };
+        // State & Persistence
+        const DB_KEY = 'jodo_local_db_v2';
+        const EXPIRY_MS = 2 * 24 * 60 * 60 * 1000; // 2 Days in Milliseconds
 
-        function saveUser(name, phone) { try { localStorage.setItem('jodo_user_name', name); localStorage.setItem('jodo_user_phone', phone); } catch(e) {} }
-        function getUser() { return { name: localStorage.getItem('jodo_user_name') || '', phone: localStorage.getItem('jodo_user_phone') || '' }; }
+        const state = { 
+            view: 'home', 
+            currentGroupId: null, 
+            groups: {}, 
+            members: {}, 
+            user: { name: '', phone: '' }, 
+            timerInterval: null, 
+            scrollObserver: null 
+        };
 
-        async function init() {
-            if (useMock) {
-                state.user = { uid: 'mock-user', isAnonymous: true };
-                const mockGid = 'g-mock-1';
-                state.groups[mockGid] = { id: mockGid, productId: 'onion', ownerName: 'Demo Leader', expiresAt: Date.now() + 3600000, createdAt: { seconds: Date.now()/1000 }, status: 'open' };
-                state.members[mockGid] = [{ groupId: mockGid, name: 'Demo Leader', phone: '9999999999', isLeader: true, quantity: 1 }];
-                render(); return;
-            }
+        // --- LOCAL STORAGE LOGIC ---
+        function loadData() {
+            try {
+                // 1. Load User
+                state.user.name = localStorage.getItem('jodo_user_name') || '';
+                state.user.phone = localStorage.getItem('jodo_user_phone') || '';
 
-            if (window.__initial_auth_token) await signInWithCustomToken(auth, window.__initial_auth_token);
-            else await signInAnonymously(auth);
-            state.user = auth.currentUser;
+                // 2. Load DB
+                const raw = localStorage.getItem(DB_KEY);
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    // 3. Filter Expired Groups (Data Retention Policy: 2 Days)
+                    const now = Date.now();
+                    const validGroups = {};
+                    const validMembers = {}; // Reset members, only keep valid ones
 
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/groups`), (snap) => {
-                state.groups = {}; snap.forEach(d => state.groups[d.id] = { id: d.id, ...d.data() }); render();
-            });
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/members`), (snap) => {
-                state.members = {};
-                snap.forEach(d => {
-                    const m = d.data();
-                    if (!state.members[m.groupId]) state.members[m.groupId] = [];
-                    state.members[m.groupId].push(m);
-                });
+                    Object.values(data.groups || {}).forEach(g => {
+                        if (g.expiresAt > now) {
+                            validGroups[g.id] = g;
+                            // Keep members for valid groups
+                            if (data.members[g.id]) {
+                                validMembers[g.id] = data.members[g.id];
+                            }
+                        }
+                    });
+
+                    state.groups = validGroups;
+                    state.members = validMembers;
+                    
+                    // Save back the cleaned version immediately
+                    saveData();
+                }
+            } catch(e) { console.error("Load Error", e); }
+        }
+
+        function saveData() {
+            try {
+                const db = { groups: state.groups, members: state.members };
+                localStorage.setItem(DB_KEY, JSON.stringify(db));
+                // Sync across tabs
+                window.dispatchEvent(new Event('storage')); 
+            } catch(e) { console.error("Save Error", e); }
+        }
+
+        function saveUser(name, phone) {
+            state.user.name = name;
+            state.user.phone = phone;
+            localStorage.setItem('jodo_user_name', name);
+            localStorage.setItem('jodo_user_phone', phone);
+        }
+
+        // --- APP INIT ---
+        function init() {
+            loadData();
+            
+            // Listen for changes from other tabs
+            window.addEventListener('storage', () => {
+                loadData();
                 render();
             });
 
+            // Routing
             const handleRoute = () => {
                 const params = new URLSearchParams(location.search);
                 state.currentGroupId = params.get('group') || null;
@@ -250,20 +222,15 @@
                         <span class="text-slate-400 font-bold text-sm tracking-widest uppercase opacity-80 animate-pulse" id="slider-label">${label}</span>
                         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-slide-shimmer" style="background-size: 200% 100%;"></div>
                     </div>
-                    <input type="range" min="0" max="100" value="0" class="slider-lock absolute inset-0 w-full h-full z-10 opacity-100" id="unlock-slider">
+                    <input type="range" min="0" max="100" value="0" class="slider-lock absolute inset-0 w-full h-full z-10 opacity-100 cursor-pointer" id="unlock-slider">
                 </div>
                 <div class="error-container"></div>
             `;
         }
 
-        // NEW: Shared Helper for the 1-2-5 Pricing Roadmap (MATCHING UPLOADED IMAGE)
         function getPricingRoadmapHTML(p, theme = 'light') {
             const isGlass = theme === 'glass';
-            
-            const containerClass = isGlass 
-                ? 'bg-black/40 backdrop-blur-md border-white/10' 
-                : 'bg-slate-100 border-slate-200';
-            
+            const containerClass = isGlass ? 'bg-black/40 backdrop-blur-md border-white/10' : 'bg-slate-100 border-slate-200';
             const lineClass = isGlass ? 'bg-white/20' : 'bg-slate-300';
             const textGrey = isGlass ? 'text-white/50' : 'text-slate-400';
             const priceGrey = isGlass ? 'text-white/50' : 'text-slate-500';
@@ -296,7 +263,6 @@
 
         function setupQuantityLogic(node, p, labelId) {
             let qty = 1;
-            
             const updateDisplay = () => {
                 const totalWeight = qty * p.baseWeight;
                 const formattedWeight = parseFloat(totalWeight.toFixed(2)); 
@@ -307,19 +273,15 @@
                     const totalPrice = p.price5 * qty;
                     node.querySelector(labelId).innerHTML = `Unlock ₹${totalPrice} (Save ₹${totalSavings})`;
                 }
-
                 const t1 = node.querySelector('#tier-1-price');
                 const t2 = node.querySelector('#tier-2-price');
                 const t5 = node.querySelector('#tier-5-price');
-
                 if (t1) t1.innerText = '₹' + (p.price1 * qty);
                 if (t2) t2.innerText = '₹' + (p.price2 * qty);
                 if (t5) t5.innerText = '₹' + (p.price5 * qty);
             };
-
             node.querySelector('#btn-minus').onclick = () => { if (qty > 1) { qty--; updateDisplay(); } };
             node.querySelector('#btn-plus').onclick = () => { if (qty < 20) { qty++; updateDisplay(); } };
-            
             updateDisplay();
             return () => qty;
         }
@@ -327,120 +289,48 @@
         // --- ACTIONS ---
 
         window.openFullFeed = (startPid) => {
-            const user = getUser();
-            
-            // CHECK ACTIVE STATUS
-            let activeGid = null;
-            if (user.name && user.phone) {
-                Object.values(state.groups).forEach(g => {
-                    if (g.productId === startPid) {
-                        const mems = state.members[g.id] || [];
-                        if (mems.some(m => m.name === user.name && m.phone === user.phone)) {
-                            activeGid = g.id;
-                        }
-                    }
-                });
-            }
-
-            if (activeGid) {
-                window.openGroup(activeGid);
-                return;
-            }
+            const activeGid = getActiveGroupId(startPid);
+            if (activeGid) { window.openGroup(activeGid); return; }
 
             const slidesHtml = PRODUCTS.map(p => {
                 let backgroundContent;
                 if (p.videoSrc) {
-                    backgroundContent = `
-                        <video src="${p.videoSrc}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover z-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></video>
-                        <div class="absolute inset-0 z-0 ${p.videoClass} video-grain hidden"></div>
-                    `;
+                    backgroundContent = `<video src="${p.videoSrc}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover z-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></video><div class="absolute inset-0 z-0 ${p.videoClass} video-grain hidden"></div>`;
                 } else {
                     backgroundContent = `<div class="absolute inset-0 z-0 ${p.videoClass} video-grain"></div>`;
                 }
 
-                let slideActiveGid = null;
-                if (user.name && user.phone) {
-                    Object.values(state.groups).forEach(g => {
-                        if (g.productId === p.id) {
-                            const mems = state.members[g.id] || [];
-                            if (mems.some(m => m.name === user.name && m.phone === user.phone)) {
-                                slideActiveGid = g.id;
-                            }
-                        }
-                    });
-                }
-
+                const slideActiveGid = getActiveGroupId(p.id);
                 let buttonHtml;
                 if (slideActiveGid) {
-                    buttonHtml = `
-                        <button onclick="openGroup('${slideActiveGid}')" class="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect">
-                            <span>View Squad</span><i data-lucide="arrow-right" size="16"></i>
-                        </button>
-                    `;
+                    buttonHtml = `<button onclick="openGroup('${slideActiveGid}')" class="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect cursor-pointer"><span>View Squad</span><i data-lucide="arrow-right" size="16"></i></button>`;
                 } else {
-                    buttonHtml = `
-                        <button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect transition-all active:scale-95">
-                            <span>Start Live Squad</span>
-                            <span class="bg-black/20 text-[10px] px-1.5 py-0.5 rounded border border-white/10 font-medium ml-1">Save ₹${p.price1 - p.price5}</span>
-                        </button>
-                    `;
+                    buttonHtml = `<button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect transition-all active:scale-95 cursor-pointer"><span>Start Live Squad</span><span class="bg-black/20 text-[10px] px-1.5 py-0.5 rounded border border-white/10 font-medium ml-1">Save ₹${p.price1 - p.price5}</span></button>`;
                 }
 
                 return `
                     <div id="slide-${p.id}" class="snap-center shrink-0 relative w-full h-full bg-black overflow-hidden flex flex-col">
                         <div class="absolute inset-0 z-0">
                             ${backgroundContent}
-                            <!-- Taller gradient for better text readability -->
                             <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div>
                         </div>
-
                         <div class="absolute top-6 left-4 right-4 z-40 flex justify-between items-start">
-                            <div class="bg-red-600/90 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                                <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE
-                            </div>
-                            <div class="bg-black/30 backdrop-blur-md text-white text-[10px] font-medium px-2 py-1 rounded-full border border-white/10 flex items-center gap-1">
-                                <i data-lucide="eye" size="10"></i> ${p.liveViewers}
-                            </div>
+                            <div class="bg-red-600/90 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm"><span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE</div>
+                            <div class="bg-black/30 backdrop-blur-md text-white text-[10px] font-medium px-2 py-1 rounded-full border border-white/10 flex items-center gap-1"><i data-lucide="eye" size="10"></i> ${p.liveViewers}</div>
                         </div>
-
-                        <!-- REEL STYLE COMPACT LAYOUT -->
                         <div class="absolute bottom-0 left-0 right-0 p-4 pb-6 z-30 flex flex-col gap-3">
-                            
-                            <!-- 1. Farmer & Product Info (Tight Stack) -->
                             <div class="text-white drop-shadow-md flex flex-col gap-1">
-                                <div class="flex items-center gap-2">
-                                    <div class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">@${p.farmer}</div>
-                                </div>
+                                <div class="flex items-center gap-2"><div class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">@${p.farmer}</div></div>
                                 <h3 class="font-black text-xl leading-tight">${p.name}</h3>
                                 <div class="text-slate-200 text-xs font-medium opacity-90 truncate">${p.unit} Bundle • ${p.nameTe}</div>
                             </div>
-
-                            <!-- 2. COMPACT PRICING ROADMAP (Transparent Row) -->
                             <div class="flex items-center justify-between bg-black/20 backdrop-blur-sm border border-white/5 rounded-lg p-2.5 text-white/90">
-                                <!-- Step 1 -->
-                                <div class="flex flex-col items-center min-w-[3.5rem]">
-                                    <span class="text-[9px] uppercase opacity-60 font-bold">1 Person</span>
-                                    <span class="text-sm font-bold opacity-70">₹${p.price1}</span>
-                                </div>
-                                
+                                <div class="flex flex-col items-center min-w-[3.5rem]"><span class="text-[9px] uppercase opacity-60 font-bold">1 Person</span><span class="text-sm font-bold opacity-70">₹${p.price1}</span></div>
                                 <div class="h-6 w-px bg-white/10"></div>
-                                
-                                <!-- Step 2 -->
-                                <div class="flex flex-col items-center min-w-[3.5rem]">
-                                    <span class="text-[9px] uppercase text-emerald-300 font-bold">2 Ppl</span>
-                                    <span class="text-sm font-bold text-emerald-300">₹${p.price2}</span>
-                                </div>
-                                
+                                <div class="flex flex-col items-center min-w-[3.5rem]"><span class="text-[9px] uppercase text-emerald-300 font-bold">2 Ppl</span><span class="text-sm font-bold text-emerald-300">₹${p.price2}</span></div>
                                 <div class="h-6 w-px bg-white/10"></div>
-                                
-                                <!-- Step 3 (Goal) -->
-                                <div class="flex flex-col items-center min-w-[3.5rem]">
-                                    <span class="bg-yellow-500 text-black text-[8px] font-black px-1 rounded-sm leading-tight mb-0.5">GOAL</span>
-                                    <span class="text-lg font-black text-white leading-none">₹${p.price5}</span>
-                                </div>
+                                <div class="flex flex-col items-center min-w-[3.5rem]"><span class="bg-yellow-500 text-black text-[8px] font-black px-1 rounded-sm leading-tight mb-0.5">GOAL</span><span class="text-lg font-black text-white leading-none">₹${p.price5}</span></div>
                             </div>
-
-                            <!-- 3. ACTION BUTTON -->
                             ${buttonHtml}
                         </div>
                     </div>
@@ -448,9 +338,11 @@
             }).join('');
             
             const node = createNodeFromHTML(`
-                <div id="full-feed-overlay" class="fixed inset-0 bg-black z-[70] animate-in fade-in duration-200">
-                    <button id="close-feed" class="absolute top-6 right-4 z-50 p-2 bg-black/20 backdrop-blur-md rounded-full text-white border border-white/10 tap-effect"><i data-lucide="x" size="20"></i></button>
-                    <div class="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black">${slidesHtml}</div>
+                <div id="full-feed-overlay" class="fixed inset-0 z-[70] flex justify-center items-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
+                    <button id="close-feed" class="absolute top-6 right-6 z-[80] p-2 bg-white/10 backdrop-blur-md rounded-full text-white border border-white/10 hover:bg-white/20 transition-colors cursor-pointer tap-effect"><i data-lucide="x" size="24"></i></button>
+                    <div class="w-full max-w-md h-full bg-black relative shadow-2xl overflow-hidden">
+                        <div class="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black">${slidesHtml}</div>
+                    </div>
                 </div>
             `);
             node.querySelector('#close-feed').onclick = () => node.remove();
@@ -464,48 +356,32 @@
             const fullFeed = document.getElementById('full-feed-overlay');
             if(fullFeed) fullFeed.remove();
             const p = PRODUCTS.find(x => x.id === pid);
-            const user = getUser();
+            const user = state.user;
             const savings = p.price1 - p.price5;
             
             const node = createNodeFromHTML(`
                 <div>
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="font-bold text-xl text-brand-900">Start Squad</h3>
-                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i data-lucide="x" size="18"></i></button>
+                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer"><i data-lucide="x" size="18"></i></button>
                     </div>
-                    
                     <div class="flex items-center gap-4 mb-4 p-4 bg-brand-50 rounded-2xl border border-brand-100">
                         <div class="w-16 h-16 ${p.imageColor} rounded-xl flex items-center justify-center shrink-0"><i data-lucide="${p.icon}" size="32"></i></div>
-                        <div>
-                            <h4 class="font-bold text-lg text-brand-900 leading-tight">${p.name}</h4>
-                            <p id="price-label" class="text-xs font-medium text-brand-600 mt-1">Unlock ₹${p.price5} (Save ₹${savings})</p>
-                        </div>
+                        <div><h4 class="font-bold text-lg text-brand-900 leading-tight">${p.name}</h4><p id="price-label" class="text-xs font-medium text-brand-600 mt-1">Unlock ₹${p.price5} (Save ₹${savings})</p></div>
                     </div>
-                    
                     ${getPricingRoadmapHTML(p, 'light')}
-
                     <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6">
-                        <div class="ml-1">
-                            <div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div>
-                            <div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div>
-                        </div>
+                        <div class="ml-1"><div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div><div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div></div>
                         <div class="flex items-center gap-3">
-                            <button id="btn-minus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="minus" size="16"></i></button>
+                            <button id="btn-minus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="minus" size="16"></i></button>
                             <span id="qty-display" class="font-bold text-lg w-20 text-center text-slate-800">...</span>
-                            <button id="btn-plus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="plus" size="16"></i></button>
+                            <button id="btn-plus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="plus" size="16"></i></button>
                         </div>
                     </div>
-                    
                     <div class="mb-6 p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-xs text-red-800 font-medium animate-pulse-slow">
-                        <div class="w-8 h-8 rounded-full bg-white border border-red-200 flex items-center justify-center shrink-0 text-red-500">
-                            <i data-lucide="timer" size="16"></i>
-                        </div>
-                        <div>
-                            <div class="font-bold">24 Hour Limit</div>
-                            <div class="opacity-80 text-[10px]">Deal expires 24h after creating squad.</div>
-                        </div>
+                        <div class="w-8 h-8 rounded-full bg-white border border-red-200 flex items-center justify-center shrink-0 text-red-500"><i data-lucide="timer" size="16"></i></div>
+                        <div><div class="font-bold">24 Hour Limit</div><div class="opacity-80 text-[10px]">Deal expires 24h after creating squad.</div></div>
                     </div>
-
                     <div class="space-y-4">
                         <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Your Name</label><input id="inp-name" value="${user.name}" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
                         <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Phone Number</label><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
@@ -515,7 +391,6 @@
             `);
             showModalNode(node);
             const getQty = setupQuantityLogic(node, p, '#price-label');
-
             node.querySelector('#close-modal').addEventListener('click', window.closeModal);
             
             const slider = node.querySelector('#unlock-slider');
@@ -526,41 +401,32 @@
                     const phone = safeVal(node.querySelector('#inp-phone'));
                     const qty = getQty();
                     const errCont = node.querySelector('.error-container');
-
                     if (!name || !/^[6-9]\d{9}$/.test(phone)) {
                         this.value = 0; this.disabled = false;
                         showFieldError(errCont, 'Valid Name & Phone required');
                         return;
                     }
-
                     const track = document.getElementById('slider-track');
-                    track.classList.remove('bg-slate-100');
-                    track.classList.add('bg-brand-500');
+                    track.classList.remove('bg-slate-100'); track.classList.add('bg-brand-500');
                     document.getElementById('slider-label').innerText = 'Creating...';
                     document.getElementById('slider-label').classList.replace('text-slate-400', 'text-white');
-                    document.getElementById('slider-label').classList.remove('opacity-80');
-
+                    
                     try {
                         saveUser(name, phone);
                         const gid = 'g' + Date.now();
-                        const expires = Date.now() + (24 * 60 * 60 * 1000);
-                        const groupData = { productId: pid, ownerName: name, expiresAt: expires, createdAt: serverTimestamp(), status: 'open' };
-                        const memberData = { groupId: gid, name, phone, isLeader: true, quantity: qty };
+                        const expires = Date.now() + EXPIRY_MS;
+                        const group = { id: gid, productId: pid, ownerName: name, expiresAt: expires, createdAt: Date.now(), status: 'open' };
+                        const member = { groupId: gid, name, phone, isLeader: true, quantity: qty };
+                        
+                        // Update Local State & Storage
+                        state.groups[gid] = group;
+                        state.members[gid] = [member];
+                        saveData();
 
-                        if (useMock) {
-                            setTimeout(() => {
-                                state.groups[gid] = { id: gid, ...groupData, createdAt: { seconds: Date.now()/1000 } };
-                                state.members[gid] = [memberData];
-                                window.closeModal(); window.openGroup(gid); render();
-                            }, 800);
-                        } else {
-                            await setDoc(doc(db, `artifacts/${appId}/public/data/groups`, gid), groupData);
-                            await setDoc(doc(db, `artifacts/${appId}/public/data/members`, newId('m')), memberData);
-                            window.closeModal(); window.openGroup(gid);
-                        }
+                        setTimeout(() => { window.closeModal(); window.openGroup(gid); }, 500);
                     } catch (err) {
                         this.value = 0; this.disabled = false;
-                        showFieldError(errCont, 'Connection failed');
+                        showFieldError(errCont, 'Storage failed');
                     }
                 }
             };
@@ -577,57 +443,40 @@
                 <div>
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="font-bold text-xl text-brand-900">Add Neighbor</h3>
-                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i data-lucide="x" size="18"></i></button>
+                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer"><i data-lucide="x" size="18"></i></button>
                     </div>
-                    
                     ${getPricingRoadmapHTML(p, 'light')}
-
                     <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6">
-                        <div class="ml-1">
-                            <div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div>
-                            <div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div>
-                        </div>
+                        <div class="ml-1"><div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div><div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div></div>
                         <div class="flex items-center gap-3">
-                            <button id="btn-minus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="minus" size="16"></i></button>
+                            <button id="btn-minus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="minus" size="16"></i></button>
                             <span id="qty-display" class="font-bold text-lg w-20 text-center text-slate-800">...</span>
-                            <button id="btn-plus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="plus" size="16"></i></button>
+                            <button id="btn-plus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="plus" size="16"></i></button>
                         </div>
                     </div>
-
                     <div class="space-y-4">
                         <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Neighbor Name</label><input id="m-name" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
                         <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Phone Number</label><input id="m-phone" type="tel" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
                     </div>
-                    
                     <div class="mt-4 mb-2 p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3 text-xs text-blue-800 font-medium">
-                        <div class="w-8 h-8 rounded-full bg-white border border-blue-200 flex items-center justify-center shrink-0">
-                            <i data-lucide="clock" size="16" class="text-blue-600 animate-pulse"></i>
-                        </div>
-                        <div>
-                            <div>Time Remaining for Squad</div>
-                            <div class="font-mono font-bold text-sm live-timer-home" data-expires="${group.expiresAt}">Loading...</div>
-                        </div>
+                        <div class="w-8 h-8 rounded-full bg-white border border-blue-200 flex items-center justify-center shrink-0"><i data-lucide="clock" size="16" class="text-blue-600 animate-pulse"></i></div>
+                        <div><div>Time Remaining for Squad</div><div class="font-mono font-bold text-sm live-timer-home" data-expires="${group.expiresAt}">Loading...</div></div>
                     </div>
-
                     ${createSliderHTML('Slide to Add Member')}
                 </div>
             `);
             showModalNode(node);
             const getQty = setupQuantityLogic(node, p, null);
-
             node.querySelector('#close-modal').addEventListener('click', window.closeModal);
             
-            // Start local timer for the modal
             const updateModalTimer = () => {
                 const el = node.querySelector('.live-timer-home');
                 if(el) {
-                    const now = Date.now();
-                    const expires = parseInt(el.dataset.expires);
-                    const diff = Math.max(0, expires - now);
+                    const diff = Math.max(0, parseInt(el.dataset.expires) - Date.now());
                     const h = Math.floor(diff / 3600000);
                     const m = Math.floor((diff % 3600000) / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
-                    el.innerText = `${h}h ${m < 10 ? '0'+m : m}m ${s < 10 ? '0'+s : s}s`;
+                    el.innerText = `${h}h ${m}m ${s}s`;
                 }
             };
             updateModalTimer();
@@ -641,36 +490,26 @@
                     const phone = safeVal(node.querySelector('#m-phone'));
                     const qty = getQty();
                     const errCont = node.querySelector('.error-container');
-
                     if (!name || !/^[6-9]\d{9}$/.test(phone)) {
                         this.value = 0; this.disabled = false;
                         showFieldError(errCont, 'Valid Name & Phone required');
                         return;
                     }
-
                     const track = document.getElementById('slider-track');
-                    track.classList.remove('bg-slate-100');
-                    track.classList.add('bg-brand-500');
+                    track.classList.remove('bg-slate-100'); track.classList.add('bg-brand-500');
                     document.getElementById('slider-label').innerText = 'Adding...';
                     document.getElementById('slider-label').classList.replace('text-slate-400', 'text-white');
                     
-                    const memberData = { groupId: gid, name, phone, isLeader: false, quantity: qty };
-
                     try {
-                        clearInterval(modalTimerInterval); // Stop timer on submit
-                        if (useMock) {
-                             setTimeout(() => {
-                                if(!state.members[gid]) state.members[gid] = [];
-                                state.members[gid].push(memberData);
-                                window.closeModal(); toast('Added Successfully!', 'check-circle'); render();
-                             }, 500);
-                        } else {
-                            await setDoc(doc(db, `artifacts/${appId}/public/data/members`, newId('m')), memberData);
-                            window.closeModal(); toast('Added Successfully!', 'check-circle');
-                        }
+                        clearInterval(modalTimerInterval);
+                        const memberData = { groupId: gid, name, phone, isLeader: false, quantity: qty };
+                        if (!state.members[gid]) state.members[gid] = [];
+                        state.members[gid].push(memberData);
+                        saveData();
+                        setTimeout(() => { window.closeModal(); toast('Added Successfully!', 'check-circle'); render(); }, 500);
                     } catch (err) {
                         this.value = 0; this.disabled = false;
-                        showFieldError(errCont, 'Failed. Retry.');
+                        showFieldError(errCont, 'Storage failed');
                     }
                 }
             };
@@ -679,41 +518,28 @@
 
         function render() {
             const app = document.getElementById('app');
-            if (window.lucide) window.lucide.createIcons();
             if (state.view === 'home') renderHome(app);
             else renderGroup(app);
             if (window.lucide) window.lucide.createIcons();
         }
 
         function renderHome(el) {
-            // 1. Clear previous timer to prevent duplicates
             if (state.timerInterval) clearInterval(state.timerInterval);
-
-            const user = getUser();
-            const activeGroups = Object.values(state.groups).filter(g => {
-                const count = (state.members[g.id] || []).length;
-                return count > 0 && count < 5;
-            }).sort((a,b) => b.createdAt?.seconds - a.createdAt?.seconds);
-
-            const totalSquads = Object.keys(state.groups).length;
-            const totalPeople = Object.values(state.members).flat().length;
-
-            // IDENTIFY PRODUCTS USER IS ALREADY IN
-            const userActiveGroupIds = {}; // productId -> groupId
-            let primaryActiveGroup = null; // Store one active group to use for the header timer
-
+            const user = state.user;
+            
+            // Logic for active group identification
+            const userActiveGroupIds = {};
+            let primaryActiveGroup = null;
             if (user.name && user.phone) {
                 Object.values(state.groups).forEach(g => {
                     const members = state.members[g.id] || [];
-                    const isMember = members.some(m => m.name === user.name && m.phone === user.phone);
-                    if (isMember) {
+                    if (members.some(m => m.name === user.name && m.phone === user.phone)) {
                         userActiveGroupIds[g.productId] = g.id;
-                        if (!primaryActiveGroup) primaryActiveGroup = g; // Pick first found as primary
+                        if (!primaryActiveGroup) primaryActiveGroup = g;
                     }
                 });
             }
 
-            // DETERMINE HEADER TIMER TARGET
             let headerTargetTime, headerLabel;
             if (primaryActiveGroup) {
                 headerTargetTime = primaryActiveGroup.expiresAt;
@@ -725,12 +551,11 @@
                 headerLabel = "Market Closes";
             }
 
-            // SORT PRODUCTS: Inactive first, Active last
             const sortedProducts = [...PRODUCTS].sort((a, b) => {
                 const aActive = !!userActiveGroupIds[a.id];
                 const bActive = !!userActiveGroupIds[b.id];
-                if (aActive && !bActive) return 1; // a goes last
-                if (!aActive && bActive) return -1; // b goes last
+                if (aActive && !bActive) return 1;
+                if (!aActive && bActive) return -1;
                 return 0;
             });
 
@@ -741,77 +566,25 @@
                             <div><h1 class="font-black text-3xl tracking-tighter">JODO</h1><div class="text-[11px] text-brand-100 font-bold tracking-widest uppercase opacity-90">Direct Farmer Network</div></div>
                             <div class="bg-red-500/20 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black tracking-wide flex items-center gap-2 border border-red-400/30"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span> LIVE</div>
                         </div>
-                        
-                        <!-- HEADER TIMER (With Milliseconds) -->
                         <div class="flex items-center justify-between gap-3 text-xs font-semibold text-brand-50 bg-black/20 p-2.5 rounded-xl border border-white/10 backdrop-blur-sm transition-colors duration-300" id="home-header-timer-container">
-                            <div class="flex items-center gap-2 opacity-80">
-                                <i data-lucide="clock" size="14" class="animate-pulse"></i>
-                                <span class="uppercase text-[10px] font-bold tracking-wider">${headerLabel}</span>
-                            </div>
+                            <div class="flex items-center gap-2 opacity-80"><i data-lucide="clock" size="14" class="animate-pulse"></i><span class="uppercase text-[10px] font-bold tracking-wider">${headerLabel}</span></div>
                             <div class="font-mono font-bold tracking-widest text-white text-sm tabular-nums" id="appbar-header-timer" data-expires="${headerTargetTime}">Loading...</div>
                         </div>
                     </div>
 
-                    ${activeGroups.length > 0 ? `
-                        <div class="mt-6 pl-5">
-                            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><i data-lucide="zap" size="14" class="text-harvest-500 fill-harvest-500"></i> Live Missions</h2>
-                            <div class="flex gap-4 overflow-x-auto pb-6 pr-5 no-scrollbar">
-                                ${activeGroups.map(g => {
-                                    const p = PRODUCTS.find(x => x.id === g.productId);
-                                    if(!p) return '';
-                                    const count = (state.members[g.id] || []).length;
-                                    const needed = 5 - count;
-                                    return `
-                                        <div onclick="openGroup('${g.id}')" class="min-w-[240px] bg-white border border-slate-100 p-4 rounded-2xl shadow-lg shadow-slate-200/50 btn-press cursor-pointer relative overflow-hidden group">
-                                            <div class="absolute top-0 left-0 w-1.5 h-full bg-brand-500"></div>
-                                            <div class="flex items-center gap-3 mb-3">
-                                                <div class="w-10 h-10 ${p.imageColor} rounded-lg flex items-center justify-center"><i data-lucide="${p.icon}" size="20"></i></div>
-                                                <div><div class="text-sm font-bold text-slate-800 truncate leading-none mb-1">${p.name}</div><div class="text-[10px] text-slate-400 font-medium">Started by ${g.ownerName}</div></div>
-                                            </div>
-                                            <div class="w-full bg-slate-100 h-2.5 rounded-full mb-3 overflow-hidden"><div class="bg-brand-500 h-full transition-all duration-500" style="width: ${(count/5)*100}%"></div></div>
-                                            <div class="text-[11px] font-bold text-slate-600 flex justify-between items-center mb-1">
-                                                <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-500">${count}/5 Joined</span>
-                                                <span class="text-red-500">Need ${needed}</span>
-                                            </div>
-                                            <!-- SUBTLE TIMER -->
-                                            <div class="text-[10px] font-mono text-slate-400 text-right live-timer-home" data-expires="${g.expiresAt}">...</div>
-                                        </div>
-                                    `
-                                }).join('')}
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    <div class="px-5 space-y-6 mt-2">
+                    <div class="px-5 space-y-6 mt-6">
                         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Fresh Harvest</h2>
                         ${sortedProducts.map(p => {
                             const activeGid = userActiveGroupIds[p.id];
                             const activeGroup = activeGid ? state.groups[activeGid] : null;
-                            
                             let buttonHtml;
                             let timerHtml = ''; 
 
                             if (activeGid && activeGroup) {
-                                // Timer Logic for the pricing card
-                                timerHtml = `
-                                    <div class="flex items-center gap-1.5 bg-red-50 text-red-600 px-2 py-1 rounded-md border border-red-100 shadow-sm ml-auto">
-                                        <div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-                                        <span class="text-[10px] font-mono font-bold live-timer-home" data-expires="${activeGroup.expiresAt}">...</span>
-                                    </div>
-                                `;
-
-                                buttonHtml = `
-                                    <button onclick="openGroup('${activeGid}')" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold text-lg shadow-xl flex items-center justify-center gap-2 border border-slate-700 mt-4">
-                                        <span>View Your Squad</span><i data-lucide="arrow-right" size="20"></i>
-                                    </button>
-                                `;
+                                timerHtml = `<div class="flex items-center gap-1.5 bg-red-50 text-red-600 px-2 py-1 rounded-md border border-red-100 shadow-sm ml-auto"><div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div><span class="text-[10px] font-mono font-bold live-timer-home" data-expires="${activeGroup.expiresAt}">...</span></div>`;
+                                buttonHtml = `<button onclick="openGroup('${activeGid}')" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold text-lg shadow-xl flex items-center justify-center gap-2 border border-slate-700 mt-4 cursor-pointer"><span>View Your Squad</span><i data-lucide="arrow-right" size="20"></i></button>`;
                             } else {
-                                buttonHtml = `
-                                    <button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all hover:shadow-brand-500/40 mt-4">
-                                        <span>Start Live Squad</span>
-                                        <span class="bg-black/20 text-xs px-2 py-0.5 rounded border border-white/10 font-medium">Save ₹${p.price1 - p.price5}</span>
-                                    </button>
-                                `;
+                                buttonHtml = `<button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all hover:shadow-brand-500/40 mt-4 cursor-pointer"><span>Start Live Squad</span><span class="bg-black/20 text-xs px-2 py-0.5 rounded border border-white/10 font-medium">Save ₹${p.price1 - p.price5}</span></button>`;
                             }
 
                             return `
@@ -820,12 +593,7 @@
                                 <div class="p-5">
                                     <div class="flex gap-5 mb-6 cursor-pointer group/img" onclick="openFullFeed('${p.id}')">
                                         <div class="w-24 h-24 ${p.videoClass} video-grain rounded-2xl flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden">
-                                            
-                                            <!-- Price Overlay on Video Thumbnail -->
-                                            <div class="absolute top-0 left-0 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-br-xl border-b border-r border-white/10 z-20 shadow-sm">
-                                                ₹${p.price5}
-                                            </div>
-
+                                            <div class="absolute top-0 left-0 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-br-xl border-b border-r border-white/10 z-20 shadow-sm">₹${p.price5}</div>
                                             <i data-lucide="${p.icon}" size="40" class="text-white/80 z-10 relative group-hover/img:scale-110 transition-transform"></i>
                                             <div class="absolute bottom-1 right-1 bg-black/50 text-white text-[8px] px-1.5 rounded flex items-center gap-1 z-10"><i data-lucide="play" size="8"></i> Video</div>
                                         </div>
@@ -835,25 +603,16 @@
                                             <div class="text-xs text-slate-400 font-medium">${p.nameTe}</div>
                                         </div>
                                     </div>
-                                    
-                                    <!-- NEW: COLORFUL PRICING & CONCEPT CARD (Replaced with shared helper) -->
                                     <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden">
-                                        
-                                        <!-- Header: Concept + Timer -->
                                         <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
                                             <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">How JODO Works</div>
                                             ${timerHtml}
                                         </div>
-
-                                        <!-- Shared Pricing Component -->
                                         ${getPricingRoadmapHTML(p, 'light')}
-                                        
-                                        <!-- Informative Message -->
                                         <div class="mt-3 text-center text-[10px] text-slate-500 font-medium bg-slate-50/80 py-1.5 rounded-lg border border-slate-100">
                                             Price drops when neighbors join. <span class="text-emerald-600 font-bold">Unlock Green Price!</span>
                                         </div>
                                     </div>
-
                                     ${buttonHtml}
                                 </div>
                             </div>
@@ -862,11 +621,8 @@
                 </div>
             `;
 
-            // 2. START HIGH PRECISION HOME TIMER (50ms interval for milliseconds)
             const updateHomeTimers = () => {
                 const now = Date.now();
-                
-                // Helper to format time
                 const formatTime = (diff) => {
                     if (diff <= 0) return "00h 00m 00s 00";
                     const h = Math.floor(diff / 3600000);
@@ -876,7 +632,6 @@
                     return `${h}h ${m < 10 ? '0'+m : m}m ${s < 10 ? '0'+s : s}s ${ms < 10 ? '0'+ms : ms}`;
                 };
 
-                // Update Main Header Timer
                 const headerTimer = document.getElementById('appbar-header-timer');
                 const headerContainer = document.getElementById('home-header-timer-container');
                 
@@ -884,8 +639,6 @@
                     const expires = parseInt(headerTimer.dataset.expires);
                     const diff = expires - now;
                     headerTimer.innerText = formatTime(diff);
-                    
-                    // Turn RED when over/expired
                     if (diff <= 0) {
                         headerContainer.classList.remove('bg-black/20', 'border-white/10');
                         headerContainer.classList.add('bg-red-600', 'border-red-500', 'animate-pulse');
@@ -895,22 +648,19 @@
                     }
                 }
 
-                // Update Card Timers
                 document.querySelectorAll('.live-timer-home').forEach(el => {
                     const expires = parseInt(el.dataset.expires);
                     const diff = expires - now;
                     el.innerText = formatTime(diff);
-                    if (diff <= 0) el.classList.add('text-red-300'); // Light red for text on red bg
+                    if (diff <= 0) el.classList.add('text-red-300');
                 });
             };
             
-            // Start interval
             updateHomeTimers();
-            state.timerInterval = setInterval(updateHomeTimers, 50); // 50ms for smooth milliseconds
+            state.timerInterval = setInterval(updateHomeTimers, 50);
         }
 
         function renderGroup(el) {
-            // 1. CLEANUP (Timer & Observer)
             if (state.timerInterval) clearInterval(state.timerInterval);
             if (state.scrollObserver) state.scrollObserver.disconnect();
 
@@ -923,29 +673,19 @@
             const needed = Math.max(0, 5 - count);
             let currentPrice = p.price1;
             let status = 'Starting...';
-            
             if (count >= 5) { status = 'STAGE 2 CLEARED'; currentPrice = p.price5; } 
             else if (count >= 2) { status = 'STAGE 1 UNLOCKED'; currentPrice = p.price2; }
 
             const manualOrderMsg = `📦 *New Order Alert*\n\nProduct: ${p.name}\nGroup ID: ${g.id}\nStatus: ${count}/5 (${status})\nPrice: ₹${currentPrice}\n\n*Members:*\n` + members.map((m, i) => `${i+1}. ${m.name} (${(m.quantity || 1) * p.baseWeight} ${p.weightUnit}) - ${m.phone}`).join('\n');
             const companyLink = `https://wa.me/${COMPANY_PHONE}?text=${encodeURIComponent(manualOrderMsg)}`;
-            
-            const timeLeft = Math.max(0, g.expiresAt - Date.now());
-            const hrs = Math.floor(timeLeft / 3600000);
-            const isUrgent = hrs < 2; 
+            const isUrgent = (g.expiresAt - Date.now()) < 7200000;
             const timerColor = isUrgent ? 'text-red-600' : 'text-slate-800';
             const timerBg = isUrgent ? 'bg-red-50 border-red-100' : 'bg-white border-slate-100';
 
             el.innerHTML = `
                 <div class="fade-in bg-white min-h-screen">
-                    <!-- NAVIGATION HEADER WITH CENTERED TIMER -->
                     <div class="glass-header sticky top-0 z-40 border-b border-white/10 h-16 flex items-center justify-center shadow-sm relative transition-all duration-300">
-                        <!-- Absolute Left Back Button -->
-                        <button onclick="goHome()" class="absolute left-3 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-50">
-                            <i data-lucide="arrow-left" size="24"></i>
-                        </button>
-                        
-                        <!-- SCROLL-TRIGGERED TIMER (Centered & Big) -->
+                        <button onclick="goHome()" class="absolute left-3 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-50 cursor-pointer"><i data-lucide="arrow-left" size="24"></i></button>
                         <div id="sticky-header-timer" class="hidden opacity-0 translate-y-[-20px] transition-all duration-300 flex items-center gap-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full px-5 py-1.5 shadow-2xl">
                             <div class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
                             <span id="header-timer-text" class="text-white font-mono text-xl font-black tabular-nums tracking-tight drop-shadow-md">00h 00m 00s 00</span>
@@ -953,20 +693,12 @@
                     </div>
 
                     <div class="p-6 pb-32">
-                        <!-- MAIN TIMER CARD (Target for Observer) -->
                         <div id="main-timer-card" class="${timerBg} border rounded-2xl p-4 mb-8 shadow-sm relative overflow-hidden">
                             <div class="flex items-center gap-4 relative z-10">
-                                <div class="bg-white p-3 rounded-xl shadow-sm ${isUrgent ? 'animate-pulse' : ''}">
-                                    <i data-lucide="timer" class="${isUrgent ? 'text-red-500' : 'text-slate-400'}" size="24"></i>
-                                </div>
-                                <div>
-                                    <div class="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-0.5">Time Left to Fill</div>
-                                    <div id="live-timer" class="text-2xl font-mono font-black ${timerColor} tracking-tight tabular-nums">Loading...</div>
-                                </div>
+                                <div class="bg-white p-3 rounded-xl shadow-sm ${isUrgent ? 'animate-pulse' : ''}"><i data-lucide="timer" class="${isUrgent ? 'text-red-500' : 'text-slate-400'}" size="24"></i></div>
+                                <div><div class="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-0.5">Time Left to Fill</div><div id="live-timer" class="text-2xl font-mono font-black ${timerColor} tracking-tight tabular-nums">Loading...</div></div>
                             </div>
-                            <div class="mt-3 pt-3 border-t ${isUrgent ? 'border-red-200' : 'border-slate-100'} text-xs font-medium text-slate-500">
-                                ⚠️ Price is decided by group size when timer hits 0.
-                            </div>
+                            <div class="mt-3 pt-3 border-t ${isUrgent ? 'border-red-200' : 'border-slate-100'} text-xs font-medium text-slate-500">⚠️ Price is decided by group size when timer hits 0.</div>
                         </div>
 
                         <div class="text-center mb-8">
@@ -974,37 +706,27 @@
                             <p class="text-sm text-slate-500 font-medium">${p.unit} • ${p.nameTe}</p>
                         </div>
 
-                        <!-- SQUAD RING VISUALIZATION -->
                         <div class="squad-ring mb-6">
                             <div class="ring-track"></div>
-                            <!-- SEATS -->
+                            <div class="ring-center">
+                                <i data-lucide="${p.icon}" size="24" class="text-brand-500 mb-1"></i>
+                                <div class="text-2xl font-black text-slate-800 leading-none">₹${currentPrice}</div>
+                                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Locked In</div>
+                            </div>
                             ${[0,1,2,3,4].map(i => {
                                 const m = members[i];
                                 const isFilled = !!m;
                                 const isLeader = m?.isLeader;
                                 const seatClass = `seat-${i}`;
-                                let content = '';
-                                let bgClass = 'bg-white border-2 border-slate-200 text-slate-300';
-                                
-                                if (isFilled) {
-                                    bgClass = isLeader ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30 border-none' : 'bg-slate-800 text-white shadow-lg shadow-slate-800/30 border-none';
-                                    content = `<span class="font-bold text-lg">${m.name[0]}</span>`;
-                                } else {
-                                    content = `<i data-lucide="plus" size="16"></i>`;
-                                }
-
+                                let content = isFilled ? `<span class="font-bold text-lg">${m.name[0]}</span>` : `<i data-lucide="plus" size="16"></i>`;
+                                let bgClass = isFilled 
+                                    ? (isLeader ? 'bg-brand-500 text-white shadow-lg border-none' : 'bg-slate-800 text-white shadow-lg border-none') 
+                                    : 'bg-white border-2 border-slate-200 text-slate-300';
                                 const weightLabel = (isFilled && m.quantity > 1) ? ((m.quantity * p.baseWeight) + p.weightUnit) : '';
-
-                                return `
-                                    <div class="ring-seat ${seatClass} ${bgClass}">
-                                        ${content}
-                                        ${isFilled && m.quantity > 1 ? `<div class="absolute -top-3 -right-2 bg-yellow-400 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded-full border border-white whitespace-nowrap shadow-sm">${weightLabel}</div>` : ''}
-                                    </div>
-                                `;
+                                return `<div class="ring-seat ${seatClass} ${bgClass}">${content}${isFilled && m.quantity > 1 ? `<div class="absolute -top-3 -right-2 bg-yellow-400 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded-full border border-white whitespace-nowrap shadow-sm">${weightLabel}</div>` : ''}</div>`;
                             }).join('')}
                         </div>
                         
-                        <!-- PRICE PREDICTOR -->
                         <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-8">
                             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-3">Live Pricing Tiers</div>
                             <div class="flex justify-between gap-2 relative">
@@ -1034,44 +756,22 @@
                         </div>
 
                         ${count < 5 ? `
-                            <button onclick="openAddMemberModal('${g.id}')" class="w-full bg-gradient-to-r from-brand-600 to-brand-500 text-white py-4.5 rounded-2xl font-bold shadow-lg shadow-brand-500/30 btn-press flex items-center justify-center gap-2.5 mb-3 border border-white/10">
+                            <button onclick="openAddMemberModal('${g.id}')" class="w-full bg-gradient-to-r from-brand-600 to-brand-500 text-white py-4.5 rounded-2xl font-bold shadow-lg shadow-brand-500/30 btn-press flex items-center justify-center gap-2.5 mb-3 border border-white/10 cursor-pointer">
                                 <i data-lucide="user-plus" size="20"></i> Add Neighbor (Manual Entry)
                             </button>
                             <p class="text-center text-[11px] text-slate-400 font-medium">You are the leader. Enter details for others.</p>
                         ` : ''}
                         
                         <div class="mt-8 mb-4">
-                            <a href="${companyLink}" target="_blank" class="block w-full bg-blue-600 text-white py-3.5 rounded-2xl font-bold text-sm text-center shadow-lg shadow-blue-500/25 btn-press flex items-center justify-center gap-2"><i data-lucide="send" size="16"></i> 📲 Send Order to JODO</a>
+                            <a href="${companyLink}" target="_blank" class="block w-full bg-blue-600 text-white py-3.5 rounded-2xl font-bold text-sm text-center shadow-lg shadow-blue-500/25 btn-press flex items-center justify-center gap-2 cursor-pointer"><i data-lucide="send" size="16"></i> 📲 Send Order to JODO</a>
                             <p class="text-center text-[10px] text-slate-400 mt-2">Sync final list with admin.</p>
                         </div>
 
                         <div class="mt-8 border-t border-slate-100 pt-8">
-                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex justify-between items-center ml-1">
-                                <span>Squad Roster (${count}/5)</span>
-                                <span class="flex items-center gap-1.5 text-brand-600 text-[10px] bg-brand-50 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 bg-brand-500 rounded-full animate-ping"></span> Live</span>
-                            </h3>
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex justify-between items-center ml-1"><span>Squad Roster (${count}/5)</span><span class="flex items-center gap-1.5 text-brand-600 text-[10px] bg-brand-50 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 bg-brand-500 rounded-full animate-ping"></span> Live</span></h3>
                             <div class="space-y-3">
-                                ${members.map((m, i) => `
-                                    <div class="flex items-center justify-between p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-xs font-bold text-slate-500 border border-slate-200">${i+1}</div>
-                                            <div>
-                                                <div class="flex items-center gap-2">
-                                                    <div class="text-sm font-bold text-slate-900 uppercase tracking-tight">${m.name}</div>
-                                                    ${(m.quantity > 1) ? `<div class="text-[10px] font-black bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">${m.quantity}x</div>` : ''}
-                                                </div>
-                                                <div class="text-[10px] text-slate-500 font-mono tracking-widest font-bold">${m.phone}</div>
-                                            </div>
-                                        </div>
-                                        ${i === 0 ? '<div class="text-[9px] bg-harvest-100 text-harvest-800 px-2.5 py-1 rounded-lg font-black uppercase tracking-wide flex items-center gap-1"><i data-lucide="star" size="10"></i> HERO</div>' : ''}
-                                    </div>
-                                `).join('')}
-                                ${Array(needed).fill(0).map((_, idx) => `
-                                    <div class="flex items-center gap-3 p-3.5 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl opacity-60">
-                                        <div class="w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center text-xs font-bold text-slate-300">${count + idx + 1}</div>
-                                        <div class="text-xs font-bold text-slate-400 italic flex items-center gap-2">Waiting... <span class="w-1.5 h-1.5 bg-slate-300 rounded-full animate-ping-slow"></span></div>
-                                    </div>
-                                `).join('')}
+                                ${members.map((m, i) => `<div class="flex items-center justify-between p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm"><div class="flex items-center gap-3"><div class="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-xs font-bold text-slate-500 border border-slate-200">${i+1}</div><div><div class="flex items-center gap-2"><div class="text-sm font-bold text-slate-900 uppercase tracking-tight">${m.name}</div>${(m.quantity > 1) ? `<div class="text-[10px] font-black bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">${(m.quantity*p.baseWeight)}${p.weightUnit}</div>` : ''}</div><div class="text-[10px] text-slate-500 font-mono tracking-widest font-bold">${m.phone}</div></div></div>${i === 0 ? '<div class="text-[9px] bg-harvest-100 text-harvest-800 px-2.5 py-1 rounded-lg font-black uppercase tracking-wide flex items-center gap-1"><i data-lucide="star" size="10"></i> HERO</div>' : ''}</div>`).join('')}
+                                ${Array(needed).fill(0).map((_, idx) => `<div class="flex items-center gap-3 p-3.5 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl opacity-60"><div class="w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center text-xs font-bold text-slate-300">${count + idx + 1}</div><div class="text-xs font-bold text-slate-400 italic flex items-center gap-2">Waiting... <span class="w-1.5 h-1.5 bg-slate-300 rounded-full animate-ping-slow"></span></div></div>`).join('')}
                             </div>
                         </div>
                     </div>
@@ -1084,54 +784,33 @@
             const mainTimerCard = document.getElementById('main-timer-card');
 
             if (timerEl) {
-                // 1. UPDATE TIMER FUNCTION
                 const tick = () => {
                     const diff = Math.max(0, g.expiresAt - Date.now());
                     const h = Math.floor(diff / 3600000);
                     const m = Math.floor((diff % 3600000) / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
                     const ms = Math.floor((diff % 1000) / 10);
-                    
                     const mainStr = `${h}h ${m}m ${s}s ${ms}`;
-                    
                     timerEl.innerText = mainStr;
                     if(headerTimerText) headerTimerText.innerText = mainStr;
-
-                    // COLOR RED IF EXPIRED
                     if (diff <= 0) {
-                        timerEl.classList.remove('text-slate-800', 'text-red-600');
-                        timerEl.classList.add('text-red-600');
-                        if (headerTimerEl) {
-                            headerTimerEl.classList.remove('bg-black/40', 'border-white/10');
-                            headerTimerEl.classList.add('bg-red-600', 'border-red-500');
-                        }
+                        timerEl.classList.remove('text-slate-800', 'text-red-600'); timerEl.classList.add('text-red-600');
+                        if (headerTimerEl) { headerTimerEl.classList.remove('bg-black/40', 'border-white/10'); headerTimerEl.classList.add('bg-red-600', 'border-red-500'); }
                     }
                 };
                 state.timerInterval = setInterval(tick, 50);
                 tick();
 
-                // 2. SCROLL OBSERVER (Show Header Timer when Main Card is invisible)
                 state.scrollObserver = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
-                        if (!entry.isIntersecting) {
-                            // Card is gone -> Show header timer
-                            headerTimerEl.classList.remove('hidden', 'opacity-0', 'translate-y-[-20px]');
-                        } else {
-                            // Card is visible -> Hide header timer
-                            headerTimerEl.classList.add('opacity-0', 'translate-y-[-20px]');
-                            // Delay adding 'hidden' to allow animation to finish
-                            setTimeout(() => {
-                                if (entry.isIntersecting) headerTimerEl.classList.add('hidden');
-                            }, 300);
-                        }
+                        if (!entry.isIntersecting) { headerTimerEl.classList.remove('hidden', 'opacity-0', 'translate-y-[-20px]'); } 
+                        else { headerTimerEl.classList.add('opacity-0', 'translate-y-[-20px]'); setTimeout(() => { if (entry.isIntersecting) headerTimerEl.classList.add('hidden'); }, 300); }
                     });
                 }, { threshold: 0.1 });
-                
                 state.scrollObserver.observe(mainTimerCard);
             }
         }
 
-        // 3. CLEAN UP ON NAVIGATION
         window.goHome = () => { 
             if (state.timerInterval) clearInterval(state.timerInterval);
             if (state.scrollObserver) state.scrollObserver.disconnect();
@@ -1142,6 +821,21 @@
         window.openGroup = (gid) => { 
             try { if (window.location.protocol !== 'blob:') history.pushState({}, '', `?group=${gid}`); } catch(e) {} 
             state.currentGroupId = gid; state.view = 'group'; render(); 
+        }
+
+        function getActiveGroupId(pid) {
+            // Helper to get active group ID for a product
+            if (state.user.name && state.user.phone) {
+                for (const g of Object.values(state.groups)) {
+                    if (g.productId === pid) {
+                        const mems = state.members[g.id] || [];
+                        if (mems.some(m => m.name === state.user.name && m.phone === state.user.phone)) {
+                            return g.id;
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
         function toast(msg, icon) { 
