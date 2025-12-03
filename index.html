@@ -1,162 +1,1120 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>JODO — Start Squad</title>
-  <meta name="theme-color" content="#059669" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>body{font-family:'Poppins',sans-serif} .card{border-radius:14px}</style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <title>JODO - 1-2-5 Pricing</title>
+    <!-- Tailwind CSS (Utility) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons (Visual Language) -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 900: '#022c22', 800: '#064e3b', 600: '#059669', 500: '#10b981', 100: '#d1fae5', 50: '#ecfdf5' },
+                        harvest: { 500: '#f59e0b', 400: '#fbbf24', 100: '#fef3c7' }
+                    },
+                    animation: {
+                        'float-slow': 'float 4s ease-in-out infinite',
+                        'slide-shimmer': 'shimmer 2s linear infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-6px)' } },
+                        shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root { --action-green: #059669; --urgency-red: #ef4444; --reward-gold: #f59e0b; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; color: #0f172a; -webkit-tap-highlight-color: transparent; min-height: 100dvh; }
+        
+        .btn-press { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-press:active:not(:disabled) { transform: scale(0.96); }
+        
+        .card-modern { background: white; border-radius: 1.5rem; box-shadow: 0 10px 30px -10px rgba(6, 78, 59, 0.08); border: 1px solid rgba(255,255,255,0.5); }
+        .glass-header { background: rgba(2, 44, 34, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .ticker-slide { animation: slideUpFade 5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        @keyframes slideUpFade { 
+            0%, 20% { transform: translateY(0); opacity: 1; } 
+            25%, 45% { transform: translateY(-100%); opacity: 0; } 
+            50%, 70% { transform: translateY(100%); opacity: 0; } 
+            75%, 100% { transform: translateY(0); opacity: 1; } 
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* SLIDER CSS */
+        input[type=range].slider-lock {
+            -webkit-appearance: none; width: 100%; background: transparent; cursor: pointer;
+        }
+        input[type=range].slider-lock::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 56px; width: 56px; border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-top: -4px;
+            position: relative; z-index: 50;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: center;
+        }
+        input[type=range].slider-lock::-webkit-slider-runnable-track {
+            width: 100%; height: 48px; cursor: pointer;
+            background: rgba(0,0,0,0.05); border-radius: 99px; border: 2px solid rgba(255,255,255,0.5);
+        }
+
+        .video-onion { background: linear-gradient(-45deg, #7f1d1d, #b91c1c, #991b1b, #450a0a); }
+        .video-oil { background: linear-gradient(-45deg, #d97706, #f59e0b, #fbbf24, #b45309); }
+        .video-sugar { background: linear-gradient(-45deg, #2563eb, #60a5fa, #3b82f6, #1e40af); }
+        .video-grain { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E"); }
+
+        /* SQUAD RING CSS */
+        .squad-ring { position: relative; width: 260px; height: 260px; margin: 0 auto; }
+        .ring-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 110px; height: 110px; border-radius: 50%; background: white; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.15); border: 4px solid #f8fafc; }
+        .ring-track { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; border: 2px dashed #cbd5e1; border-radius: 50%; z-index: 0; }
+        .ring-seat { position: absolute; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 30; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        
+        /* Seat Positions (Star Shape) */
+        .seat-0 { top: 0; left: 50%; transform: translate(-50%, -10%); }
+        .seat-1 { top: 32%; right: 0; transform: translate(10%, -10%); }
+        .seat-2 { bottom: 8%; right: 12%; transform: translate(0, 0); }
+        .seat-3 { bottom: 8%; left: 12%; transform: translate(0, 0); }
+        .seat-4 { top: 32%; left: 0; transform: translate(-10%, -10%); }
+    </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="pb-10 antialiased selection:bg-brand-100">
 
-<header class="bg-white sticky top-0 z-30 border-b">
-  <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-    <div class="font-black text-xl text-slate-900">JODO — Start Squad</div>
-    <div class="text-sm text-slate-500">2-hour squads</div>
-  </div>
-</header>
+    <div id="app" class="max-w-md mx-auto min-h-screen bg-slate-50/50 shadow-2xl relative overflow-hidden ring-1 ring-slate-900/5"></div>
 
-<main class="max-w-md mx-auto p-4 pb-36">
-
-  <p class="text-sm text-slate-600 mb-3">Tap a product → Start Squad → Invite on WhatsApp. The link you share carries the live squad state (no server required).</p>
-
-  <div id="productList" class="space-y-4"></div>
-
-  <!-- modal: create squad -->
-  <div id="createModal" class="fixed inset-0 bg-black/40 hidden items-end justify-center p-4 z-40">
-    <div class="bg-white w-full rounded-t-2xl max-w-md p-4">
-      <div class="flex items-center justify-between mb-2">
-        <div class="font-bold text-lg">Start Squad</div>
-        <button id="closeCreate" class="text-slate-500">✕</button>
-      </div>
-
-      <div id="createProductInfo" class="mb-3"></div>
-
-      <label class="text-xs font-semibold text-slate-600">Your name</label>
-      <input id="creatorName" class="w-full p-3 mt-1 mb-3 border rounded-lg" placeholder="e.g. Raju"/>
-
-      <label class="text-xs font-semibold text-slate-600">Quantity (packs)</label>
-      <div class="flex gap-2 mt-1 items-center mb-4">
-        <button id="qtyMinus" class="px-3 py-2 bg-slate-100 rounded-lg">−</button>
-        <div id="qtyDisplay" class="font-bold">1</div>
-        <button id="qtyPlus" class="px-3 py-2 bg-slate-100 rounded-lg">+</button>
-        <div class="text-sm text-slate-500 ml-auto">You pay per pack; final price determined at expiry.</div>
-      </div>
-
-      <div class="flex gap-2">
-        <button id="startSquadBtn" class="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold">Start & Share</button>
-        <button id="cancelStart" class="flex-1 py-3 bg-gray-100 rounded-lg font-semibold">Cancel</button>
-      </div>
-
-      <p class="text-xs text-slate-400 mt-3">Note: Squad link encodes the current members. Every time someone joins they produce a newer link — share the newest link in the chat.</p>
+    <div id="modal-overlay" class="fixed inset-0 bg-brand-900/60 hidden z-[60] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
+        <div id="modal-content" class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl transform transition-all relative overflow-hidden"></div>
     </div>
-  </div>
 
-</main>
+    <div id="toast" aria-live="polite" role="status" class="fixed top-6 left-1/2 -translate-x-1/2 bg-brand-900/90 backdrop-blur-md text-white px-6 py-3.5 rounded-full text-sm font-semibold shadow-2xl hidden z-[70] flex items-center gap-2 pointer-events-none border border-white/10 transition-all duration-300"></div>
 
-<footer id="hint" class="fixed bottom-4 left-0 right-0 max-w-md mx-auto px-4 z-30">
-  <div class="bg-white rounded-2xl p-3 shadow">Pro tip: Use WhatsApp group chats — ask friends to click the shared link and press JOIN.</div>
-</footer>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-<script>
-/* ---------- CONFIG ---------- */
-const SQUAD_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours
-const WHATSAPP_PHONE = ''; // optional: put merchant phone without + if you want direct wa link for checkout
+        // --- 1. INFRASTRUCTURE ---
+        let firebaseConfig;
+        try { firebaseConfig = (typeof __firebase_config !== 'undefined') ? JSON.parse(__firebase_config) : null; } catch(e) { firebaseConfig = null; }
+        const appId = (typeof __app_id !== 'undefined') ? __app_id : 'jodo-app';
+        let app, auth, db;
+        let useMock = false;
 
-const PRODUCTS = [
-  { id:'tomato', name:'Tomato', p1:43, p2:39, p5:33, unitLabel:'per kg', img:'https://i.postimg.cc/qR4pSKwK/tomato.jpg' },
-  { id:'onion',  name:'Onion',  p1:30, p2:26, p5:22, unitLabel:'per kg', img:'https://i.postimg.cc/yx1mycZW/onion.jpg' },
-  { id:'potato', name:'Potato', p1:36, p2:32, p5:28, unitLabel:'per kg', img:'https://i.postimg.cc/YCHq0Zq3/potato.jpg' }
-];
+        if (firebaseConfig) {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            } catch(e) { useMock = true; }
+        } else { useMock = true; }
 
-/* ---------- UTIL (encode/decode squad payload in URL) ---------- */
-function enc(obj){ return btoa(encodeURIComponent(JSON.stringify(obj))); }
-function dec(s){ try{ return JSON.parse(decodeURIComponent(atob(s))); }catch(e){ return null; } }
-function uid(prefix='G'){ return prefix + '-' + Math.random().toString(36).slice(2,9).toUpperCase(); }
-function now(){ return Date.now(); }
+        const COMPANY_PHONE = "919999999999"; 
 
-/* ---------- UI: render product cards ---------- */
-const productList = document.getElementById('productList');
-function renderProducts(){
-  productList.innerHTML = '';
-  PRODUCTS.forEach(p=>{
-    const el = document.createElement('div');
-    el.className = 'card bg-white p-3 shadow-sm flex gap-3 items-center';
-    el.innerHTML = `
-      <img src="${p.img}" class="w-20 h-20 rounded-lg object-cover">
-      <div class="flex-1">
-        <div class="font-bold text-slate-900">${p.name}</div>
-        <div class="text-sm text-slate-500">Start a squad — final price unlocks at 2 & 5 members</div>
-        <div class="mt-2 text-sm text-green-600 font-bold">1: ₹${p.p1} • 2: ₹${p.p2} • 5: ₹${p.p5}</div>
-      </div>
-      <div>
-        <button class="startBtn px-4 py-2 bg-green-600 text-white rounded-lg" data-id="${p.id}">Start Squad</button>
-      </div>
-    `;
-    productList.appendChild(el);
-  });
-}
-renderProducts();
+        // --- 2. DATA (UPDATED: 500g Base Units) ---
+        const PRODUCTS = [
+            { 
+                id: 'onion', 
+                name: 'Red Onions', 
+                nameTe: 'ఎర్ర ఉల్లిపాయలు', 
+                unit: '500g', 
+                baseWeight: 0.5, // 0.5 kg
+                weightUnit: 'kg',
+                price1: 25, price2: 22, price5: 18, // Prices per 500g
+                icon: 'layers', 
+                imageColor: 'bg-red-50 text-red-500', 
+                farmer: 'Raju Bhai', 
+                location: 'Duvva Fields', 
+                liveViewers: '1.2k', 
+                videoClass: 'video-onion', 
+                videoSrc: 'https://videos.pexels.com/video-files/5725790/5725790-uhd_1440_2732_25fps.mp4' 
+            },
+            { 
+                id: 'oil', 
+                name: 'Sunflower Oil', 
+                nameTe: 'పొద్దుతిరుగుడు నూనె', 
+                unit: '500ml', 
+                baseWeight: 0.5, // 0.5 L
+                weightUnit: 'L',
+                price1: 60, price2: 55, price5: 50, // Prices per 500ml
+                icon: 'droplet', 
+                imageColor: 'bg-harvest-100 text-harvest-500', 
+                farmer: 'Sunil Oil Mills', 
+                location: 'Factory Direct', 
+                liveViewers: '850', 
+                videoClass: 'video-oil', 
+                videoSrc: 'oil.mp4' 
+            },
+            { 
+                id: 'sugar', 
+                name: 'Sugar', 
+                nameTe: 'చక్కెర', 
+                unit: '500g', 
+                baseWeight: 0.5, // 0.5 kg
+                weightUnit: 'kg',
+                price1: 24, price2: 22, price5: 20, // Prices per 500g
+                icon: 'package', 
+                imageColor: 'bg-blue-50 text-blue-500', 
+                farmer: 'Co-op Society', 
+                location: 'Local Stock', 
+                liveViewers: '340', 
+                videoClass: 'video-sugar', 
+                videoSrc: 'sugar.mp4' 
+            }
+        ];
 
-/* ---------- Create modal logic ---------- */
-let activeProduct=null, qty=1;
-const createModal = document.getElementById('createModal');
-const createProductInfo = document.getElementById('createProductInfo');
-const creatorName = document.getElementById('creatorName');
-const qtyDisplay = document.getElementById('qtyDisplay');
+        const state = { view: 'home', currentGroupId: null, groups: {}, members: {}, user: { uid: 'guest' }, timerInterval: null };
 
-document.addEventListener('click', e=>{
-  if(e.target.matches('.startBtn')) {
-    const id = e.target.dataset.id;
-    activeProduct = PRODUCTS.find(x=>x.id===id);
-    qty = 1;
-    creatorName.value = '';
-    qtyDisplay.textContent = qty;
-    createProductInfo.innerHTML = `<div class="font-bold">${activeProduct.name}</div><div class="text-sm text-slate-500">Target: unlock best price at 5 joins</div>`;
-    createModal.classList.remove('hidden');
-  }
-});
-document.getElementById('closeCreate').onclick = ()=> createModal.classList.add('hidden');
-document.getElementById('cancelStart').onclick = ()=> createModal.classList.add('hidden');
-document.getElementById('qtyPlus').onclick = ()=> { qty = Math.min(10, qty+1); qtyDisplay.textContent = qty; }
-document.getElementById('qtyMinus').onclick = ()=> { qty = Math.max(1, qty-1); qtyDisplay.textContent = qty; }
+        function saveUser(name, phone) { try { localStorage.setItem('jodo_user_name', name); localStorage.setItem('jodo_user_phone', phone); } catch(e) {} }
+        function getUser() { return { name: localStorage.getItem('jodo_user_name') || '', phone: localStorage.getItem('jodo_user_phone') || '' }; }
 
-/* ---------- Start Squad: create squad object + share link ---------- */
-document.getElementById('startSquadBtn').onclick = ()=>{
-  const name = (creatorName.value || '').trim();
-  if(!name){ alert('Enter your name'); creatorName.focus(); return; }
-  const groupId = uid('JODO');
-  const createdAt = now();
-  const squad = {
-    id: groupId,
-    productId: activeProduct.id,
-    createdAt,
-    expiresAt: createdAt + SQUAD_DURATION_MS,
-    members: [ { name, qty } ]
-  };
+        async function init() {
+            if (useMock) {
+                state.user = { uid: 'mock-user', isAnonymous: true };
+                const mockGid = 'g-mock-1';
+                state.groups[mockGid] = { id: mockGid, productId: 'onion', ownerName: 'Demo Leader', expiresAt: Date.now() + 3600000, createdAt: { seconds: Date.now()/1000 }, status: 'open' };
+                state.members[mockGid] = [{ groupId: mockGid, name: 'Demo Leader', phone: '9999999999', isLeader: true, quantity: 1 }];
+                render(); return;
+            }
 
-  // encode into URL (payload)
-  const payload = enc(squad);
-  const link = `${location.origin}${location.pathname.replace(/index\\.html$/,'') }squad.html?g=${groupId}&d=${payload}`;
+            if (window.__initial_auth_token) await signInWithCustomToken(auth, window.__initial_auth_token);
+            else await signInAnonymously(auth);
+            state.user = auth.currentUser;
 
-  // copy + open WhatsApp share
-  const msg = `Join my JODO squad for *${activeProduct.name}* — final price unlocks if more join.\n\nCurrent: *1/${5}* joined\nTime to unlock: 2 hours\nJoin here: ${link}`;
-  shareWhatsApp(msg, link);
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/groups`), (snap) => {
+                state.groups = {}; snap.forEach(d => state.groups[d.id] = { id: d.id, ...d.data() }); render();
+            });
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/members`), (snap) => {
+                state.members = {};
+                snap.forEach(d => {
+                    const m = d.data();
+                    if (!state.members[m.groupId]) state.members[m.groupId] = [];
+                    state.members[m.groupId].push(m);
+                });
+                render();
+            });
 
-  // close modal
-  createModal.classList.add('hidden');
-};
+            const handleRoute = () => {
+                const params = new URLSearchParams(location.search);
+                state.currentGroupId = params.get('group') || null;
+                state.view = state.currentGroupId ? 'group' : 'home';
+                render();
+            };
+            window.addEventListener('popstate', handleRoute);
+            handleRoute();
+        }
 
-/* ---------- share helper ---------- */
-function shareWhatsApp(msg, link){
-  // copy link to clipboard for convenience
-  try{ navigator.clipboard.writeText(link); }catch(e){}
-  const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-  window.open(url,'_blank');
-}
+        // --- DOM HELPERS ---
+        function createNodeFromHTML(html) {
+            const template = document.createElement('template');
+            template.innerHTML = html.trim();
+            return template.content.firstElementChild;
+        }
 
-</script>
+        function showModalNode(node) {
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            content.innerHTML = '';
+            content.appendChild(node);
+            overlay.classList.remove('hidden');
+            const f = content.querySelector('input');
+            if(f) f.focus();
+            if(window.lucide) window.lucide.createIcons();
+        }
+
+        window.closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
+
+        function showFieldError(container, msg) {
+            container.innerHTML = `<div class="field-error text-xs text-red-500 mt-2 font-medium bg-red-50 p-2 rounded-lg flex items-center gap-1"><i data-lucide="alert-circle" size="12"></i> ${msg}</div>`;
+            if(window.lucide) window.lucide.createIcons();
+        }
+
+        function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
+        function newId(prefix='m') { return prefix + Date.now() + Math.floor(Math.random()*900); }
+
+        function createSliderHTML(label) {
+            return `
+                <div class="relative w-full h-14 mt-6 mb-2">
+                    <div class="absolute inset-0 bg-slate-100 rounded-full flex items-center justify-center pointer-events-none transition-colors duration-300" id="slider-track">
+                        <span class="text-slate-400 font-bold text-sm tracking-widest uppercase opacity-80 animate-pulse" id="slider-label">${label}</span>
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-slide-shimmer" style="background-size: 200% 100%;"></div>
+                    </div>
+                    <input type="range" min="0" max="100" value="0" class="slider-lock absolute inset-0 w-full h-full z-10 opacity-100" id="unlock-slider">
+                </div>
+                <div class="error-container"></div>
+            `;
+        }
+
+        // UPDATED: Quantity Logic now calculates KG/L based on 500g units
+        function setupQuantityLogic(node, p, labelId) {
+            let qty = 1;
+            
+            const updateDisplay = () => {
+                // Calculate Total Weight (e.g., 3 * 0.5 = 1.5 kg)
+                const totalWeight = qty * p.baseWeight;
+                // Format to remove unnecessary decimals (e.g. 1.0 -> 1)
+                const formattedWeight = parseFloat(totalWeight.toFixed(2)); 
+                
+                // Update Qty Counter with Weight
+                node.querySelector('#qty-display').innerText = `${formattedWeight} ${p.weightUnit}`;
+                
+                // Update Main Label (e.g. "Unlock ₹220")
+                if(labelId) {
+                    const totalSavings = (p.price1 - p.price5) * qty;
+                    const totalPrice = p.price5 * qty;
+                    node.querySelector(labelId).innerHTML = `Unlock ₹${totalPrice} (Save ₹${totalSavings})`;
+                }
+
+                // Update 1-2-5 Tier Prices
+                const t1 = node.querySelector('#tier-1-price');
+                const t2 = node.querySelector('#tier-2-price');
+                const t5 = node.querySelector('#tier-5-price');
+
+                if (t1) t1.innerText = '₹' + (p.price1 * qty);
+                if (t2) t2.innerText = '₹' + (p.price2 * qty);
+                if (t5) t5.innerText = '₹' + (p.price5 * qty);
+            };
+
+            node.querySelector('#btn-minus').onclick = () => { if (qty > 1) { qty--; updateDisplay(); } };
+            node.querySelector('#btn-plus').onclick = () => { if (qty < 20) { qty++; updateDisplay(); } };
+            
+            // Initialize display
+            updateDisplay();
+            
+            return () => qty;
+        }
+
+        // --- ACTIONS ---
+
+        window.openFullFeed = (startPid) => {
+            const user = getUser();
+            
+            // CHECK ACTIVE STATUS
+            let activeGid = null;
+            if (user.name && user.phone) {
+                Object.values(state.groups).forEach(g => {
+                    if (g.productId === startPid) {
+                        const mems = state.members[g.id] || [];
+                        if (mems.some(m => m.name === user.name && m.phone === user.phone)) {
+                            activeGid = g.id;
+                        }
+                    }
+                });
+            }
+
+            if (activeGid) {
+                // If user is already in a group for this product, go directly there
+                window.openGroup(activeGid);
+                return;
+            }
+
+            // Normal Feed Logic
+            const slidesHtml = PRODUCTS.map(p => {
+                const savings = p.price1 - p.price5;
+                const savings2 = p.price1 - p.price2;
+                
+                let backgroundContent;
+                if (p.videoSrc) {
+                    backgroundContent = `
+                        <video src="${p.videoSrc}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover z-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"></video>
+                        <div class="absolute inset-0 z-0 ${p.videoClass} video-grain hidden"></div>
+                    `;
+                } else {
+                    backgroundContent = `<div class="absolute inset-0 z-0 ${p.videoClass} video-grain"></div>`;
+                }
+
+                // Check active state per slide
+                let slideActiveGid = null;
+                if (user.name && user.phone) {
+                    Object.values(state.groups).forEach(g => {
+                        if (g.productId === p.id) {
+                            const mems = state.members[g.id] || [];
+                            if (mems.some(m => m.name === user.name && m.phone === user.phone)) {
+                                slideActiveGid = g.id;
+                            }
+                        }
+                    });
+                }
+
+                let buttonHtml;
+                if (slideActiveGid) {
+                    buttonHtml = `
+                        <button onclick="openGroup('${slideActiveGid}')" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2">
+                            <span>View Your Squad</span><i data-lucide="arrow-right" size="16"></i>
+                        </button>
+                    `;
+                } else {
+                    buttonHtml = `
+                        <button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2">
+                            <span>Start Live Squad</span>
+                            <span class="bg-black/20 text-xs px-2 py-0.5 rounded border border-white/10 font-medium">Save ₹${savings}</span>
+                        </button>
+                    `;
+                }
+
+                return `
+                    <div id="slide-${p.id}" class="snap-center shrink-0 relative w-full h-full bg-black overflow-hidden flex flex-col justify-center">
+                        <div class="absolute top-6 left-4 z-40 flex items-center gap-2">
+                            <div class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 animate-pulse"><span class="w-2 h-2 bg-white rounded-full"></span> LIVE</div>
+                            <div class="bg-black/40 backdrop-blur-md text-white text-xs font-medium px-2.5 py-1 rounded-full border border-white/10"><i data-lucide="eye" size="12"></i> ${p.liveViewers}</div>
+                        </div>
+                        ${backgroundContent}
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-6 pb-24 z-20">
+                            <div class="mb-4">
+                                <div class="text-harvest-400 font-black text-lg leading-none shadow-black drop-shadow-md mb-1">@${p.farmer}</div>
+                                <h3 class="font-black text-3xl text-white leading-tight mb-1 drop-shadow-lg">${p.name}</h3>
+                                <div class="text-slate-300 text-sm font-medium">${p.unit} • ₹${p.price5} Best Price</div>
+                            </div>
+                            
+                            <!-- UPDATED: 1-2-5 Pricing Roadmap (Matches Home Screen) -->
+                            <div class="bg-black/40 backdrop-blur-md rounded-xl p-4 mb-6 border border-white/10">
+                                <div class="flex justify-between items-center text-center">
+                                    <div class="flex flex-col items-center opacity-80">
+                                        <div class="text-[10px] font-bold uppercase text-slate-300">1 Person</div>
+                                        <div class="text-sm font-bold text-white">₹${p.price1}</div>
+                                    </div>
+                                    <div class="h-px w-8 bg-white/20"></div>
+                                    <div class="flex flex-col items-center">
+                                        <div class="text-[10px] font-bold uppercase text-brand-400">2 People</div>
+                                        <div class="text-sm font-bold text-brand-400">₹${p.price2}</div>
+                                    </div>
+                                    <div class="h-px w-8 bg-white/20"></div>
+                                    <div class="flex flex-col items-center">
+                                        <div class="bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded mb-0.5">GOAL</div>
+                                        <div class="text-xl font-black text-white">₹${p.price5}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            ${buttonHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            const node = createNodeFromHTML(`
+                <div id="full-feed-overlay" class="fixed inset-0 bg-black z-[70] animate-in fade-in duration-200">
+                    <button id="close-feed" class="absolute top-6 right-4 z-50 p-2 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10"><i data-lucide="x" size="24"></i></button>
+                    <div class="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black">${slidesHtml}</div>
+                </div>
+            `);
+            node.querySelector('#close-feed').onclick = () => node.remove();
+            document.body.appendChild(node);
+            lucide.createIcons();
+            const target = document.getElementById(`slide-${startPid}`);
+            if (target) target.scrollIntoView({ behavior: 'auto' });
+        };
+
+        window.openStartModal = (pid) => {
+            const fullFeed = document.getElementById('full-feed-overlay');
+            if(fullFeed) fullFeed.remove();
+            const p = PRODUCTS.find(x => x.id === pid);
+            const user = getUser();
+            const savings = p.price1 - p.price5;
+            
+            const node = createNodeFromHTML(`
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-bold text-xl text-brand-900">Start Squad</h3>
+                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i data-lucide="x" size="18"></i></button>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 mb-4 p-4 bg-brand-50 rounded-2xl border border-brand-100">
+                        <div class="w-16 h-16 ${p.imageColor} rounded-xl flex items-center justify-center shrink-0"><i data-lucide="${p.icon}" size="32"></i></div>
+                        <div>
+                            <h4 class="font-bold text-lg text-brand-900 leading-tight">${p.name}</h4>
+                            <p id="price-label" class="text-xs font-medium text-brand-600 mt-1">Unlock ₹${p.price5} (Save ₹${savings})</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 1-2-5 Pricing Roadmap in Modal -->
+                    <div class="bg-slate-50 rounded-xl p-3 mb-4 border border-slate-100">
+                        <div class="flex justify-between items-center text-center">
+                            <div class="flex flex-col items-center opacity-60">
+                                <div class="text-[10px] font-bold uppercase text-slate-400">1 Person</div>
+                                <div class="text-sm font-bold text-slate-600" id="tier-1-price">₹${p.price1}</div>
+                            </div>
+                            <div class="h-px w-8 bg-slate-300"></div>
+                            <div class="flex flex-col items-center">
+                                <div class="text-[10px] font-bold uppercase text-brand-600">2 People</div>
+                                <div class="text-sm font-bold text-brand-600" id="tier-2-price">₹${p.price2}</div>
+                            </div>
+                            <div class="h-px w-8 bg-slate-300"></div>
+                            <div class="flex flex-col items-center">
+                                <div class="bg-yellow-100 text-yellow-700 text-[9px] font-black px-1.5 py-0.5 rounded mb-0.5">GOAL</div>
+                                <div class="text-xl font-black text-slate-900" id="tier-5-price">₹${p.price5}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6">
+                        <div class="ml-1">
+                            <div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div>
+                            <div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button id="btn-minus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="minus" size="16"></i></button>
+                            <!-- Wider display area for "1.5 kg" -->
+                            <span id="qty-display" class="font-bold text-lg w-20 text-center text-slate-800">...</span>
+                            <button id="btn-plus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="plus" size="16"></i></button>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Your Name</label><input id="inp-name" value="${user.name}" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
+                        <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Phone Number</label><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
+                    </div>
+                    ${createSliderHTML('Slide to Start Squad')}
+                </div>
+            `);
+            showModalNode(node);
+            
+            // Pass the #price-label to be updated as well
+            const getQty = setupQuantityLogic(node, p, '#price-label');
+
+            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
+            
+            const slider = node.querySelector('#unlock-slider');
+            slider.oninput = async function() {
+                if (this.value > 90) {
+                    this.disabled = true;
+                    const name = safeVal(node.querySelector('#inp-name'));
+                    const phone = safeVal(node.querySelector('#inp-phone'));
+                    const qty = getQty();
+                    const errCont = node.querySelector('.error-container');
+
+                    if (!name || !/^[6-9]\d{9}$/.test(phone)) {
+                        this.value = 0; this.disabled = false;
+                        showFieldError(errCont, 'Valid Name & Phone required');
+                        return;
+                    }
+
+                    const track = document.getElementById('slider-track');
+                    track.classList.remove('bg-slate-100');
+                    track.classList.add('bg-brand-500');
+                    document.getElementById('slider-label').innerText = 'Creating...';
+                    document.getElementById('slider-label').classList.replace('text-slate-400', 'text-white');
+                    document.getElementById('slider-label').classList.remove('opacity-80');
+
+                    try {
+                        saveUser(name, phone);
+                        const gid = 'g' + Date.now();
+                        const expires = Date.now() + (24 * 60 * 60 * 1000);
+                        const groupData = { productId: pid, ownerName: name, expiresAt: expires, createdAt: serverTimestamp(), status: 'open' };
+                        const memberData = { groupId: gid, name, phone, isLeader: true, quantity: qty };
+
+                        if (useMock) {
+                            setTimeout(() => {
+                                state.groups[gid] = { id: gid, ...groupData, createdAt: { seconds: Date.now()/1000 } };
+                                state.members[gid] = [memberData];
+                                window.closeModal(); window.openGroup(gid); render();
+                            }, 800);
+                        } else {
+                            await setDoc(doc(db, `artifacts/${appId}/public/data/groups`, gid), groupData);
+                            await setDoc(doc(db, `artifacts/${appId}/public/data/members`, newId('m')), memberData);
+                            window.closeModal(); window.openGroup(gid);
+                        }
+                    } catch (err) {
+                        this.value = 0; this.disabled = false;
+                        showFieldError(errCont, 'Connection failed');
+                    }
+                }
+            };
+            slider.onchange = function() { if(this.value < 90) this.value = 0; };
+        };
+
+        window.openAddMemberModal = (gid) => {
+            const members = state.members[gid] || [];
+            if(members.length >= 5) return toast("Squad is full!", 'lock');
+            const group = state.groups[gid];
+            const p = PRODUCTS.find(x => x.id === group.productId);
+
+            const node = createNodeFromHTML(`
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-bold text-xl text-brand-900">Add Neighbor</h3>
+                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i data-lucide="x" size="18"></i></button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6">
+                        <div class="ml-1">
+                            <div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div>
+                            <div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button id="btn-minus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="minus" size="16"></i></button>
+                            <!-- Wider display area for "1.5 kg" -->
+                            <span id="qty-display" class="font-bold text-lg w-20 text-center text-slate-800">...</span>
+                            <button id="btn-plus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="plus" size="16"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Neighbor Name</label><input id="m-name" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
+                        <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Phone Number</label><input id="m-phone" type="tel" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
+                    </div>
+                    
+                    ${createSliderHTML('Slide to Add Member')}
+                </div>
+            `);
+            showModalNode(node);
+            const getQty = setupQuantityLogic(node, p, null);
+
+            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
+            
+            const slider = node.querySelector('#unlock-slider');
+            slider.oninput = async function() {
+                if(this.value > 90) {
+                    this.disabled = true;
+                    const name = safeVal(node.querySelector('#m-name'));
+                    const phone = safeVal(node.querySelector('#m-phone'));
+                    const qty = getQty();
+                    const errCont = node.querySelector('.error-container');
+
+                    if (!name || !/^[6-9]\d{9}$/.test(phone)) {
+                        this.value = 0; this.disabled = false;
+                        showFieldError(errCont, 'Valid Name & Phone required');
+                        return;
+                    }
+
+                    const track = document.getElementById('slider-track');
+                    track.classList.remove('bg-slate-100');
+                    track.classList.add('bg-brand-500');
+                    document.getElementById('slider-label').innerText = 'Adding...';
+                    document.getElementById('slider-label').classList.replace('text-slate-400', 'text-white');
+                    
+                    const memberData = { groupId: gid, name, phone, isLeader: false, quantity: qty };
+
+                    try {
+                        if (useMock) {
+                             setTimeout(() => {
+                                if(!state.members[gid]) state.members[gid] = [];
+                                state.members[gid].push(memberData);
+                                window.closeModal(); toast('Added Successfully!', 'check-circle'); render();
+                             }, 500);
+                        } else {
+                            await setDoc(doc(db, `artifacts/${appId}/public/data/members`, newId('m')), memberData);
+                            window.closeModal(); toast('Added Successfully!', 'check-circle');
+                        }
+                    } catch (err) {
+                        this.value = 0; this.disabled = false;
+                        showFieldError(errCont, 'Failed. Retry.');
+                    }
+                }
+            };
+            slider.onchange = function() { if(this.value < 90) this.value = 0; };
+        };
+
+        function render() {
+            const app = document.getElementById('app');
+            if (window.lucide) window.lucide.createIcons();
+            if (state.view === 'home') renderHome(app);
+            else renderGroup(app);
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function renderHome(el) {
+            // 1. Clear previous timer to prevent duplicates
+            if (state.timerInterval) clearInterval(state.timerInterval);
+
+            const user = getUser();
+            const activeGroups = Object.values(state.groups).filter(g => {
+                const count = (state.members[g.id] || []).length;
+                return count > 0 && count < 5;
+            }).sort((a,b) => b.createdAt?.seconds - a.createdAt?.seconds);
+
+            const totalSquads = Object.keys(state.groups).length;
+            const totalPeople = Object.values(state.members).flat().length;
+
+            // IDENTIFY PRODUCTS USER IS ALREADY IN
+            const userActiveGroupIds = {}; // productId -> groupId
+            let primaryActiveGroup = null; // Store one active group to use for the header timer
+
+            if (user.name && user.phone) {
+                Object.values(state.groups).forEach(g => {
+                    const members = state.members[g.id] || [];
+                    const isMember = members.some(m => m.name === user.name && m.phone === user.phone);
+                    if (isMember) {
+                        userActiveGroupIds[g.productId] = g.id;
+                        if (!primaryActiveGroup) primaryActiveGroup = g; // Pick first found as primary
+                    }
+                });
+            }
+
+            // DETERMINE HEADER TIMER TARGET
+            let headerTargetTime, headerLabel;
+            if (primaryActiveGroup) {
+                headerTargetTime = primaryActiveGroup.expiresAt;
+                headerLabel = "Your Order Ends";
+            } else {
+                const midnight = new Date();
+                midnight.setHours(24, 0, 0, 0);
+                headerTargetTime = midnight.getTime();
+                headerLabel = "Market Closes";
+            }
+
+            // SORT PRODUCTS: Inactive first, Active last
+            const sortedProducts = [...PRODUCTS].sort((a, b) => {
+                const aActive = !!userActiveGroupIds[a.id];
+                const bActive = !!userActiveGroupIds[b.id];
+                if (aActive && !bActive) return 1; // a goes last
+                if (!aActive && bActive) return -1; // b goes last
+                return 0;
+            });
+
+            el.innerHTML = `
+                <div class="fade-in pb-32">
+                    <div class="glass-header text-white p-5 sticky top-0 z-40 border-b border-white/10 shadow-xl shadow-brand-900/10">
+                        <div class="flex justify-between items-center mb-4">
+                            <div><h1 class="font-black text-3xl tracking-tighter">JODO</h1><div class="text-[11px] text-brand-100 font-bold tracking-widest uppercase opacity-90">Direct Farmer Network</div></div>
+                            <div class="bg-red-500/20 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black tracking-wide flex items-center gap-2 border border-red-400/30"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span> LIVE</div>
+                        </div>
+                        
+                        <!-- HEADER TIMER (With Milliseconds) -->
+                        <div class="flex items-center justify-between gap-3 text-xs font-semibold text-brand-50 bg-black/20 p-2.5 rounded-xl border border-white/10 backdrop-blur-sm transition-colors duration-300" id="home-header-timer-container">
+                            <div class="flex items-center gap-2 opacity-80">
+                                <i data-lucide="clock" size="14" class="animate-pulse"></i>
+                                <span class="uppercase text-[10px] font-bold tracking-wider">${headerLabel}</span>
+                            </div>
+                            <div class="font-mono font-bold tracking-widest text-white text-sm tabular-nums" id="appbar-header-timer" data-expires="${headerTargetTime}">Loading...</div>
+                        </div>
+                    </div>
+
+                    ${activeGroups.length > 0 ? `
+                        <div class="mt-6 pl-5">
+                            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><i data-lucide="zap" size="14" class="text-harvest-500 fill-harvest-500"></i> Live Missions</h2>
+                            <div class="flex gap-4 overflow-x-auto pb-6 pr-5 no-scrollbar">
+                                ${activeGroups.map(g => {
+                                    const p = PRODUCTS.find(x => x.id === g.productId);
+                                    if(!p) return '';
+                                    const count = (state.members[g.id] || []).length;
+                                    const needed = 5 - count;
+                                    return `
+                                        <div onclick="openGroup('${g.id}')" class="min-w-[240px] bg-white border border-slate-100 p-4 rounded-2xl shadow-lg shadow-slate-200/50 btn-press cursor-pointer relative overflow-hidden group">
+                                            <div class="absolute top-0 left-0 w-1.5 h-full bg-brand-500"></div>
+                                            <div class="flex items-center gap-3 mb-3">
+                                                <div class="w-10 h-10 ${p.imageColor} rounded-lg flex items-center justify-center"><i data-lucide="${p.icon}" size="20"></i></div>
+                                                <div><div class="text-sm font-bold text-slate-800 truncate leading-none mb-1">${p.name}</div><div class="text-[10px] text-slate-400 font-medium">Started by ${g.ownerName}</div></div>
+                                            </div>
+                                            <div class="w-full bg-slate-100 h-2.5 rounded-full mb-3 overflow-hidden"><div class="bg-brand-500 h-full transition-all duration-500" style="width: ${(count/5)*100}%"></div></div>
+                                            <div class="text-[11px] font-bold text-slate-600 flex justify-between items-center mb-1">
+                                                <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-500">${count}/5 Joined</span>
+                                                <span class="text-red-500">Need ${needed}</span>
+                                            </div>
+                                            <!-- SUBTLE TIMER -->
+                                            <div class="text-[10px] font-mono text-slate-400 text-right live-timer-home" data-expires="${g.expiresAt}">...</div>
+                                        </div>
+                                    `
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div class="px-5 space-y-6 mt-2">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Fresh Harvest</h2>
+                        ${sortedProducts.map(p => {
+                            const activeGid = userActiveGroupIds[p.id];
+                            const activeGroup = activeGid ? state.groups[activeGid] : null;
+                            
+                            let buttonHtml;
+                            let timerHtml = ''; // We will put timer INSIDE the pricing card now
+
+                            if (activeGid && activeGroup) {
+                                // Timer Logic for the pricing card
+                                timerHtml = `
+                                    <div class="flex items-center gap-1.5 bg-red-50 text-red-600 px-2 py-1 rounded-md border border-red-100 shadow-sm ml-auto">
+                                        <div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                                        <span class="text-[10px] font-mono font-bold live-timer-home" data-expires="${activeGroup.expiresAt}">...</span>
+                                    </div>
+                                `;
+
+                                buttonHtml = `
+                                    <button onclick="openGroup('${activeGid}')" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold text-lg shadow-xl flex items-center justify-center gap-2 border border-slate-700 mt-4">
+                                        <span>View Your Squad</span><i data-lucide="arrow-right" size="20"></i>
+                                    </button>
+                                `;
+                            } else {
+                                buttonHtml = `
+                                    <button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all hover:shadow-brand-500/40 mt-4">
+                                        <span>Start Live Squad</span>
+                                        <span class="bg-black/20 text-xs px-2 py-0.5 rounded border border-white/10 font-medium">Save ₹${p.price1 - p.price5}</span>
+                                    </button>
+                                `;
+                            }
+
+                            return `
+                            <div class="card-modern relative overflow-hidden group">
+                                <div class="absolute top-0 right-0 bg-gradient-to-bl from-harvest-400 to-harvest-500 text-white text-[10px] font-black px-3 py-1.5 rounded-bl-2xl shadow-md z-10">SAVE ₹${p.price1 - p.price5}</div>
+                                <div class="p-5">
+                                    <div class="flex gap-5 mb-6 cursor-pointer group/img" onclick="openFullFeed('${p.id}')">
+                                        <div class="w-24 h-24 ${p.videoClass} video-grain rounded-2xl flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden">
+                                            
+                                            <!-- NEW: Price Overlay on Video Thumbnail -->
+                                            <div class="absolute top-0 left-0 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-br-xl border-b border-r border-white/10 z-20 shadow-sm">
+                                                ₹${p.price5}
+                                            </div>
+
+                                            <i data-lucide="${p.icon}" size="40" class="text-white/80 z-10 relative group-hover/img:scale-110 transition-transform"></i>
+                                            <div class="absolute bottom-1 right-1 bg-black/50 text-white text-[8px] px-1.5 rounded flex items-center gap-1 z-10"><i data-lucide="play" size="8"></i> Video</div>
+                                        </div>
+                                        <div class="flex-1 py-1">
+                                            <h3 class="font-black text-2xl text-slate-800 leading-tight mb-1">${p.name}</h3>
+                                            <div class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md inline-block mb-1">${p.unit}</div>
+                                            <div class="text-xs text-slate-400 font-medium">${p.nameTe}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- NEW: COLORFUL PRICING & CONCEPT CARD -->
+                                    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden">
+                                        
+                                        <!-- Header: Concept + Timer -->
+                                        <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                                            <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">How JODO Works</div>
+                                            ${timerHtml}
+                                        </div>
+
+                                        <!-- Colorful Stages -->
+                                        <div class="flex justify-between items-end gap-2 text-center relative z-10">
+                                            <!-- Stage 1 -->
+                                            <div class="flex-1 opacity-70">
+                                                <div class="text-[9px] font-bold text-slate-400 mb-1">1 Buy</div>
+                                                <div class="bg-slate-100 py-2 rounded-lg border border-slate-200 text-slate-500 font-bold text-xs">₹${p.price1}</div>
+                                            </div>
+                                            
+                                            <div class="pb-3 text-slate-300"><i data-lucide="arrow-right" size="12"></i></div>
+
+                                            <!-- Stage 2 -->
+                                            <div class="flex-1 relative">
+                                                <div class="text-[9px] font-bold text-blue-500 mb-1">2 Ppl</div>
+                                                <div class="bg-blue-50 py-2 rounded-lg border border-blue-200 text-blue-600 font-bold text-sm">₹${p.price2}</div>
+                                            </div>
+
+                                            <div class="pb-3 text-slate-300"><i data-lucide="arrow-right" size="12"></i></div>
+
+                                            <!-- Stage 3 (Goal) -->
+                                            <div class="flex-1 relative">
+                                                <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-sm animate-bounce">GOAL</div>
+                                                <div class="text-[9px] font-black text-green-700 mb-1">5 Ppl</div>
+                                                <div class="bg-green-100 py-2 rounded-lg border border-green-400 text-green-800 font-black text-lg shadow-sm">₹${p.price5}</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Informative Message -->
+                                        <div class="mt-3 text-center text-[10px] text-slate-500 font-medium bg-slate-50/80 py-1.5 rounded-lg border border-slate-100">
+                                            Price drops when neighbors join. <span class="text-green-600 font-bold">Unlock Green Price!</span>
+                                        </div>
+                                    </div>
+
+                                    ${buttonHtml}
+                                </div>
+                            </div>
+                        `}).join('')}
+                    </div>
+                </div>
+            `;
+
+            // 2. START HIGH PRECISION HOME TIMER (50ms interval for milliseconds)
+            const updateHomeTimers = () => {
+                const now = Date.now();
+                
+                // Helper to format time
+                const formatTime = (diff) => {
+                    if (diff <= 0) return "00h 00m 00s 00";
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    const ms = Math.floor((diff % 1000) / 10);
+                    return `${h}h ${m < 10 ? '0'+m : m}m ${s < 10 ? '0'+s : s}s ${ms < 10 ? '0'+ms : ms}`;
+                };
+
+                // Update Main Header Timer
+                const headerTimer = document.getElementById('appbar-header-timer');
+                const headerContainer = document.getElementById('home-header-timer-container');
+                
+                if (headerTimer) {
+                    const expires = parseInt(headerTimer.dataset.expires);
+                    const diff = expires - now;
+                    headerTimer.innerText = formatTime(diff);
+                    
+                    // Turn RED when over/expired
+                    if (diff <= 0) {
+                        headerContainer.classList.remove('bg-black/20', 'border-white/10');
+                        headerContainer.classList.add('bg-red-600', 'border-red-500', 'animate-pulse');
+                    } else {
+                        headerContainer.classList.add('bg-black/20', 'border-white/10');
+                        headerContainer.classList.remove('bg-red-600', 'border-red-500', 'animate-pulse');
+                    }
+                }
+
+                // Update Card Timers
+                document.querySelectorAll('.live-timer-home').forEach(el => {
+                    const expires = parseInt(el.dataset.expires);
+                    const diff = expires - now;
+                    el.innerText = formatTime(diff);
+                    if (diff <= 0) el.classList.add('text-red-300'); // Light red for text on red bg
+                });
+            };
+            
+            // Start interval
+            updateHomeTimers();
+            state.timerInterval = setInterval(updateHomeTimers, 50); // 50ms for smooth milliseconds
+        }
+
+        function renderGroup(el) {
+            // 1. CLEANUP (Timer & Observer)
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            if (state.scrollObserver) state.scrollObserver.disconnect();
+
+            const g = state.groups[state.currentGroupId];
+            if (!g) return goHome();
+            const p = PRODUCTS.find(x => x.id === g.productId);
+            if (!p) return goHome();
+            const members = state.members[g.id] || [];
+            const count = members.length;
+            const needed = Math.max(0, 5 - count);
+            let currentPrice = p.price1;
+            let status = 'Starting...';
+            
+            if (count >= 5) { status = 'STAGE 2 CLEARED'; currentPrice = p.price5; } 
+            else if (count >= 2) { status = 'STAGE 1 UNLOCKED'; currentPrice = p.price2; }
+
+            const manualOrderMsg = `📦 *New Order Alert*\n\nProduct: ${p.name}\nGroup ID: ${g.id}\nStatus: ${count}/5 (${status})\nPrice: ₹${currentPrice}\n\n*Members:*\n` + members.map((m, i) => `${i+1}. ${m.name} (${(m.quantity || 1) * p.baseWeight} ${p.weightUnit}) - ${m.phone}`).join('\n');
+            const companyLink = `https://wa.me/${COMPANY_PHONE}?text=${encodeURIComponent(manualOrderMsg)}`;
+            
+            const timeLeft = Math.max(0, g.expiresAt - Date.now());
+            const hrs = Math.floor(timeLeft / 3600000);
+            const isUrgent = hrs < 2; 
+            const timerColor = isUrgent ? 'text-red-600' : 'text-slate-800';
+            const timerBg = isUrgent ? 'bg-red-50 border-red-100' : 'bg-white border-slate-100';
+
+            el.innerHTML = `
+                <div class="fade-in bg-white min-h-screen">
+                    <!-- NAVIGATION HEADER WITH CENTERED TIMER -->
+                    <div class="glass-header sticky top-0 z-40 border-b border-white/10 h-16 flex items-center justify-center shadow-sm relative transition-all duration-300">
+                        <!-- Absolute Left Back Button -->
+                        <button onclick="goHome()" class="absolute left-3 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-50">
+                            <i data-lucide="arrow-left" size="24"></i>
+                        </button>
+                        
+                        <!-- SCROLL-TRIGGERED TIMER (Centered & Big) -->
+                        <div id="sticky-header-timer" class="hidden opacity-0 translate-y-[-20px] transition-all duration-300 flex items-center gap-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full px-5 py-1.5 shadow-2xl">
+                            <div class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                            <span id="header-timer-text" class="text-white font-mono text-xl font-black tabular-nums tracking-tight drop-shadow-md">00h 00m 00s 00</span>
+                        </div>
+                    </div>
+
+                    <div class="p-6 pb-32">
+                        <!-- MAIN TIMER CARD (Target for Observer) -->
+                        <div id="main-timer-card" class="${timerBg} border rounded-2xl p-4 mb-8 shadow-sm relative overflow-hidden">
+                            <div class="flex items-center gap-4 relative z-10">
+                                <div class="bg-white p-3 rounded-xl shadow-sm ${isUrgent ? 'animate-pulse' : ''}">
+                                    <i data-lucide="timer" class="${isUrgent ? 'text-red-500' : 'text-slate-400'}" size="24"></i>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-0.5">Time Left to Fill</div>
+                                    <div id="live-timer" class="text-2xl font-mono font-black ${timerColor} tracking-tight tabular-nums">Loading...</div>
+                                </div>
+                            </div>
+                            <div class="mt-3 pt-3 border-t ${isUrgent ? 'border-red-200' : 'border-slate-100'} text-xs font-medium text-slate-500">
+                                ⚠️ Price is decided by group size when timer hits 0.
+                            </div>
+                        </div>
+
+                        <div class="text-center mb-8">
+                            <h1 class="font-black text-3xl text-brand-900 mb-1">${p.name}</h1>
+                            <p class="text-sm text-slate-500 font-medium">${p.unit} • ${p.nameTe}</p>
+                        </div>
+
+                        <!-- SQUAD RING VISUALIZATION -->
+                        <div class="squad-ring mb-6">
+                            <div class="ring-track"></div>
+                            <!-- SEATS -->
+                            ${[0,1,2,3,4].map(i => {
+                                const m = members[i];
+                                const isFilled = !!m;
+                                const isLeader = m?.isLeader;
+                                const seatClass = `seat-${i}`;
+                                let content = '';
+                                let bgClass = 'bg-white border-2 border-slate-200 text-slate-300';
+                                
+                                if (isFilled) {
+                                    bgClass = isLeader ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30 border-none' : 'bg-slate-800 text-white shadow-lg shadow-slate-800/30 border-none';
+                                    content = `<span class="font-bold text-lg">${m.name[0]}</span>`;
+                                } else {
+                                    content = `<i data-lucide="plus" size="16"></i>`;
+                                }
+
+                                const weightLabel = (isFilled && m.quantity > 1) ? ((m.quantity * p.baseWeight) + p.weightUnit) : '';
+
+                                return `
+                                    <div class="ring-seat ${seatClass} ${bgClass}">
+                                        ${content}
+                                        ${isFilled && m.quantity > 1 ? `<div class="absolute -top-3 -right-2 bg-yellow-400 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded-full border border-white whitespace-nowrap shadow-sm">${weightLabel}</div>` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        
+                        <!-- PRICE PREDICTOR -->
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-8">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-3">Live Pricing Tiers</div>
+                            <div class="flex justify-between gap-2 relative">
+                                <div class="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -z-0 -translate-y-1/2 rounded-full"></div>
+                                <div class="relative z-10 flex flex-col items-center bg-slate-50 px-1">
+                                    <div class="w-3 h-3 rounded-full ${count >= 1 ? 'bg-slate-800' : 'bg-slate-300'} mb-1 border-2 border-white shadow-sm"></div>
+                                    <div class="text-[9px] font-bold text-slate-500">1 Person</div>
+                                    <div class="text-xs font-bold ${count >= 1 && count < 2 ? 'text-slate-900 scale-110' : 'text-slate-400'} transition-all">₹${p.price1}</div>
+                                </div>
+                                <div class="relative z-10 flex flex-col items-center bg-slate-50 px-1">
+                                    <div class="w-3 h-3 rounded-full ${count >= 2 ? 'bg-brand-500' : 'bg-slate-300'} mb-1 border-2 border-white shadow-sm"></div>
+                                    <div class="text-[9px] font-bold text-slate-500">2 People</div>
+                                    <div class="text-xs font-bold ${count >= 2 && count < 5 ? 'text-brand-600 scale-110' : 'text-slate-400'} transition-all">₹${p.price2}</div>
+                                </div>
+                                <div class="relative z-10 flex flex-col items-center bg-slate-50 px-1">
+                                    <div class="w-3 h-3 rounded-full ${count >= 5 ? 'bg-yellow-500' : 'bg-slate-300'} mb-1 border-2 border-white shadow-sm"></div>
+                                    <div class="text-[9px] font-bold text-slate-500">5 People</div>
+                                    <div class="text-xs font-bold ${count >= 5 ? 'text-yellow-600 scale-110' : 'text-slate-400'} transition-all">₹${p.price5}</div>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-slate-200 text-center">
+                                ${count < 5 
+                                    ? `<p class="text-xs text-slate-600 leading-relaxed">If timer ends now, you pay <span class="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-bold">₹${currentPrice}</span>.<br>Add <b class="text-red-500">${needed} more people</b> before time runs out to unlock <span class="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold">₹${p.price5}</span>!</p>`
+                                    : `<p class="text-xs font-bold text-brand-600 bg-brand-50 p-2 rounded-lg">🏆 Maximum Discount Unlocked! Everyone pays ₹${p.price5}.</p>`
+                                }
+                            </div>
+                        </div>
+
+                        ${count < 5 ? `
+                            <button onclick="openAddMemberModal('${g.id}')" class="w-full bg-gradient-to-r from-brand-600 to-brand-500 text-white py-4.5 rounded-2xl font-bold shadow-lg shadow-brand-500/30 btn-press flex items-center justify-center gap-2.5 mb-3 border border-white/10">
+                                <i data-lucide="user-plus" size="20"></i> Add Neighbor (Manual Entry)
+                            </button>
+                            <p class="text-center text-[11px] text-slate-400 font-medium">You are the leader. Enter details for others.</p>
+                        ` : ''}
+                        
+                        <div class="mt-8 mb-4">
+                            <a href="${companyLink}" target="_blank" class="block w-full bg-blue-600 text-white py-3.5 rounded-2xl font-bold text-sm text-center shadow-lg shadow-blue-500/25 btn-press flex items-center justify-center gap-2"><i data-lucide="send" size="16"></i> 📲 Send Order to JODO</a>
+                            <p class="text-center text-[10px] text-slate-400 mt-2">Sync final list with admin.</p>
+                        </div>
+
+                        <div class="mt-8 border-t border-slate-100 pt-8">
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex justify-between items-center ml-1">
+                                <span>Squad Roster (${count}/5)</span>
+                                <span class="flex items-center gap-1.5 text-brand-600 text-[10px] bg-brand-50 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 bg-brand-500 rounded-full animate-ping"></span> Live</span>
+                            </h3>
+                            <div class="space-y-3">
+                                ${members.map((m, i) => `
+                                    <div class="flex items-center justify-between p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-xs font-bold text-slate-500 border border-slate-200">${i+1}</div>
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="text-sm font-bold text-slate-900 uppercase tracking-tight">${m.name}</div>
+                                                    ${(m.quantity > 1) ? `<div class="text-[10px] font-black bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">${m.quantity}x</div>` : ''}
+                                                </div>
+                                                <div class="text-[10px] text-slate-500 font-mono tracking-widest font-bold">${m.phone}</div>
+                                            </div>
+                                        </div>
+                                        ${i === 0 ? '<div class="text-[9px] bg-harvest-100 text-harvest-800 px-2.5 py-1 rounded-lg font-black uppercase tracking-wide flex items-center gap-1"><i data-lucide="star" size="10"></i> HERO</div>' : ''}
+                                    </div>
+                                `).join('')}
+                                ${Array(needed).fill(0).map((_, idx) => `
+                                    <div class="flex items-center gap-3 p-3.5 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl opacity-60">
+                                        <div class="w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center text-xs font-bold text-slate-300">${count + idx + 1}</div>
+                                        <div class="text-xs font-bold text-slate-400 italic flex items-center gap-2">Waiting... <span class="w-1.5 h-1.5 bg-slate-300 rounded-full animate-ping-slow"></span></div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const timerEl = document.getElementById('live-timer');
+            const headerTimerEl = document.getElementById('sticky-header-timer');
+            const headerTimerText = document.getElementById('header-timer-text');
+            const mainTimerCard = document.getElementById('main-timer-card');
+
+            if (timerEl) {
+                // 1. UPDATE TIMER FUNCTION
+                const tick = () => {
+                    const diff = Math.max(0, g.expiresAt - Date.now());
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    const ms = Math.floor((diff % 1000) / 10);
+                    
+                    const mainStr = `${h}h ${m}m ${s}s ${ms}`;
+                    
+                    timerEl.innerText = mainStr;
+                    if(headerTimerText) headerTimerText.innerText = mainStr;
+
+                    // COLOR RED IF EXPIRED
+                    if (diff <= 0) {
+                        timerEl.classList.remove('text-slate-800', 'text-red-600');
+                        timerEl.classList.add('text-red-600');
+                        if (headerTimerEl) {
+                            headerTimerEl.classList.remove('bg-black/40', 'border-white/10');
+                            headerTimerEl.classList.add('bg-red-600', 'border-red-500');
+                        }
+                    }
+                };
+                state.timerInterval = setInterval(tick, 50);
+                tick();
+
+                // 2. SCROLL OBSERVER (Show Header Timer when Main Card is invisible)
+                state.scrollObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (!entry.isIntersecting) {
+                            // Card is gone -> Show header timer
+                            headerTimerEl.classList.remove('hidden', 'opacity-0', 'translate-y-[-20px]');
+                        } else {
+                            // Card is visible -> Hide header timer
+                            headerTimerEl.classList.add('opacity-0', 'translate-y-[-20px]');
+                            // Delay adding 'hidden' to allow animation to finish
+                            setTimeout(() => {
+                                if (entry.isIntersecting) headerTimerEl.classList.add('hidden');
+                            }, 300);
+                        }
+                    });
+                }, { threshold: 0.1 });
+                
+                state.scrollObserver.observe(mainTimerCard);
+            }
+        }
+
+        // 3. CLEAN UP ON NAVIGATION
+        window.goHome = () => { 
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            if (state.scrollObserver) state.scrollObserver.disconnect();
+            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', location.pathname); } catch(e) {} 
+            state.view = 'home'; state.currentGroupId = null; render(); 
+        }
+
+        window.openGroup = (gid) => { 
+            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', `?group=${gid}`); } catch(e) {} 
+            state.currentGroupId = gid; state.view = 'group'; render(); 
+        }
+
+        function toast(msg, icon) { 
+            const t = document.getElementById('toast'); 
+            t.innerHTML = `<i data-lucide="${icon}" size="16"></i> ${msg}`; 
+            t.classList.remove('hidden'); 
+            if(window.lucide) window.lucide.createIcons(); 
+            setTimeout(() => t.classList.add('hidden'), 3000); 
+        }
+
+        init();
+    </script>
 </body>
 </html>
