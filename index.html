@@ -256,27 +256,58 @@
             `;
         }
 
-        // UPDATED: Quantity Logic now calculates KG/L based on 500g units
+        // NEW: Shared Helper for the 1-2-5 Pricing Roadmap (MATCHING UPLOADED IMAGE)
+        function getPricingRoadmapHTML(p, theme = 'light') {
+            const isGlass = theme === 'glass';
+            
+            const containerClass = isGlass 
+                ? 'bg-black/40 backdrop-blur-md border-white/10' 
+                : 'bg-slate-100 border-slate-200';
+            
+            const lineClass = isGlass ? 'bg-white/20' : 'bg-slate-300';
+            const textGrey = isGlass ? 'text-white/50' : 'text-slate-400';
+            const priceGrey = isGlass ? 'text-white/50' : 'text-slate-500';
+            const textGreenLabel = isGlass ? 'text-emerald-300' : 'text-emerald-800';
+            const priceGreen = isGlass ? 'text-emerald-300' : 'text-emerald-600';
+            const goalBadgeBg = isGlass ? 'bg-yellow-500 text-black' : 'bg-[#a39055] text-white';
+            const priceGoal = isGlass ? 'text-white' : 'text-slate-900';
+
+            return `
+                <div class="${containerClass} rounded-xl p-4 mb-3 border w-full">
+                    <div class="flex items-center justify-between w-full">
+                        <div class="flex flex-col items-center">
+                            <div class="text-[10px] font-black uppercase ${textGrey} mb-1">1 Person</div>
+                            <div class="text-xl font-bold ${priceGrey}" id="tier-1-price">₹${p.price1}</div>
+                        </div>
+                        <div class="h-0.5 w-8 ${lineClass} rounded-full mt-3"></div>
+                        <div class="flex flex-col items-center">
+                            <div class="text-[10px] font-black uppercase ${textGreenLabel} mb-1">2 People</div>
+                            <div class="text-xl font-bold ${priceGreen}" id="tier-2-price">₹${p.price2}</div>
+                        </div>
+                        <div class="h-0.5 w-8 ${lineClass} rounded-full mt-3"></div>
+                        <div class="flex flex-col items-center relative">
+                            <div class="${goalBadgeBg} text-[9px] font-black px-1.5 py-0.5 rounded-md mb-1 uppercase tracking-wide">Goal</div>
+                            <div class="text-2xl font-black ${priceGoal} leading-none" id="tier-5-price">₹${p.price5}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function setupQuantityLogic(node, p, labelId) {
             let qty = 1;
             
             const updateDisplay = () => {
-                // Calculate Total Weight (e.g., 3 * 0.5 = 1.5 kg)
                 const totalWeight = qty * p.baseWeight;
-                // Format to remove unnecessary decimals (e.g. 1.0 -> 1)
                 const formattedWeight = parseFloat(totalWeight.toFixed(2)); 
-                
-                // Update Qty Counter with Weight
                 node.querySelector('#qty-display').innerText = `${formattedWeight} ${p.weightUnit}`;
                 
-                // Update Main Label (e.g. "Unlock ₹220")
                 if(labelId) {
                     const totalSavings = (p.price1 - p.price5) * qty;
                     const totalPrice = p.price5 * qty;
                     node.querySelector(labelId).innerHTML = `Unlock ₹${totalPrice} (Save ₹${totalSavings})`;
                 }
 
-                // Update 1-2-5 Tier Prices
                 const t1 = node.querySelector('#tier-1-price');
                 const t2 = node.querySelector('#tier-2-price');
                 const t5 = node.querySelector('#tier-5-price');
@@ -289,9 +320,7 @@
             node.querySelector('#btn-minus').onclick = () => { if (qty > 1) { qty--; updateDisplay(); } };
             node.querySelector('#btn-plus').onclick = () => { if (qty < 20) { qty++; updateDisplay(); } };
             
-            // Initialize display
             updateDisplay();
-            
             return () => qty;
         }
 
@@ -299,8 +328,6 @@
 
         window.openFullFeed = (startPid) => {
             const user = getUser();
-            
-            // CHECK ACTIVE STATUS
             let activeGid = null;
             if (user.name && user.phone) {
                 Object.values(state.groups).forEach(g => {
@@ -314,16 +341,11 @@
             }
 
             if (activeGid) {
-                // If user is already in a group for this product, go directly there
                 window.openGroup(activeGid);
                 return;
             }
 
-            // Normal Feed Logic
             const slidesHtml = PRODUCTS.map(p => {
-                const savings = p.price1 - p.price5;
-                const savings2 = p.price1 - p.price2;
-                
                 let backgroundContent;
                 if (p.videoSrc) {
                     backgroundContent = `
@@ -334,7 +356,6 @@
                     backgroundContent = `<div class="absolute inset-0 z-0 ${p.videoClass} video-grain"></div>`;
                 }
 
-                // Check active state per slide
                 let slideActiveGid = null;
                 if (user.name && user.phone) {
                     Object.values(state.groups).forEach(g => {
@@ -350,54 +371,44 @@
                 let buttonHtml;
                 if (slideActiveGid) {
                     buttonHtml = `
-                        <button onclick="openGroup('${slideActiveGid}')" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2">
-                            <span>View Your Squad</span><i data-lucide="arrow-right" size="16"></i>
+                        <button onclick="openGroup('${slideActiveGid}')" class="w-full bg-white text-slate-900 py-3.5 rounded-xl font-bold text-base shadow-lg flex items-center justify-center gap-2 tap-effect">
+                            <span>View Your Squad</span><i data-lucide="arrow-right" size="18"></i>
                         </button>
                     `;
                 } else {
                     buttonHtml = `
-                        <button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2">
+                        <button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-3.5 rounded-xl font-bold text-base shadow-lg flex items-center justify-center gap-2 tap-effect transition-all active:scale-95">
                             <span>Start Live Squad</span>
-                            <span class="bg-black/20 text-xs px-2 py-0.5 rounded border border-white/10 font-medium">Save ₹${savings}</span>
+                            <span class="bg-black/20 text-[10px] px-1.5 py-0.5 rounded border border-white/10 font-medium ml-1">Save ₹${p.price1 - p.price5}</span>
                         </button>
                     `;
                 }
 
                 return `
-                    <div id="slide-${p.id}" class="snap-center shrink-0 relative w-full h-full bg-black overflow-hidden flex flex-col justify-center">
-                        <div class="absolute top-6 left-4 z-40 flex items-center gap-2">
-                            <div class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 animate-pulse"><span class="w-2 h-2 bg-white rounded-full"></span> LIVE</div>
-                            <div class="bg-black/40 backdrop-blur-md text-white text-xs font-medium px-2.5 py-1 rounded-full border border-white/10"><i data-lucide="eye" size="12"></i> ${p.liveViewers}</div>
+                    <div id="slide-${p.id}" class="snap-center shrink-0 relative w-full h-full bg-black overflow-hidden flex flex-col">
+                        <div class="absolute inset-0 z-0">
+                            ${backgroundContent}
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-10 pointer-events-none"></div>
                         </div>
-                        ${backgroundContent}
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
-                        <div class="absolute bottom-0 left-0 right-0 p-6 pb-24 z-20">
-                            <div class="mb-4">
-                                <div class="text-harvest-400 font-black text-lg leading-none shadow-black drop-shadow-md mb-1">@${p.farmer}</div>
-                                <h3 class="font-black text-3xl text-white leading-tight mb-1 drop-shadow-lg">${p.name}</h3>
-                                <div class="text-slate-300 text-sm font-medium">${p.unit} • ₹${p.price5} Best Price</div>
-                            </div>
-                            
-                            <!-- UPDATED: 1-2-5 Pricing Roadmap (Matches Home Screen) -->
-                            <div class="bg-black/40 backdrop-blur-md rounded-xl p-4 mb-6 border border-white/10">
-                                <div class="flex justify-between items-center text-center">
-                                    <div class="flex flex-col items-center opacity-80">
-                                        <div class="text-[10px] font-bold uppercase text-slate-300">1 Person</div>
-                                        <div class="text-sm font-bold text-white">₹${p.price1}</div>
-                                    </div>
-                                    <div class="h-px w-8 bg-white/20"></div>
-                                    <div class="flex flex-col items-center">
-                                        <div class="text-[10px] font-bold uppercase text-brand-400">2 People</div>
-                                        <div class="text-sm font-bold text-brand-400">₹${p.price2}</div>
-                                    </div>
-                                    <div class="h-px w-8 bg-white/20"></div>
-                                    <div class="flex flex-col items-center">
-                                        <div class="bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded mb-0.5">GOAL</div>
-                                        <div class="text-xl font-black text-white">₹${p.price5}</div>
-                                    </div>
-                                </div>
-                            </div>
 
+                        <div class="absolute top-6 left-4 right-4 z-40 flex justify-between items-start">
+                            <div class="bg-red-600/90 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                                <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE
+                            </div>
+                            <div class="bg-black/30 backdrop-blur-md text-white text-[10px] font-medium px-2 py-1 rounded-full border border-white/10 flex items-center gap-1">
+                                <i data-lucide="eye" size="10"></i> ${p.liveViewers}
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-0 left-0 right-0 p-4 pb-8 z-30 flex flex-col gap-3">
+                            <div class="text-white drop-shadow-md mb-1">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <div class="bg-white/20 backdrop-blur px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">@${p.farmer}</div>
+                                </div>
+                                <h3 class="font-black text-2xl leading-tight mb-0.5">${p.name}</h3>
+                                <div class="text-slate-200 text-xs font-medium opacity-90">${p.unit} Bundle • ${p.nameTe}</div>
+                            </div>
+                            ${getPricingRoadmapHTML(p, 'glass')}
                             ${buttonHtml}
                         </div>
                     </div>
@@ -406,7 +417,7 @@
             
             const node = createNodeFromHTML(`
                 <div id="full-feed-overlay" class="fixed inset-0 bg-black z-[70] animate-in fade-in duration-200">
-                    <button id="close-feed" class="absolute top-6 right-4 z-50 p-2 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10"><i data-lucide="x" size="24"></i></button>
+                    <button id="close-feed" class="absolute top-6 right-4 z-50 p-2 bg-black/20 backdrop-blur-md rounded-full text-white border border-white/10 tap-effect"><i data-lucide="x" size="20"></i></button>
                     <div class="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black">${slidesHtml}</div>
                 </div>
             `);
@@ -439,25 +450,7 @@
                         </div>
                     </div>
                     
-                    <!-- 1-2-5 Pricing Roadmap in Modal -->
-                    <div class="bg-slate-50 rounded-xl p-3 mb-4 border border-slate-100">
-                        <div class="flex justify-between items-center text-center">
-                            <div class="flex flex-col items-center opacity-60">
-                                <div class="text-[10px] font-bold uppercase text-slate-400">1 Person</div>
-                                <div class="text-sm font-bold text-slate-600" id="tier-1-price">₹${p.price1}</div>
-                            </div>
-                            <div class="h-px w-8 bg-slate-300"></div>
-                            <div class="flex flex-col items-center">
-                                <div class="text-[10px] font-bold uppercase text-brand-600">2 People</div>
-                                <div class="text-sm font-bold text-brand-600" id="tier-2-price">₹${p.price2}</div>
-                            </div>
-                            <div class="h-px w-8 bg-slate-300"></div>
-                            <div class="flex flex-col items-center">
-                                <div class="bg-yellow-100 text-yellow-700 text-[9px] font-black px-1.5 py-0.5 rounded mb-0.5">GOAL</div>
-                                <div class="text-xl font-black text-slate-900" id="tier-5-price">₹${p.price5}</div>
-                            </div>
-                        </div>
-                    </div>
+                    ${getPricingRoadmapHTML(p, 'light')}
 
                     <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6">
                         <div class="ml-1">
@@ -466,11 +459,21 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <button id="btn-minus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="minus" size="16"></i></button>
-                            <!-- Wider display area for "1.5 kg" -->
                             <span id="qty-display" class="font-bold text-lg w-20 text-center text-slate-800">...</span>
                             <button id="btn-plus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="plus" size="16"></i></button>
                         </div>
                     </div>
+                    
+                    <div class="mb-6 p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-xs text-red-800 font-medium animate-pulse-slow">
+                        <div class="w-8 h-8 rounded-full bg-white border border-red-200 flex items-center justify-center shrink-0 text-red-500">
+                            <i data-lucide="timer" size="16"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold">24 Hour Limit</div>
+                            <div class="opacity-80 text-[10px]">Deal expires 24h after creating squad.</div>
+                        </div>
+                    </div>
+
                     <div class="space-y-4">
                         <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Your Name</label><input id="inp-name" value="${user.name}" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
                         <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Phone Number</label><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
@@ -479,8 +482,6 @@
                 </div>
             `);
             showModalNode(node);
-            
-            // Pass the #price-label to be updated as well
             const getQty = setupQuantityLogic(node, p, '#price-label');
 
             node.querySelector('#close-modal').addEventListener('click', window.closeModal);
@@ -547,6 +548,8 @@
                         <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><i data-lucide="x" size="18"></i></button>
                     </div>
                     
+                    ${getPricingRoadmapHTML(p, 'light')}
+
                     <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6">
                         <div class="ml-1">
                             <div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div>
@@ -554,7 +557,6 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <button id="btn-minus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="minus" size="16"></i></button>
-                            <!-- Wider display area for "1.5 kg" -->
                             <span id="qty-display" class="font-bold text-lg w-20 text-center text-slate-800">...</span>
                             <button id="btn-plus" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform"><i data-lucide="plus" size="16"></i></button>
                         </div>
@@ -565,6 +567,16 @@
                         <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Phone Number</label><input id="m-phone" type="tel" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-semibold"></div>
                     </div>
                     
+                    <div class="mt-4 mb-2 p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3 text-xs text-blue-800 font-medium">
+                        <div class="w-8 h-8 rounded-full bg-white border border-blue-200 flex items-center justify-center shrink-0">
+                            <i data-lucide="clock" size="16" class="text-blue-600 animate-pulse"></i>
+                        </div>
+                        <div>
+                            <div>Time Remaining for Squad</div>
+                            <div class="font-mono font-bold text-sm live-timer-home" data-expires="${group.expiresAt}">Loading...</div>
+                        </div>
+                    </div>
+
                     ${createSliderHTML('Slide to Add Member')}
                 </div>
             `);
@@ -572,6 +584,22 @@
             const getQty = setupQuantityLogic(node, p, null);
 
             node.querySelector('#close-modal').addEventListener('click', window.closeModal);
+            
+            // Start local timer for the modal
+            const updateModalTimer = () => {
+                const el = node.querySelector('.live-timer-home');
+                if(el) {
+                    const now = Date.now();
+                    const expires = parseInt(el.dataset.expires);
+                    const diff = Math.max(0, expires - now);
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    el.innerText = `${h}h ${m < 10 ? '0'+m : m}m ${s < 10 ? '0'+s : s}s`;
+                }
+            };
+            updateModalTimer();
+            const modalTimerInterval = setInterval(updateModalTimer, 1000);
             
             const slider = node.querySelector('#unlock-slider');
             slider.oninput = async function() {
@@ -597,6 +625,7 @@
                     const memberData = { groupId: gid, name, phone, isLeader: false, quantity: qty };
 
                     try {
+                        clearInterval(modalTimerInterval); // Stop timer on submit
                         if (useMock) {
                              setTimeout(() => {
                                 if(!state.members[gid]) state.members[gid] = [];
@@ -728,7 +757,7 @@
                             const activeGroup = activeGid ? state.groups[activeGid] : null;
                             
                             let buttonHtml;
-                            let timerHtml = ''; // We will put timer INSIDE the pricing card now
+                            let timerHtml = ''; 
 
                             if (activeGid && activeGroup) {
                                 // Timer Logic for the pricing card
@@ -760,7 +789,7 @@
                                     <div class="flex gap-5 mb-6 cursor-pointer group/img" onclick="openFullFeed('${p.id}')">
                                         <div class="w-24 h-24 ${p.videoClass} video-grain rounded-2xl flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden">
                                             
-                                            <!-- NEW: Price Overlay on Video Thumbnail -->
+                                            <!-- Price Overlay on Video Thumbnail -->
                                             <div class="absolute top-0 left-0 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-br-xl border-b border-r border-white/10 z-20 shadow-sm">
                                                 ₹${p.price5}
                                             </div>
@@ -775,7 +804,7 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- NEW: COLORFUL PRICING & CONCEPT CARD -->
+                                    <!-- NEW: COLORFUL PRICING & CONCEPT CARD (Replaced with shared helper) -->
                                     <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden">
                                         
                                         <!-- Header: Concept + Timer -->
@@ -784,35 +813,12 @@
                                             ${timerHtml}
                                         </div>
 
-                                        <!-- Colorful Stages -->
-                                        <div class="flex justify-between items-end gap-2 text-center relative z-10">
-                                            <!-- Stage 1 -->
-                                            <div class="flex-1 opacity-70">
-                                                <div class="text-[9px] font-bold text-slate-400 mb-1">1 Buy</div>
-                                                <div class="bg-slate-100 py-2 rounded-lg border border-slate-200 text-slate-500 font-bold text-xs">₹${p.price1}</div>
-                                            </div>
-                                            
-                                            <div class="pb-3 text-slate-300"><i data-lucide="arrow-right" size="12"></i></div>
-
-                                            <!-- Stage 2 -->
-                                            <div class="flex-1 relative">
-                                                <div class="text-[9px] font-bold text-blue-500 mb-1">2 Ppl</div>
-                                                <div class="bg-blue-50 py-2 rounded-lg border border-blue-200 text-blue-600 font-bold text-sm">₹${p.price2}</div>
-                                            </div>
-
-                                            <div class="pb-3 text-slate-300"><i data-lucide="arrow-right" size="12"></i></div>
-
-                                            <!-- Stage 3 (Goal) -->
-                                            <div class="flex-1 relative">
-                                                <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-sm animate-bounce">GOAL</div>
-                                                <div class="text-[9px] font-black text-green-700 mb-1">5 Ppl</div>
-                                                <div class="bg-green-100 py-2 rounded-lg border border-green-400 text-green-800 font-black text-lg shadow-sm">₹${p.price5}</div>
-                                            </div>
-                                        </div>
+                                        <!-- Shared Pricing Component -->
+                                        ${getPricingRoadmapHTML(p, 'light')}
                                         
                                         <!-- Informative Message -->
                                         <div class="mt-3 text-center text-[10px] text-slate-500 font-medium bg-slate-50/80 py-1.5 rounded-lg border border-slate-100">
-                                            Price drops when neighbors join. <span class="text-green-600 font-bold">Unlock Green Price!</span>
+                                            Price drops when neighbors join. <span class="text-emerald-600 font-bold">Unlock Green Price!</span>
                                         </div>
                                     </div>
 
