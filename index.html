@@ -102,7 +102,7 @@
         ];
 
         // State & Persistence
-        const DB_KEY = 'jodo_local_db_v2';
+        const DB_KEY = 'jodo_local_db_v3';
         const EXPIRY_MS = 2 * 24 * 60 * 60 * 1000; // 2 Days in Milliseconds
 
         const state = { 
@@ -129,12 +129,12 @@
                     // 3. Filter Expired Groups (Data Retention Policy: 2 Days)
                     const now = Date.now();
                     const validGroups = {};
-                    const validMembers = {}; // Reset members, only keep valid ones
+                    const validMembers = {}; 
 
                     Object.values(data.groups || {}).forEach(g => {
+                        // Keep groups that haven't expired
                         if (g.expiresAt > now) {
                             validGroups[g.id] = g;
-                            // Keep members for valid groups
                             if (data.members[g.id]) {
                                 validMembers[g.id] = data.members[g.id];
                             }
@@ -143,9 +143,7 @@
 
                     state.groups = validGroups;
                     state.members = validMembers;
-                    
-                    // Save back the cleaned version immediately
-                    saveData();
+                    saveData(); // Clean up storage immediately
                 }
             } catch(e) { console.error("Load Error", e); }
         }
@@ -154,7 +152,6 @@
             try {
                 const db = { groups: state.groups, members: state.members };
                 localStorage.setItem(DB_KEY, JSON.stringify(db));
-                // Sync across tabs
                 window.dispatchEvent(new Event('storage')); 
             } catch(e) { console.error("Save Error", e); }
         }
@@ -168,22 +165,21 @@
 
         // --- APP INIT ---
         function init() {
+            // 1. Load data from LocalStorage
             loadData();
             
-            // Listen for changes from other tabs
-            window.addEventListener('storage', () => {
-                loadData();
-                render();
-            });
-
-            // Routing
+            // 2. Setup Routing
             const handleRoute = () => {
                 const params = new URLSearchParams(location.search);
                 state.currentGroupId = params.get('group') || null;
                 state.view = state.currentGroupId ? 'group' : 'home';
                 render();
             };
+            
             window.addEventListener('popstate', handleRoute);
+            window.addEventListener('storage', () => { loadData(); render(); });
+            
+            // 3. Start App
             handleRoute();
         }
 
@@ -324,13 +320,7 @@
                                 <h3 class="font-black text-xl leading-tight">${p.name}</h3>
                                 <div class="text-slate-200 text-xs font-medium opacity-90 truncate">${p.unit} Bundle • ${p.nameTe}</div>
                             </div>
-                            <div class="flex items-center justify-between bg-black/20 backdrop-blur-sm border border-white/5 rounded-lg p-2.5 text-white/90">
-                                <div class="flex flex-col items-center min-w-[3.5rem]"><span class="text-[9px] uppercase opacity-60 font-bold">1 Person</span><span class="text-sm font-bold opacity-70">₹${p.price1}</span></div>
-                                <div class="h-6 w-px bg-white/10"></div>
-                                <div class="flex flex-col items-center min-w-[3.5rem]"><span class="text-[9px] uppercase text-emerald-300 font-bold">2 Ppl</span><span class="text-sm font-bold text-emerald-300">₹${p.price2}</span></div>
-                                <div class="h-6 w-px bg-white/10"></div>
-                                <div class="flex flex-col items-center min-w-[3.5rem]"><span class="bg-yellow-500 text-black text-[8px] font-black px-1 rounded-sm leading-tight mb-0.5">GOAL</span><span class="text-lg font-black text-white leading-none">₹${p.price5}</span></div>
-                            </div>
+                            ${getPricingRoadmapHTML(p, 'glass')}
                             ${buttonHtml}
                         </div>
                     </div>
