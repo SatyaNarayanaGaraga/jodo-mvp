@@ -13,19 +13,35 @@
             theme: {
                 extend: {
                     colors: {
-                        // 🧠 PSYCHOLOGY COLOR SYSTEM
+                        // 🧠 PSYCHOLOGY COLOR SYSTEM - STRICT MODE
                         psycho: {
-                            action: '#059669',     // GREEN: Action, Savings, Confidence
+                            action: '#059669',      // GREEN: Action, Savings, Confidence
                             actionLight: '#10b981', 
-                            urgency: '#ef4444',    // RED: Fear, Loss, Spike
-                            reward: '#f59e0b',     // GOLD: Goal, Best Price, Status
+                            actionBg: '#ecfdf5',    // Green-50 equivalent
+                            urgency: '#ef4444',     // RED: Fear, Loss, Spike
+                            urgencyBg: '#fef2f2',   // Red-50 equivalent
+                            reward: '#f59e0b',      // GOLD: Goal, Best Price, Status
                             rewardLight: '#fbbf24',
-                            trust: '#3b82f6',      // BLUE: Safety, Verification, Calm
-                            trustBg: '#eff6ff',
-                            alert: '#f97316',      // ORANGE: Attention without Panic
-                            alertBg: '#fff7ed',
-                            neutral: '#64748b',    // SLATE: Baseline, "Bad Deal"
-                            base: '#f8fafc'        // WHITE/SLATE: Eye Reset
+                            rewardBg: '#fffbeb',    // Yellow-50 equivalent
+                            trust: '#3b82f6',       // BLUE: Safety, Verification, Calm
+                            trustBg: '#eff6ff',     // Blue-50 equivalent
+                            alert: '#f97316',       // ORANGE: Attention without Panic
+                            alertBg: '#fff7ed',     // Orange-50 equivalent
+                            neutral: '#64748b',     // SLATE: Baseline
+                            base: '#f8fafc'         // WHITE/SLATE: Eye Reset
+                        },
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
                         }
                     },
                     animation: {
@@ -34,12 +50,17 @@
                         'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                         'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'ping-slow': 'ping 3s cubic-bezier(0, 0, 0.2, 1) infinite',
+                        'flash-red': 'flashRed 1s ease-out',
+                        'flash-green': 'flashGreen 1s ease-out',
                     },
                     keyframes: {
                         float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-6px)' } },
                         shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
                         pop: { '0%': { transform: 'scale(0.9)' }, '100%': { transform: 'scale(1)' } },
-                        shake: { '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' }, '20%, 80%': { transform: 'translate3d(2px, 0, 0)' }, '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' }, '40%, 60%': { transform: 'translate3d(4px, 0, 0)' } }
+                        shake: { '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' }, '20%, 80%': { transform: 'translate3d(2px, 0, 0)' }, '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' }, '40%, 60%': { transform: 'translate3d(4px, 0, 0)' } },
+                        flashRed: { '0%': { color: '#ef4444', transform: 'scale(1.2)' }, '100%': { color: 'inherit', transform: 'scale(1)' } },
+                        flashGreen: { '0%': { color: '#059669', transform: 'scale(1.2)' }, '100%': { color: 'inherit', transform: 'scale(1)' } }
                     }
                 }
             }
@@ -93,11 +114,12 @@
 
     <div id="app"></div>
 
-    <div id="modal-overlay" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
-        <div id="modal-content" class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-6 pt-8 shadow-2xl transform transition-all relative overflow-hidden pb-8"></div>
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 hidden z-[60] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
+        <!-- MODAL FIX: Added max-h-[85dvh] and overflow-y-auto to ensure it fits on small screens/keyboards -->
+        <div id="modal-content" class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-6 pt-8 shadow-2xl transform transition-all relative overflow-y-auto max-h-[85dvh] pb-8"></div>
     </div>
 
-    <!-- TRIGGER 5 & 16: PSYCHOLOGY TICKER (Strict 3-Color Logic) -->
+    <!-- TRIGGER 5 & 16: PSYCHOLOGY TICKER -->
     <div id="live-ticker" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-full text-xs font-medium shadow-2xl z-[55] flex items-center gap-2 pointer-events-none border border-white/10 whitespace-nowrap hidden max-w-[90%] overflow-hidden transition-all duration-500">
         <div id="ticker-dot" class="w-2 h-2 rounded-full animate-pulse shrink-0"></div>
         <span id="ticker-text" class="truncate font-bold tracking-wide">...</span>
@@ -109,16 +131,40 @@
         // --- CONFIG & STATE ---
         const COMPANY_PHONE = "919999999999"; 
         const GUIDE_VIDEO_SRC = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
+
+        // 🧠 DYNAMIC COLOR FUNCTION
+        function getTierColor(count, tier, forceGoal = false) {
+            // TIER 5: GOAL / REWARD TIER
+            if (tier === 5) {
+                // 🏆 VICTORY STATE
+                if (count >= 5) {
+                    return "bg-psycho-reward text-black shadow-[0_0_12px_rgba(245,158,11,0.6)] ring-2 ring-psycho-reward/50 transition-all duration-300 font-black";
+                }
+                
+                // 🎯 TARGET STATE
+                return "bg-[#FFF9E5] text-[#F59E0B] border border-[#FCD34D] shadow-sm font-black";
+            }
+
+            // TIER 2: ACTION TIER
+            if (tier === 2) {
+                if (count >= 2) return "bg-psycho-action text-white shadow-[0_0_8px_rgba(5,150,105,0.5)] transition-all duration-300 font-bold";
+                return "bg-psycho-actionLight/10 text-psycho-action border border-psycho-action/20";
+            }
+
+            // TIER 1: BASELINE
+            if (tier === 1) {
+                if (count < 2) return "bg-slate-200 text-slate-600 border border-slate-300";
+                return "bg-slate-100 text-slate-500 border border-slate-200";
+            }
+        }
         
-        // 🚨 PSYCHOLOGY TRIGGERS: ANTICIPATION MICRO HITS 🚨
+        // 🚨 PSYCHOLOGY TRIGGERS
         const TICKER_MESSAGES = [
-            { msg: "🔥 Ward 7 is beating your ward! Order now.", type: 'urgent' }, // RED
-            { msg: "⚠️ Price rising in 42 minutes.", type: 'urgent' },           // RED
-            { msg: "⚡ 2 people just joined squads near you.", type: 'neutral' }, // SLATE
-            { msg: "📦 Only 12kg left — people are grabbing fast!", type: 'alert' }, // ORANGE (Attention)
-            { msg: "Ramya (Ward 4) saved ₹45 just now.", type: 'good' },          // GREEN
-            { msg: "Suresh (Block B) unlocked Gold Price.", type: 'good' },       // GREEN
-            { msg: "📉 Duvva Shops prices just went UP. Lock your rate now.", type: 'urgent' } // RED
+            { msg: "💡 Tip: Groups of 5 unlock the lowest wholesale price.", type: 'neutral' }, 
+            { msg: "📦 Wholesale prices sourced directly from farmers.", type: 'good' },
+            { msg: "🛡️ Pay on delivery available for all orders.", type: 'neutral' },
+            { msg: "⚡ Invite neighbors to fill your squad faster.", type: 'good' },
+            { msg: "📉 Duvva Shops prices are updated daily at 5 AM.", type: 'neutral' }
         ];
 
         const PRODUCTS = [
@@ -130,17 +176,17 @@
                 baseWeight: 0.5, 
                 weightUnit: 'kg', 
                 price1: 25, price2: 22, price5: 18,
-                mandiPrice: 32, // TRIGGER 1 (Duvva Shops Price)
-                farmerPrice: 12, // TRIGGER 2
-                remainingStock: 14, // TRIGGER 11
+                mandiPrice: 32,
+                farmerPrice: 12,
+                remainingStock: 14,
                 icon: 'layers', 
-                imageColor: 'bg-red-50 text-red-500', 
+                imageColor: 'bg-slate-100 text-psycho-urgency', 
                 farmer: 'Raju Bhai', 
-                farmerLoc: 'Duvva', // TRIGGER 4
+                farmerLoc: 'Duvva',
                 location: 'Duvva Fields', 
                 liveViewers: '1.2k', 
                 recentBuys: '124', 
-                videoClass: 'bg-gradient-to-br from-red-800 to-red-950', 
+                videoClass: 'bg-gradient-to-br from-slate-800 to-slate-900',
                 videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' 
             },
             { 
@@ -155,13 +201,13 @@
                 farmerPrice: 40,
                 remainingStock: 8,
                 icon: 'droplet', 
-                imageColor: 'bg-psycho-rewardLight text-psycho-reward', 
+                imageColor: 'bg-slate-100 text-psycho-reward', 
                 farmer: 'Sunil', 
                 farmerLoc: 'Mills',
                 location: 'Factory Direct', 
                 liveViewers: '850', 
                 recentBuys: '89', 
-                videoClass: 'bg-gradient-to-br from-yellow-600 to-yellow-900', 
+                videoClass: 'bg-gradient-to-br from-slate-900 to-black',
                 videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' 
             },
             { 
@@ -176,13 +222,13 @@
                 farmerPrice: 15,
                 remainingStock: 42,
                 icon: 'package', 
-                imageColor: 'bg-blue-50 text-blue-500', 
+                imageColor: 'bg-slate-100 text-psycho-trust', 
                 farmer: 'Co-op', 
                 farmerLoc: 'Society',
                 location: 'Local Stock', 
                 liveViewers: '340', 
                 recentBuys: '45', 
-                videoClass: 'bg-gradient-to-br from-blue-700 to-blue-950', 
+                videoClass: 'bg-gradient-to-br from-slate-900 to-black',
                 videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' 
             }
         ];
@@ -195,14 +241,12 @@
         const habitState = {
             totalOrders: 0,
             streakDays: 0,
-            lastOrderDate: null // "YYYY-MM-DD"
+            lastOrderDate: null
         };
 
-        // 3️⃣ TICKER COOLDOWN
         let lastTickerTime = 0;
-        const TICKER_COOLDOWN_MS = 6000; // 6 seconds
+        const TICKER_COOLDOWN_MS = 6000;
 
-        // 🧠 UPDATED STATE WITH NEW ENGINES
         const state = { 
             view: 'home', 
             currentGroupId: null, 
@@ -217,7 +261,8 @@
             dependencyInterval: null,
             painLoopInterval: null,
             mandiModalInterval: null, 
-            mandiGroupInterval: null  
+            mandiGroupInterval: null,
+            lastMandiUpdate: { id: null, dir: null }
         };
 
         // --- UTILS ---
@@ -239,9 +284,7 @@
             if (navigator.vibrate) navigator.vibrate(20);
         }
 
-        // 🚨 1. MICRO NUDGE ENGINE & TICKER (STRICT 3-COLOR LOGIC)
         function showTicker(msg, type = 'neutral') {
-            // FIX: Don't show ticker if modal or feed is open
             const modal = document.getElementById('modal-overlay');
             const feed = document.getElementById('full-feed-overlay');
             if ((modal && !modal.classList.contains('hidden')) || feed) return;
@@ -258,12 +301,6 @@
             if(!el || !txt || !dot) return;
 
             txt.innerText = msg;
-            
-            // PSYCHOLOGY MAP:
-            // Urgent = RED (#ef4444) -> Loss / Fear
-            // Good = GREEN (#059669) -> Gain / Social Proof
-            // Alert = ORANGE (#f97316) -> Attention / Warning
-            // Neutral = SLATE (#64748b) -> Info
             
             let bgClass, borderClass, dotClass;
 
@@ -298,10 +335,9 @@
             };
             
             update();
-            state.tickerInterval = setInterval(update, 12000); // 12 seconds loop
+            state.tickerInterval = setInterval(update, 12000); 
         }
 
-        // 🚨 2. BEHAVIOR ENGINE
         let scrollTimeout;
         const initBehaviorEngine = () => {
             const app = document.getElementById('app');
@@ -309,30 +345,14 @@
                 clearTimeout(scrollTimeout);
                 scrollTimeout = setTimeout(() => {
                     if (state.view === 'home') {
-                        // FIX: Use 'alert' (orange) instead of 'urgent' (red) for neutral nudges
                         showTicker("⏳ Prices change soon — don't miss today's rate", 'alert');
                     }
                 }, 4000);
             });
         };
 
-        // 🚨 LIVE MARKET PRICE ENGINE (Duvva Shops)
         function startMandiEngine() {
-            PRODUCTS.forEach(p => {
-                const delta = Math.floor(Math.random() * 4) - 1;  
-                const oldPrice = p.mandiPrice;
-                p.mandiPrice = Math.max(10, p.mandiPrice + delta);
-
-                if (p.mandiPrice !== oldPrice) {
-                    if (delta > 0) {
-                        showTicker(`📈 Duvva Shops price increased to ₹${p.mandiPrice}!`, 'urgent');
-                    } else if (delta < 0) {
-                        showTicker(`📉 Duvva Shops price dropped! Squads filling fast.`, 'good');
-                    }
-                }
-            });
             render();
-            setTimeout(startMandiEngine, 22000);
         }
 
         function loadData() {
@@ -352,7 +372,7 @@
             try {
                 localStorage.setItem(DB_KEY, JSON.stringify({ groups: state.groups, members: state.members }));
                 window.dispatchEvent(new Event('storage')); 
-                setTimeout(() => showTicker("🏆 Your ward moved up 1 rank due to your order!", 'good'), 2000);
+                setTimeout(() => showTicker("✅ Squad details saved on this device.", 'good'), 2000);
             } catch(e) { console.error("Save Error", e); }
         }
 
@@ -363,7 +383,6 @@
             localStorage.setItem('jodo_user_phone', phone);
         }
 
-        // 1️⃣ HABIT LOGIC
         function loadHabit() {
             try {
                 const raw = localStorage.getItem(HABIT_KEY);
@@ -408,37 +427,28 @@
             return null;
         }
 
-        // --- DOM HELPERS ---
         function createNodeFromHTML(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
         function showModalNode(node) { const c = document.getElementById('modal-content'); c.innerHTML = ''; c.appendChild(node); document.getElementById('modal-overlay').classList.remove('hidden'); if(node.querySelector('input')) node.querySelector('input').focus(); if(window.lucide) window.lucide.createIcons(); }
         window.closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
-        function showFieldError(c, m) { c.innerHTML = `<div class="field-error text-xs text-red-600 font-bold bg-red-50 p-3 rounded-xl flex items-center gap-2 border border-red-100"><i data-lucide="alert-circle" size="16"></i> ${m}</div>`; if(window.lucide) window.lucide.createIcons(); }
+        function showFieldError(c, m) { c.innerHTML = `<div class="field-error text-xs text-psycho-urgency font-bold bg-psycho-urgency/10 p-3 rounded-xl flex items-center gap-2 border border-psycho-urgency/20"><i data-lucide="alert-circle" size="16"></i> ${m}</div>`; if(window.lucide) window.lucide.createIcons(); }
         function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
 
-        // REMOVED SLIDER FUNCTION, NO LONGER NEEDED
+        function createSliderHTML(label) {
+            return `<div class="relative w-full h-14 mt-6 mb-2 select-none"><div class="absolute inset-0 bg-slate-100 rounded-full flex items-center justify-center pointer-events-none transition-colors duration-300" id="slider-track"><span class="text-slate-400 font-extrabold text-sm tracking-widest uppercase opacity-80 animate-pulse transition-all duration-200" id="slider-label">${label}</span><div class="absolute inset-0 bg-gradient-to-r from-transparent via-psycho-actionLight to-transparent animate-slide-shimmer" style="background-size: 200% 100%;"></div></div><input type="range" min="0" max="100" value="0" class="slider-lock absolute inset-0 w-full h-full z-10 opacity-0 cursor-pointer" id="unlock-slider"></div><div class="error-container"></div>`;
+        }
 
-        function getPricingRoadmapHTML(p, theme = 'light') {
-            const isGlass = theme === 'glass';
-            const lineColor = isGlass ? 'bg-white/20' : 'bg-slate-200';
-            const labelColor = isGlass ? 'text-white/70' : 'text-slate-400';
-            const priceClass = isGlass ? 'text-white' : 'text-slate-800';
-            const boxBase = "px-2.5 py-1.5 rounded-xl border shadow-sm min-w-[3.5rem] mb-3 flex items-center justify-center transition-transform bg-white relative z-10";
-            
-            // PSYCHOLOGY: TIER COLORS
-            // 1 Person: SLATE (Undesirable, Baseline)
-            const boxSlate = isGlass ? 'bg-white/10 border-white/10 text-white/90' : 'bg-white border-slate-200 text-slate-500';
-            // 2 People: GREEN (Action, Good)
-            const boxGreen = isGlass ? 'bg-psycho-action/20 border-psycho-action/30 text-psycho-actionLight' : 'bg-green-50 border-green-100 text-psycho-action';
-            // 5 People: GOLD (Reward, Goal)
-            const boxGold = isGlass ? 'bg-yellow-500/20 border-yellow-400/30 text-yellow-100' : 'bg-yellow-50 border-yellow-100 text-psycho-reward';
-            
-            const dotBase = `w-3 h-3 rounded-full border-2 ${isGlass ? 'border-black' : 'border-white'} relative z-10`;
+        function getPricingRoadmapHTML(p, count = 1, isHome = false) {
+            const tier1Class = getTierColor(count, 1);
+            const tier2Class = getTierColor(count, 2);
+            const tier5Class = getTierColor(count, 5, isHome); 
+
+            const boxBase = "px-2.5 py-1.5 rounded-xl border shadow-sm min-w-[3.5rem] mb-3 flex items-center justify-center transition-transform bg-white relative z-10 tier-box";
+            const dotBase = `w-3 h-3 rounded-full border-2 border-white relative z-10`;
 
             const mandiSavings = p.mandiPrice ? p.mandiPrice - p.price5 : 0;
             
-            // Savings Label: Green (Good)
             const savingsHtml = p.mandiPrice ? `
-                <div class="absolute -bottom-2 left-0 right-0 flex justify-center w-full">
+                <div class="mt-4 flex justify-center w-full">
                     <div class="bg-slate-100/90 backdrop-blur-sm px-3 py-1 rounded-full text-[9px] font-medium text-slate-500 flex items-center gap-2 border border-slate-200/50 shadow-sm">
                         <span>Duvva Shops: <span class="line-through decoration-psycho-urgency text-psycho-urgency">₹${p.mandiPrice}</span></span>
                         <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
@@ -447,42 +457,67 @@
                 </div>
             ` : '';
 
+            const boxCommon = "px-2.5 py-1.5 rounded-xl border shadow-sm min-w-[3.5rem] flex items-center justify-center transition-transform bg-white";
+
             return `
                 <div class="w-full py-4 px-2 select-none relative mb-2">
-                    <div class="absolute top-[55%] left-10 right-10 h-1 ${lineColor} -translate-y-1/2 z-0 rounded-full"></div>
-                    <div class="relative z-10 flex justify-between items-end text-center">
-                        <!-- TIER 1: SLATE -->
-                        <div class="flex flex-col items-center w-1/3"><div class="${boxBase} ${boxSlate}"><div class="text-sm font-bold ${priceClass}" id="tier-1-price">₹${p.price1}</div></div><div class="${dotBase} bg-slate-300"></div><div class="text-[9px] font-bold uppercase ${labelColor} mt-2 tracking-wide">1 Person</div></div>
-                        <!-- TIER 2: GREEN -->
-                        <div class="flex flex-col items-center w-1/3"><div class="${boxBase} ${boxGreen} scale-105"><div class="text-base font-black text-psycho-action" id="tier-2-price">₹${p.price2}</div></div><div class="${dotBase} bg-psycho-action shadow-sm ring-2 ring-green-100 ring-opacity-50"></div><div class="text-[9px] font-bold uppercase text-psycho-action mt-2 tracking-wide">2 People</div></div>
-                        <!-- TIER 5: GOLD -->
-                        <div class="flex flex-col items-center w-1/3"><div class="${boxBase} ${boxGold} scale-110 origin-bottom"><div class="text-lg font-black text-yellow-600 leading-none" id="tier-5-price">₹${p.price5}</div></div><div class="${dotBase} bg-psycho-reward shadow-sm"></div><div class="text-[9px] font-bold uppercase text-psycho-reward mt-2 tracking-wide">5 People</div></div>
+                    <!-- Row 1: Boxes -->
+                    <div class="flex justify-between items-end mb-2 relative z-10">
+                        <div class="flex justify-center w-1/3">
+                            <div class="${boxBase} ${tier1Class} tier-1"><div class="text-sm font-bold">₹${p.price1}</div></div>
+                        </div>
+                        <div class="flex justify-center w-1/3">
+                            <div class="${boxBase} ${tier2Class} scale-105 tier-2"><div class="text-base font-black">₹${p.price2}</div></div>
+                        </div>
+                        <div class="flex justify-center w-1/3">
+                            <div class="${boxBase} ${tier5Class} scale-110 origin-bottom tier-5"><div class="text-3xl font-black">₹${p.price5}</div></div>
+                        </div>
                     </div>
+
+                    <!-- Row 2: Line & Dots (Perfectly Aligned) -->
+                    <div class="relative h-3 w-full mb-2">
+                         <!-- Line anchored to center of dots (6px down) -->
+                         <div class="absolute top-1.5 left-[16.66%] right-[16.66%] h-1 bg-slate-200 -translate-y-1/2 z-0 rounded-full"></div>
+                         
+                         <!-- Dots centered in 1/3 columns -->
+                         <div class="flex justify-between items-center h-full relative z-10">
+                            <div class="w-1/3 flex justify-center"><div class="${dotBase} bg-slate-300"></div></div>
+                            <div class="w-1/3 flex justify-center"><div class="${dotBase} bg-psycho-action ring-2 ring-green-100 ring-opacity-50"></div></div>
+                            <div class="w-1/3 flex justify-center"><div class="${dotBase} bg-psycho-reward"></div></div>
+                         </div>
+                    </div>
+
+                    <!-- Row 3: Labels -->
+                    <div class="flex justify-between items-start text-center">
+                        <div class="w-1/3 flex justify-center"><div class="text-[9px] font-bold uppercase text-slate-400 tracking-wide">1 Person</div></div>
+                        <div class="w-1/3 flex justify-center"><div class="text-[9px] font-bold uppercase text-psycho-action tracking-wide">2 People</div></div>
+                        <div class="w-1/3 flex justify-center"><div class="text-[9px] font-bold uppercase text-psycho-reward tracking-wide">5 People</div></div>
+                    </div>
+
                     ${savingsHtml}
                 </div>
             `;
         }
 
-        // TRIGGER 2: BREAKDOWN MODAL COMPONENT
         function getPriceBreakdownHTML(p) {
             const savings = p.mandiPrice ? p.mandiPrice - p.price5 : 0;
             return `
-                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-4 relative overflow-hidden">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">True Cost Breakdown</span>
-                        <!-- GREEN: Savings is positive -->
-                        <span class="text-[10px] text-psycho-action font-black bg-green-100 px-2 py-0.5 rounded border border-green-200 animate-pulse">YOU SAVE ₹${savings}/${p.weightUnit}</span>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 mb-4 overflow-hidden transition-all">
+                    <div class="p-3 flex justify-between items-center cursor-pointer active:bg-slate-100 transition-colors" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180')">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Today's Savings</span>
+                            <div class="chevron transition-transform duration-300 text-slate-400"><i data-lucide="chevron-down" size="14"></i></div>
+                        </div>
+                        <span class="text-[10px] text-psycho-action font-black bg-psycho-actionBg px-2 py-0.5 rounded border border-psycho-action/20 animate-pulse">YOU SAVE ₹${savings}/${p.weightUnit}</span>
                     </div>
                     
-                    <div class="space-y-3 relative z-10">
+                    <div class="hidden px-3 pb-3 space-y-3 border-t border-slate-100 bg-white/50 pt-3">
                         <div class="flex justify-between items-center opacity-60 grayscale">
                             <span class="text-xs font-bold text-slate-500">Duvva Shops Price</span>
-                            <!-- RED: High Price = Bad -->
                             <span class="text-sm font-black text-psycho-urgency line-through decoration-2 decoration-red-500/50">₹${p.mandiPrice}</span>
                         </div>
                         <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100 shadow-sm">
                             <div class="flex items-center gap-2">
-                                <!-- BLUE: Trust / Verification -->
                                 <span class="text-sm font-bold text-slate-700">Farmer (${p.farmer})</span>
                                 <i data-lucide="check-circle" size="14" class="text-psycho-trust fill-blue-100"></i>
                             </div>
@@ -496,14 +531,12 @@
                         <div class="flex justify-between items-center px-2">
                             <span class="text-sm font-black text-slate-900 uppercase">Your Squad Price</span>
                             <div class="flex items-center gap-2">
-                                <!-- GOLD: The Goal Price -->
                                 <span class="text-xl font-black text-psycho-reward">₹${p.price5}</span>
                                 <span class="text-[10px] font-bold text-slate-400">/${p.unit}</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- BLUE: Social Proof / Trust Layer -->
                 <div class="flex items-center gap-2 mb-6 px-2 bg-psycho-trustBg p-2 rounded-lg border border-blue-100">
                     <div class="flex -space-x-2">
                         <div class="w-6 h-6 rounded-full bg-slate-200 border-2 border-white"></div>
@@ -516,6 +549,8 @@
 
         function setupQuantityLogic(node, p, labelId) {
             let qty = 1;
+            const membersCount = state.members[state.currentGroupId]?.length || 1;
+            
             const updateDisplay = () => {
                 const totalWeight = qty * p.baseWeight;
                 const formattedWeight = parseFloat(totalWeight.toFixed(2)); 
@@ -529,12 +564,25 @@
                         el.innerHTML = `Unlock ₹${totalPrice} (Save ₹${totalSavings})`;
                     }
                 }
-                const t1 = node.querySelector('#tier-1-price');
-                const t2 = node.querySelector('#tier-2-price');
-                const t5 = node.querySelector('#tier-5-price');
-                if (t1) t1.innerText = '₹' + (p.price1 * qty);
-                if (t2) t2.innerText = '₹' + (p.price2 * qty);
-                if (t5) t5.innerText = '₹' + (p.price5 * qty);
+                
+                const roadmapBoxes = node.querySelectorAll(".tier-box");
+                roadmapBoxes.forEach(box => {
+                    const tier = box.classList.contains("tier-1") ? 1 :
+                                   box.classList.contains("tier-2") ? 2 : 5;
+
+                    let baseClass = "px-2.5 py-1.5 rounded-xl border shadow-sm min-w-[3.5rem] mb-3 flex items-center justify-center transition-transform relative z-10 tier-box tier-" + tier;
+                    if(tier === 5) baseClass += " scale-110 origin-bottom";
+                    else if (tier === 2) baseClass += " scale-105";
+                    
+                    box.className = baseClass + " " + getTierColor(membersCount, tier);
+                    
+                    const priceDiv = box.querySelector('div');
+                    if(priceDiv) {
+                         if(tier === 1) priceDiv.innerText = '₹' + (p.price1 * qty);
+                         if(tier === 2) priceDiv.innerText = '₹' + (p.price2 * qty);
+                         if(tier === 5) priceDiv.innerText = '₹' + (p.price5 * qty);
+                    }
+                });
             };
             const btnMinus = node.querySelector('#btn-minus');
             if (btnMinus) btnMinus.onclick = () => { if (qty > 1) { qty--; updateDisplay(); } };
@@ -543,285 +591,6 @@
             updateDisplay();
             return () => qty;
         }
-
-        // --- ACTIONS ---
-        function goHome() { 
-            if (state.timerInterval) clearInterval(state.timerInterval);
-            if (state.hesitationInterval) clearInterval(state.hesitationInterval);
-            if (state.dependencyInterval) clearInterval(state.dependencyInterval);
-            if (state.painLoopInterval) clearInterval(state.painLoopInterval);
-            if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
-            if (state.mandiGroupInterval) clearInterval(state.mandiGroupInterval);
-            if (state.scrollObserver) state.scrollObserver.disconnect();
-            
-            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', location.pathname); } catch(e) {} 
-            state.view = 'home'; state.currentGroupId = null; render(); 
-            startTicker(); 
-        }
-
-        function openGroup(gid) { 
-            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', `?group=${gid}`); } catch(e) {} 
-            state.currentGroupId = gid; state.view = 'group'; render(); 
-        }
-
-        function openLiveGuide() {
-            const videoSrc = GUIDE_VIDEO_SRC;
-            const node = createNodeFromHTML(`
-                <div id="live-guide-overlay" class="fixed inset-0 z-[80] flex justify-center items-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-200">
-                    <button id="close-guide" class="absolute top-6 right-6 z-[90] p-2 bg-white/10 backdrop-blur-md rounded-full text-white border border-white/10 hover:bg-white/20 transition-colors cursor-pointer tap-effect"><i data-lucide="x" size="24"></i></button>
-                    <div class="w-full max-w-md h-full relative flex flex-col justify-center">
-                        <div class="aspect-[9/16] w-full bg-black relative rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                            <video src="${videoSrc}" autoplay loop playsinline controls class="w-full h-full object-cover"></video>
-                            <div class="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse shadow-lg z-20">🔴 LIVE GUIDE</div>
-                        </div>
-                    </div>
-                </div>
-            `);
-            node.querySelector('#close-guide').onclick = () => node.remove();
-            document.body.appendChild(node);
-            lucide.createIcons();
-        }
-
-        window.goHome = goHome;
-        window.openGroup = openGroup;
-        window.openLiveGuide = openLiveGuide;
-
-        window.openFullFeed = function(startPid, forceOpen = false) {
-            if (!forceOpen) {
-                const activeGid = getActiveGroupId(startPid);
-                if (activeGid) { window.openGroup(activeGid); return; }
-            }
-            const slidesHtml = PRODUCTS.map(p => {
-                let backgroundContent = p.videoSrc ? `<div class="absolute inset-0 w-full h-full bg-black rounded-2xl overflow-hidden"><video src="${p.videoSrc}" autoplay loop playsinline muted controls class="w-full h-full object-cover"></video></div>` : `<div class="absolute inset-0 z-0 ${p.videoClass} video-grain hidden"></div>`;
-                const slideActiveGid = getActiveGroupId(p.id);
-                // GREEN = Action Button
-                let buttonHtml = slideActiveGid ? `<button onclick="openGroup('${slideActiveGid}')" class="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect cursor-pointer"><span>Check My Group</span><i data-lucide="arrow-right" size="16"></i></button>` : `<button onclick="openStartModal('${p.id}')" class="w-full bg-psycho-action text-white py-3.5 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect transition-all active:scale-95 cursor-pointer"><span>Buy Together</span><span class="bg-black/20 text-[10px] px-1.5 py-0.5 rounded border border-white/10 font-medium ml-1">Save ₹${p.price1 - p.price5}</span></button>`;
-                return `<div id="slide-${p.id}" class="snap-center shrink-0 relative w-full h-full bg-black overflow-hidden flex flex-col"><div class="absolute inset-0 z-0">${backgroundContent}<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div></div><div class="absolute top-6 left-4 right-4 z-40 flex justify-between items-start"><div class="bg-red-600/90 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm"><span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE DEAL</div><div class="bg-black/30 backdrop-blur-md text-white text-[10px] font-medium px-2 py-1 rounded-full border border-white/10 flex items-center gap-1"><i data-lucide="eye" size="10"></i> ${p.liveViewers}</div></div><div class="absolute bottom-0 left-0 right-0 p-4 pb-6 z-30 flex flex-col gap-3"><div class="text-white drop-shadow-md flex flex-col gap-1"><div class="flex items-center gap-2"><div class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">@${p.farmer}</div></div><h3 class="font-black text-xl leading-tight">${p.name}</h3><div class="text-slate-200 text-xs font-medium opacity-90 truncate">${p.unit} Bundle • ${p.nameTe}</div></div>${getPricingRoadmapHTML(p, 'glass')}${buttonHtml}</div></div>`;
-            }).join('');
-            const node = createNodeFromHTML(`<div id="full-feed-overlay" class="fixed inset-0 z-[70] flex justify-center items-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200"><button id="close-feed" class="absolute top-6 right-6 z-[80] p-2 bg-white/10 backdrop-blur-md rounded-full text-white border border-white/10 hover:bg-white/20 transition-colors cursor-pointer tap-effect"><i data-lucide="x" size="24"></i></button><div class="w-full max-w-md h-full bg-black relative shadow-2xl overflow-hidden"><div class="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black scroll-container">${slidesHtml}</div></div></div>`);
-            node.querySelector('#close-feed').onclick = () => node.remove();
-            
-            setTimeout(() => {
-                const scrollContainer = node.querySelector('.scroll-container');
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        const video = entry.target.querySelector('video');
-                        if (video) {
-                            if (entry.isIntersecting) {
-                                const playPromise = video.play();
-                                if (playPromise !== undefined) { playPromise.catch(error => {}); }
-                            } else {
-                                video.pause();
-                                video.currentTime = 0;
-                            }
-                        }
-                    });
-                }, { root: scrollContainer, threshold: 0.7 });
-                const slides = node.querySelectorAll('[id^="slide-"]');
-                slides.forEach(slide => observer.observe(slide));
-            }, 100);
-
-            document.body.appendChild(node);
-            lucide.createIcons();
-            const target = document.getElementById(`slide-${startPid}`);
-            if (target) target.scrollIntoView({ behavior: 'auto' });
-        }
-
-        window.openStartModal = function(pid) {
-            const fullFeed = document.getElementById('full-feed-overlay'); if(fullFeed) fullFeed.remove();
-            const p = PRODUCTS.find(x => x.id === pid);
-            const user = state.user;
-            const savings = p.price1 - p.price5;
-            
-            const node = createNodeFromHTML(`
-                <div class="flex flex-col h-full transition-all duration-300" id="modal-container-inner">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-black text-xl text-slate-800 tracking-tight">Start Group Buy</h3>
-                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer transition-colors"><i data-lucide="x" size="20"></i></button>
-                    </div>
-                    
-                    <div class="flex items-start gap-4 mb-4">
-                        <div class="w-16 h-16 ${p.imageColor} rounded-2xl flex items-center justify-center shrink-0 text-white shadow-md relative overflow-hidden">
-                            <div class="absolute bottom-0 left-0 w-full h-1/3 bg-black/40 backdrop-blur-sm flex items-center justify-center text-[8px] font-bold text-white z-10">${p.farmer}</div>
-                            <i data-lucide="${p.icon}" size="32"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h4 class="font-black text-xl text-slate-900 leading-tight mb-1">${p.name}</h4>
-                            
-                            <!-- ORANGE: Scarcity / Attention -->
-                            <div class="flex flex-wrap gap-1.5 mt-1">
-                                <span class="bg-psycho-alertBg text-psycho-alert px-1.5 py-0.5 rounded text-[9px] font-bold border border-orange-100 flex items-center gap-1 animate-pulse"><i data-lucide="flame" size="8"></i> Only ${p.remainingStock}kg left</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    ${getPricingRoadmapHTML(p, 'light')}
-
-                    ${getPriceBreakdownHTML(p)}
-                    
-                    <div class="space-y-4 mb-2">
-                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="user" size="16"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-slate-300 py-3.5 pl-10 pr-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Your Name"></div>
-                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="phone" size="16"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-slate-300 py-3.5 pl-10 pr-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Phone Number"></div>
-                    </div>
-
-                    <div class="mt-auto relative">
-                        <!-- CHANGED BUTTON TO 'CREATE SQUAD' ONLY -->
-                        <button id="confirm-btn" class="w-full bg-psycho-action text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-green-600/30 btn-press flex items-center justify-center gap-2 cursor-pointer mt-6 mb-2">
-                            <i data-lucide="users" size="24"></i> Create Squad
-                        </button>
-                        <div class="error-container"></div>
-                        
-                        <!-- BLUE: Trust / Safety (No Penalty) -->
-                        <div class="mt-3 text-[10px] text-psycho-trust text-center bg-psycho-trustBg py-1.5 rounded-lg border border-blue-100 font-medium">
-                            <i data-lucide="shield" size="10" class="inline mb-0.5"></i> Pay safely at delivery. Cancel anytime.
-                        </div>
-
-                        <div id="lock-in-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 rounded-2xl">
-                            <div class="text-center animate-pop">
-                                <div class="w-12 h-12 bg-psycho-action rounded-full flex items-center justify-center mx-auto mb-2 shadow-xl shadow-psycho-action/40 text-white"><i data-lucide="check" size="24"></i></div>
-                                <div class="text-green-800 font-black text-lg">Squad Created!</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `);
-            showModalNode(node);
-            const getQty = setupQuantityLogic(node, p, '#price-label');
-            
-            if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
-            state.mandiModalInterval = setInterval(() => {
-                const mandiEl = node.querySelector('.decoration-psycho-urgency');
-                if (mandiEl) mandiEl.innerText = `₹${p.mandiPrice}`;
-            }, 5000);
-
-            node.querySelector('#close-modal').addEventListener('click', () => {
-                if (state.hesitationInterval) clearInterval(state.hesitationInterval);
-                if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
-                window.closeModal();
-            });
-            
-            const confirmBtn = node.querySelector('#confirm-btn');
-
-            if (state.hesitationInterval) clearInterval(state.hesitationInterval);
-            state.hesitationInterval = setInterval(() => {
-                const n = Math.floor(Math.random() * 3);
-                const msgs = [
-                    "📉 Others are joining — price may change",
-                    "🔥 This item is in demand right now",
-                    "⚠ Stock reduces while you wait"
-                ];
-                toast(msgs[n], ["alert-circle", "flame", "package"][n]);
-                triggerVibration();
-            }, 7000);
-
-            confirmBtn.onclick = async function() {
-                this.disabled = true;
-                const name = safeVal(node.querySelector('#inp-name'));
-                const phone = safeVal(node.querySelector('#inp-phone'));
-                const qty = getQty();
-                const errCont = node.querySelector('.error-container');
-
-                if (!name || !/^[6-9]\d{9}$/.test(phone)) {
-                    this.disabled = false;
-                    showFieldError(errCont, 'Enter Valid Name & Phone');
-                    return;
-                }
-
-                document.getElementById('lock-in-overlay').classList.remove('opacity-0');
-                document.getElementById('lock-in-overlay').classList.add('opacity-100');
-                
-                if (state.hesitationInterval) clearInterval(state.hesitationInterval);
-                if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
-
-                try {
-                    saveUser(name, phone);
-                    const gid = 'g' + Date.now();
-                    const expires = Date.now() + EXPIRY_MS;
-                    
-                    const group = { id: gid, productId: pid, ownerName: name, expiresAt: expires, createdAt: Date.now(), status: 'open' };
-                    const member = { groupId: gid, name, phone, isLeader: true, quantity: qty };
-                    
-                    state.groups[gid] = group;
-                    state.members[gid] = [member];
-                    saveData();
-                    
-                    markOrderHabit(); 
-
-                    // REMOVED WHATSAPP OPENING HERE. JUST REDIRECT.
-                    setTimeout(() => { 
-                        window.closeModal(); 
-                        window.openGroup(gid); 
-                        triggerConfetti();
-                    }, 800); 
-                } catch (err) {
-                    this.disabled = false;
-                    showFieldError(errCont, 'Error saving data');
-                }
-            };
-        };
-
-        window.openAddMemberModal = function(gid) {
-            const members = state.members[gid] || []; if(members.length >= 5) return toast("Group is full!", 'lock');
-            const group = state.groups[gid]; const p = PRODUCTS.find(x => x.id === group.productId);
-            
-            const node = createNodeFromHTML(`<div><div class="flex items-center justify-between mb-6"><h3 class="font-bold text-xl text-slate-800">Add Neighbor</h3><button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer"><i data-lucide="x" size="20"></i></button></div>${getPricingRoadmapHTML(p, 'light')}<div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6 mt-4"><div class="ml-1"><div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div><div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div></div><div class="flex items-center gap-3"><button id="btn-minus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="minus" size="20"></i></button><span id="qty-display" class="font-black text-xl w-20 text-center text-slate-800 tabular-nums">0.5 kg</span><button id="btn-plus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="plus" size="20"></i></button></div></div><div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Neighbor Name</label><input id="m-name" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Friend Name"></div><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Phone Number</label><input id="m-phone" type="tel" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Phone Number"></div></div><div class="mt-auto mb-2"><p class="text-center text-[11px] text-slate-400 font-medium mt-2 flex items-center justify-center gap-1"><i data-lucide="info" size="10"></i> Add neighbor if they are with you.</p></div>
-            <button id="add-btn" class="w-full bg-psycho-action text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-green-600/30 btn-press flex items-center justify-center gap-2 cursor-pointer mt-4">
-                <i data-lucide="plus-circle" size="24"></i> Add Neighbor
-            </button>
-            <div class="error-container"></div>
-            </div>`);
-            
-            showModalNode(node);
-            const getQty = setupQuantityLogic(node, p, null);
-            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
-            
-            const addBtn = node.querySelector('#add-btn');
-            addBtn.onclick = async function() { 
-                this.disabled = true;
-                const name = safeVal(node.querySelector('#m-name')); 
-                const phone = safeVal(node.querySelector('#m-phone')); 
-                const qty = getQty(); 
-                const errCont = node.querySelector('.error-container'); 
-                
-                if (!name || !/^[6-9]\d{9}$/.test(phone)) { 
-                    this.disabled = false; 
-                    showFieldError(errCont, 'Valid Details Required'); 
-                    return; 
-                } 
-                
-                this.innerHTML = '<span class="animate-pulse">Adding...</span>';
-                
-                try { 
-                    const memberData = { groupId: gid, name, phone, isLeader: false, quantity: qty }; 
-                    if (!state.members[gid]) state.members[gid] = []; 
-                    state.members[gid].push(memberData); 
-                    saveData(); 
-                    setTimeout(() => { 
-                        window.closeModal(); 
-                        toast('Added Successfully!', 'check-circle'); 
-                        render(); 
-                        triggerConfetti(); 
-                    }, 500); 
-                } catch (err) { 
-                    toast('Error Saving', 'alert-circle'); 
-                    this.disabled = false;
-                    this.innerHTML = '<i data-lucide="plus-circle" size="24"></i> Add Neighbor';
-                    if(window.lucide) window.lucide.createIcons();
-                } 
-            }; 
-        };
-        window.openAddMemberModal = openAddMemberModal;
-
-        window.openEditMemberModal = function(gid, memberIndex) {
-            const member = state.members[gid][memberIndex]; const group = state.groups[gid]; const p = PRODUCTS.find(x => x.id === group.productId);
-            const node = createNodeFromHTML(`<div><div class="flex items-center justify-between mb-6"><h3 class="font-bold text-xl text-slate-800">Edit Order</h3><button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer"><i data-lucide="x" size="20"></i></button></div>${getPricingRoadmapHTML(p, 'light')}<div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6 mt-4"><div class="ml-1"><div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div><div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div></div><div class="flex items-center gap-3"><button id="btn-minus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="minus" size="20"></i></button><span id="qty-display" class="font-black text-xl w-20 text-center text-slate-800">...</span><button id="btn-plus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="plus" size="20"></i></button></div></div><div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all"></div><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Phone</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all"></div></div><button id="save-btn" class="w-full bg-psycho-action text-white h-14 rounded-2xl font-bold text-lg shadow-lg btn-press flex items-center justify-center gap-2 cursor-pointer">Save Changes</button></div>`);
-            showModalNode(node);
-            const getQty = setupQuantityLogic(node, p, null);
-            const targetQty = member.quantity || 1; const plusBtn = node.querySelector('#btn-plus'); for(let i=1; i<targetQty; i++) { plusBtn.click(); }
-            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
-            node.querySelector('#save-btn').onclick = () => { const name = safeVal(node.querySelector('#m-name')); const phone = safeVal(node.querySelector('#m-phone')); const qty = getQty(); if (!name || !/^[6-9]\d{9}$/.test(phone)) return toast('Valid Name & Phone required', 'alert-circle'); state.members[gid][memberIndex] = { ...member, name, phone, quantity: qty }; saveData(); saveUser(name, phone); window.closeModal(); toast('Order Updated!', 'check-circle'); render(); };
-        };
-        window.openEditMemberModal = openEditMemberModal;
 
         function render() { const app = document.getElementById('app'); if (state.view === 'home') renderHome(app); else renderGroup(app); if (window.lucide) window.lucide.createIcons(); }
 
@@ -880,10 +649,11 @@
                             <div class="flex justify-between items-start mb-3 relative z-10">
                                 <div class="flex items-center gap-2">
                                     <span class="relative flex h-2.5 w-2.5">
-                                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                      <!-- SLOW PING FIX -->
+                                      <span class="absolute inline-flex h-full w-full rounded-full bg-psycho-urgency opacity-75 animate-ping-slow"></span>
+                                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-psycho-urgency"></span>
                                     </span>
-                                    <span class="text-[10px] font-black text-white tracking-widest uppercase">Live Squad</span>
+                                    <span class="text-[10px] font-black text-white tracking-widest uppercase">Live Gang</span>
                                 </div>
                                 <div class="bg-white/10 backdrop-blur px-2 py-1 rounded text-[10px] font-mono font-bold text-white/90 border border-white/10 live-timer-home" data-expires="${g.expiresAt}">...</div>
                             </div>
@@ -897,13 +667,13 @@
                                     <div class="flex items-center gap-1.5 text-[10px]">
                                         <span class="text-white font-bold">${count}/5</span>
                                         <span class="text-slate-500">•</span>
-                                        ${needed > 0 ? `<span class="text-psycho-rewardLight font-bold">Need ${needed}</span>` : `<span class="text-green-400 font-bold">Unlocked</span>`}
+                                        ${needed > 0 ? `<span class="text-psycho-rewardLight font-bold">Need ${needed}</span>` : `<span class="text-psycho-actionLight font-bold">Unlocked</span>`}
                                     </div>
                                 </div>
                             </div>
 
                             <div class="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-psycho-action to-green-400 transition-all duration-1000" style="width: ${progress}%"></div>
+                                <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-psycho-action to-psycho-actionLight transition-all duration-1000" style="width: ${progress}%"></div>
                             </div>
                         </div>
                     </div>`;
@@ -921,10 +691,10 @@
                                 How to Order?
                             </div>
                         </div>
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent pointer-events-none"></div>
                         <div class="absolute bottom-4 left-4 right-4 text-center">
                             <div class="text-white font-bold text-sm mb-0.5">Watch 30s Guide</div>
-                            <div class="text-white/70 text-[10px] font-medium uppercase tracking-widest">Learn to Save 60%</div>
+                            <div class="text-slate-200 text-[10px] font-medium uppercase tracking-widest">Learn to Save 60%</div>
                         </div>
                     </div>
                 </div>`;
@@ -945,7 +715,7 @@
                                 ${
                                     habitState.streakDays >= 3
                                     ? `<div class="text-[11px] text-psycho-actionLight font-bold opacity-90">
-                                           You’ve ordered <span class="underline decoration-green-400">${habitState.streakDays} days</span> in a row.
+                                           You’ve ordered <span class="underline decoration-psycho-actionLight">${habitState.streakDays} days</span> in a row.
                                        </div>`
                                     : habitState.totalOrders >= 3
                                     ? `<div class="text-[11px] text-psycho-actionLight font-bold opacity-90">
@@ -957,11 +727,11 @@
                                 }
                             </div>
                             <button onclick="openFullFeed('${PRODUCTS[0].id}', true)" class="group relative overflow-hidden bg-slate-900/30 backdrop-blur-md border border-white/10 rounded-full pr-4 pl-1.5 py-1.5 flex items-center gap-2.5 shadow-xl active:scale-95 transition-all cursor-pointer hover:bg-slate-800/50 hover:border-white/20">
-                                <div class="absolute inset-0 bg-gradient-to-r from-pink-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <div class="relative w-7 h-7 bg-gradient-to-br from-pink-600 via-red-500 to-yellow-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 ring-2 ring-black/20">
+                                <div class="absolute inset-0 bg-gradient-to-r from-slate-900/30 to-slate-800/30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div class="relative w-7 h-7 bg-gradient-to-br from-slate-700 via-slate-600 to-slate-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 ring-2 ring-black/20">
                                     <i data-lucide="play" size="10" class="fill-white text-white ml-0.5"></i>
                                 </div>
-                                <span class="relative text-[10px] font-black tracking-widest text-white/90 group-hover:text-white">JODO TV</span>
+                                <span class="relative text-[10px] font-black tracking-widest text-white/90 group-hover:text-white">Duvva Market Live</span>
                             </button>
                         </div>
                         <div class="flex items-center justify-between gap-3 text-xs font-semibold text-white/70 bg-black/20 p-2.5 rounded-xl border border-white/10 backdrop-blur-sm transition-colors duration-300" id="home-header-timer-container">
@@ -973,14 +743,14 @@
                     <!-- 🟢 TRIGGER 1 & 17: TRUST STRIP + WARD LEADERBOARD -->
                     <div class="px-4 mt-3 mb-1">
                         <!-- BLUE: Trust Strip. Safe Information -->
-                        <div id="trust-strip" class="bg-psycho-trustBg border border-blue-200 rounded-xl py-2 px-3 flex justify-between items-center shadow-sm relative overflow-hidden transition-all duration-300">
+                        <div id="trust-strip" class="bg-psycho-trustBg border border-psycho-trust/20 rounded-xl py-2 px-3 flex justify-between items-center shadow-sm relative overflow-hidden transition-all duration-300">
                             <div class="flex flex-col relative z-10">
                                 <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">Duvva Shops Today <span class="text-[8px] text-slate-300 font-normal">5:02 AM</span></span>
-                                <span class="text-xs font-black text-psycho-urgency line-through decoration-red-500/50">₹${featuredMandiPrice}/kg</span>
+                                <span class="text-xs font-black text-psycho-urgency line-through decoration-psycho-urgency/50">₹${featuredMandiPrice}/kg</span>
                             </div>
                             
                             <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                                <i data-lucide="arrow-right" size="14" class="text-blue-300"></i>
+                                <i data-lucide="arrow-right" size="14" class="text-psycho-trust/50"></i>
                             </div>
 
                             <div class="flex flex-col items-end relative z-10">
@@ -999,22 +769,22 @@
                             </div>
                             <!-- RED text only for "Catch Up" urgency -->
                             <div class="text-psycho-urgency flex items-center gap-1">
-                                Your Ward: 12 orders <span class="bg-red-50 px-1 rounded text-[9px] uppercase">Catch Up</span>
+                                Your Ward: 12 orders <span class="bg-psycho-urgencyBg px-1 rounded text-[9px] uppercase">Catch Up</span>
                             </div>
                         </div>
                     </div>
 
                     ${heroContent}
 
-                    <div class="px-4 space-y-4 mt-4"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Fresh Harvest</h2>${sortedProducts.map(p => {
+                    <div class="px-4 space-y-4 mt-4"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Today's Rate</h2>${sortedProducts.map(p => {
                         const activeGid = userActiveGroupIds[p.id]; const activeGroup = activeGid ? state.groups[activeGid] : null;
                         let buttonHtml, timerHtml = ''; 
                         if (activeGid && activeGroup) {
-                            timerHtml = `<div class="flex items-center gap-1.5 bg-red-50 text-red-600 px-2 py-1 rounded-md border border-red-100 shadow-sm ml-auto mb-2"><div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div><span class="text-[10px] font-mono font-bold live-timer-home" data-expires="${activeGroup.expiresAt}">...</span></div>`;
+                            timerHtml = `<div class="flex items-center gap-1.5 bg-psycho-urgencyBg text-psycho-urgency px-2 py-1 rounded-md border border-psycho-urgency/20 shadow-sm ml-auto mb-2"><div class="w-1.5 h-1.5 bg-psycho-urgency rounded-full animate-pulse"></div><span class="text-[10px] font-mono font-bold live-timer-home" data-expires="${activeGroup.expiresAt}">...</span></div>`;
                             buttonHtml = `<button onclick="openGroup('${activeGid}')" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold text-sm shadow-xl flex items-center justify-center gap-2 border border-slate-700 mt-3 cursor-pointer"><span>View Your Squad</span><i data-lucide="arrow-right" size="16"></i></button>`;
                         } else {
                             // GREEN: Start Squad (Action)
-                            buttonHtml = `<button onclick="openStartModal('${p.id}')" class="w-full bg-psycho-action text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all hover:shadow-psycho-action/40 mt-3 cursor-pointer"><span>Start Live Squad</span><span class="bg-black/20 text-xs px-2 py-0.5 rounded border border-white/10 font-medium">Save ₹${p.price1 - p.price5}</span></button>`;
+                            buttonHtml = `<button onclick="openStartModal('${p.id}')" class="w-full bg-psycho-action text-white py-3.5 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect transition-all active:scale-95 cursor-pointer"><span>Buy Together</span><span class="bg-black/20 text-[10px] px-1.5 py-0.5 rounded border border-white/10 font-medium ml-1">Save ₹${p.price1 - p.price5}</span></button>`;
                         }
                         
                         let backgroundContent = p.videoSrc ? `<div class="w-28 h-40 rounded-xl flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden border border-black/5"><video src="${p.videoSrc}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-90"></video><div class="absolute top-0 left-0 bg-black/60 backdrop-blur-md text-white text-[8px] font-bold px-1.5 py-0.5 rounded-br-lg border-b border-r border-white/10 z-20 shadow-sm">${p.farmer}</div><div class="absolute bottom-1 right-1 bg-black/50 text-white text-[8px] px-1.5 rounded flex items-center gap-1 z-10"><i data-lucide="play" size="8"></i> Live</div></div>` : `<div class="w-28 h-40 ${p.videoClass} video-grain rounded-xl flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden border border-black/5"><div class="absolute top-0 left-0 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-br-lg border-b border-r border-white/10 z-20 shadow-sm">₹${p.price5}</div><i data-lucide="${p.icon}" size="32" class="text-white/80 z-10 relative group-hover/img:scale-110 transition-transform"></i></div>`;
@@ -1022,7 +792,7 @@
                         return `
                         <div class="card-modern relative overflow-hidden group">
                             <!-- GOLD: Best Price Badge -->
-                            <div class="absolute top-0 right-0 bg-gradient-to-bl from-amber-400 to-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-bl-xl shadow-md z-10">SAVE ₹${p.price1 - p.price5}</div>
+                            <div class="absolute top-0 right-0 bg-psycho-rewardLight text-white text-[10px] font-black px-2.5 py-1 rounded-bl-xl shadow-md z-10">SAVE ₹${p.price1 - p.price5}</div>
                             <div class="p-3.5">
                                 <div class="flex gap-3 mb-3 cursor-pointer group/img" onclick="openFullFeed('${p.id}')">
                                     ${backgroundContent}
@@ -1031,36 +801,377 @@
                                         <div class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md inline-block mb-1">${p.unit}</div>
                                         <div class="text-xs text-slate-400 font-medium">${p.nameTe}</div>
                                         <!-- BLUE: Trust / Guarantee -->
-                                        <div class="flex items-center gap-1 text-[10px] font-bold text-psycho-trust bg-psycho-trustBg px-2 py-1 rounded mt-2 w-fit border border-blue-100"><i data-lucide="truck" size="12"></i> Get by Tomorrow, 9 AM</div>
+                                        <div class="flex items-center gap-1 text-[10px] font-bold text-psycho-trust bg-psycho-trustBg px-2 py-1 rounded mt-2 w-fit border border-psycho-trust/20"><i data-lucide="truck" size="12"></i> Get by Tomorrow, 9 AM</div>
                                     </div>
                                 </div>
-                                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden">${timerHtml}${getPricingRoadmapHTML(p, 'light')}</div>
-                                ${buttonHtml}
+                                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden">${timerHtml}${getPricingRoadmapHTML(p, 1)}${buttonHtml}</div>
                             </div>
                         </div>`;
                     }).join('')}</div></div>`;
 
+            // MANDI PRICE FLASH LOGIC
             const mandiPriceEl = document.querySelector('#trust-strip .line-through');
             const squadPriceEl = document.querySelector('#trust-strip .text-psycho-action');
             if (mandiPriceEl && squadPriceEl) {
                 const p = PRODUCTS[0];
                 mandiPriceEl.innerText = `₹${p.mandiPrice}/kg`;
                 squadPriceEl.innerText = `₹${p.price5}/kg`;
+                
+                if (state.lastMandiUpdate.id === p.id) {
+                    if (state.lastMandiUpdate.dir === 'up') mandiPriceEl.classList.add('animate-flash-red');
+                    if (state.lastMandiUpdate.dir === 'down') mandiPriceEl.classList.add('animate-flash-green');
+                }
             }
 
             const updateHomeTimers = () => {
                 const now = Date.now();
                 const formatTime = (diff) => { if (diff <= 0) return "00h 00m 00s 00"; const h = Math.floor(diff / 3600000); const m = Math.floor((diff % 3600000) / 60000); const s = Math.floor((diff % 60000) / 1000); const ms = Math.floor((diff % 1000) / 10); return `${h}h ${m < 10 ? '0'+m : m}m ${s < 10 ? '0'+s : s}s ${ms < 10 ? '0'+ms : ms}`; };
                 const headerTimer = document.getElementById('appbar-header-timer'); const headerContainer = document.getElementById('home-header-timer-container');
-                if (headerTimer) { const expires = parseInt(headerTimer.dataset.expires); const diff = expires - now; headerTimer.innerText = formatTime(diff); if (diff <= 0) { headerContainer.classList.remove('bg-black/20', 'border-white/10'); headerContainer.classList.add('bg-red-600', 'border-red-500', 'animate-pulse'); } else { headerContainer.classList.add('bg-black/20', 'border-white/10'); headerContainer.classList.remove('bg-red-600', 'border-red-500', 'animate-pulse'); } }
-                document.querySelectorAll('.live-timer-home').forEach(el => { const expires = parseInt(el.dataset.expires); const diff = expires - now; el.innerText = formatTime(diff); if (diff <= 0) el.classList.add('text-red-300'); });
+                if (headerTimer) { const expires = parseInt(headerTimer.dataset.expires); const diff = expires - now; headerTimer.innerText = formatTime(diff); if (diff <= 0) { headerContainer.classList.remove('bg-black/20', 'border-white/10'); headerContainer.classList.add('bg-psycho-urgency', 'border-psycho-urgency', 'animate-pulse'); } else { headerContainer.classList.add('bg-black/20', 'border-white/10'); headerContainer.classList.remove('bg-psycho-urgency', 'border-psycho-urgency', 'animate-pulse'); } }
+                document.querySelectorAll('.live-timer-home').forEach(el => { const expires = parseInt(el.dataset.expires); const diff = expires - now; el.innerText = formatTime(diff); if (diff <= 0) el.classList.add('text-psycho-urgency'); });
             };
             updateHomeTimers(); state.timerInterval = setInterval(updateHomeTimers, 50);
             startTicker();
             initBehaviorEngine();
         }
 
+        // --- RESTORED FUNCTIONS ---
+        function goHome() { 
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            if (state.hesitationInterval) clearInterval(state.hesitationInterval);
+            if (state.dependencyInterval) clearInterval(state.dependencyInterval);
+            if (state.painLoopInterval) clearInterval(state.painLoopInterval);
+            if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
+            if (state.mandiGroupInterval) clearInterval(state.mandiGroupInterval);
+            if (state.scrollObserver) state.scrollObserver.disconnect();
+            
+            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', location.pathname); } catch(e) {} 
+            state.view = 'home'; state.currentGroupId = null; render(); 
+            startTicker(); 
+        }
+
+        function openGroup(gid) { 
+            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', `?group=${gid}`); } catch(e) {} 
+            state.currentGroupId = gid; state.view = 'group'; render(); 
+        }
+
+        function openLiveGuide() {
+            const videoSrc = GUIDE_VIDEO_SRC;
+            const node = createNodeFromHTML(`
+                <div id="live-guide-overlay" class="fixed inset-0 z-[80] flex justify-center items-center bg-slate-900/95 backdrop-blur-sm animate-in fade-in duration-200">
+                    <button id="close-guide" class="absolute top-6 right-6 z-[90] p-2 bg-white/10 backdrop-blur-md rounded-full text-white border border-white/10 hover:bg-white/20 transition-colors cursor-pointer tap-effect"><i data-lucide="x" size="24"></i></button>
+                    <div class="w-full max-w-md h-full relative flex flex-col justify-center">
+                        <div class="aspect-[9/16] w-full bg-black relative rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+                            <video src="${videoSrc}" autoplay loop playsinline controls class="w-full h-full object-cover"></video>
+                            <div class="absolute top-4 left-4 bg-psycho-urgency text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-20">🔴 LIVE GUIDE</div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            node.querySelector('#close-guide').onclick = () => node.remove();
+            document.body.appendChild(node);
+            lucide.createIcons();
+        }
+
+        window.goHome = goHome;
+        window.openGroup = openGroup;
+        window.openLiveGuide = openLiveGuide;
+
+        window.openFullFeed = function(startPid, forceOpen = false) {
+            if (!forceOpen) {
+                const activeGid = getActiveGroupId(startPid);
+                if (activeGid) { window.openGroup(activeGid); return; }
+            }
+            const slidesHtml = PRODUCTS.map(p => {
+                let backgroundContent = p.videoSrc ? `<div class="absolute inset-0 w-full h-full bg-black rounded-2xl overflow-hidden"><video src="${p.videoSrc}" autoplay loop playsinline controls class="w-full h-full object-cover"></video></div>` : `<div class="absolute inset-0 z-0 ${p.videoClass} video-grain hidden"></div>`;
+                const slideActiveGid = getActiveGroupId(p.id);
+                let buttonHtml = slideActiveGid ? `<button onclick="openGroup('${slideActiveGid}')" class="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect cursor-pointer"><span>Check My Group</span><i data-lucide="arrow-right" size="16"></i></button>` : `<button onclick="openStartModal('${p.id}')" class="w-full bg-psycho-action text-white py-3.5 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect transition-all active:scale-95 cursor-pointer"><span>Buy Together</span><span class="bg-black/20 text-[10px] px-1.5 py-0.5 rounded border border-white/10 font-medium ml-1">Save ₹${p.price1 - p.price5}</span></button>`;
+                return `<div id="slide-${p.id}" class="snap-center shrink-0 relative w-full h-full bg-black overflow-hidden flex flex-col"><div class="absolute inset-0 z-0">${backgroundContent}<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div></div><div class="absolute top-6 left-4 right-4 z-40 flex justify-between items-start"><div class="bg-psycho-urgency/90 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm"><span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE DEAL</div><div class="bg-black/30 backdrop-blur-md text-white text-[10px] font-medium px-2 py-1 rounded-full border border-white/10 flex items-center gap-1"><i data-lucide="eye" size="10"></i> ${p.liveViewers}</div></div><div class="absolute bottom-0 left-0 right-0 p-4 pb-6 z-30 flex flex-col gap-3"><div class="text-white drop-shadow-md flex flex-col gap-1"><div class="flex items-center gap-2"><div class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">@${p.farmer}</div></div><h3 class="font-black text-xl leading-tight">${p.name}</h3><div class="text-slate-200 text-xs font-medium opacity-90 truncate">${p.unit} Bundle • ${p.nameTe}</div></div>${getPricingRoadmapHTML(p, 1)}${buttonHtml}</div></div>`;
+            }).join('');
+            const node = createNodeFromHTML(`<div id="full-feed-overlay" class="fixed inset-0 z-[70] flex justify-center items-center bg-slate-900/90 backdrop-blur-sm animate-in fade-in duration-200"><button id="close-feed" class="absolute top-6 right-6 z-[80] p-2 bg-white/10 backdrop-blur-md rounded-full text-white border border-white/10 hover:bg-white/20 transition-colors cursor-pointer tap-effect"><i data-lucide="x" size="24"></i></button><div class="w-full max-w-md h-full bg-black relative shadow-2xl overflow-hidden"><div class="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black scroll-container">${slidesHtml}</div></div></div>`);
+            node.querySelector('#close-feed').onclick = () => node.remove();
+            
+            setTimeout(() => {
+                const scrollContainer = node.querySelector('.scroll-container');
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        const video = entry.target.querySelector('video');
+                        if (video) {
+                            if (entry.isIntersecting) {
+                                const playPromise = video.play();
+                                if (playPromise !== undefined) { playPromise.catch(error => {}); }
+                            } else {
+                                video.pause();
+                                video.currentTime = 0;
+                            }
+                        }
+                    });
+                }, { root: scrollContainer, threshold: 0.7 });
+                const slides = node.querySelectorAll('[id^="slide-"]');
+                slides.forEach(slide => observer.observe(slide));
+            }, 100);
+
+            document.body.appendChild(node);
+            lucide.createIcons();
+            const target = document.getElementById(`slide-${startPid}`);
+            if (target) target.scrollIntoView({ behavior: 'auto' });
+        }
+
+        window.openStartModal = function(pid) {
+            const fullFeed = document.getElementById('full-feed-overlay'); if(fullFeed) fullFeed.remove();
+            const p = PRODUCTS.find(x => x.id === pid);
+            const user = state.user;
+            const savings = p.price1 - p.price5;
+            
+            const node = createNodeFromHTML(`
+                <div class="flex flex-col h-full transition-all duration-300" id="modal-container-inner">
+                    <div class="sticky -top-8 -mt-8 pt-8 pb-4 -mx-6 px-6 bg-white/95 backdrop-blur-md z-50 flex items-center justify-between mb-4 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <button id="back-btn-modal" class="text-slate-400 hover:text-slate-600 transition-colors p-1 -ml-1 rounded-full hover:bg-slate-100 active:scale-95"><i data-lucide="arrow-left" size="24"></i></button>
+                            <h3 class="font-black text-xl text-slate-800 tracking-tight">Start Group Buy</h3>
+                        </div>
+                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer transition-colors active:scale-95"><i data-lucide="x" size="20"></i></button>
+                    </div>
+                    
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="w-16 h-16 ${p.imageColor} rounded-2xl flex items-center justify-center shrink-0 text-white shadow-md relative overflow-hidden">
+                            <div class="absolute bottom-0 left-0 w-full h-1/3 bg-black/40 backdrop-blur-sm flex items-center justify-center text-[8px] font-bold text-white z-10">${p.farmer}</div>
+                            <i data-lucide="${p.icon}" size="32"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-black text-xl text-slate-900 leading-tight mb-1">${p.name}</h4>
+                            
+                            <div class="flex flex-wrap gap-1.5 mt-1">
+                                <span class="bg-psycho-alertBg text-psycho-alert px-1.5 py-0.5 rounded text-[9px] font-bold border border-orange-100 flex items-center gap-1 animate-pulse"><i data-lucide="flame" size="8"></i> Only ${p.remainingStock}kg left</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${getPricingRoadmapHTML(p, 1)}
+
+                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4 mt-2">
+                        <div class="ml-1">
+                            <div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div>
+                            <div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button id="btn-minus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer">
+                                <i data-lucide="minus" size="20"></i>
+                            </button>
+                            <span id="qty-display" class="font-black text-xl w-20 text-center text-slate-800 tabular-nums">0.5 kg</span>
+                            <button id="btn-plus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer">
+                                <i data-lucide="plus" size="20"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    ${getPriceBreakdownHTML(p)}
+                    
+                    <div class="space-y-4 mb-2">
+                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="user" size="16"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-slate-300 py-3.5 pl-10 pr-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Your Name"></div>
+                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="phone" size="16"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-slate-300 py-3.5 pl-10 pr-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Phone Number"></div>
+                    </div>
+
+                    <div class="mt-auto relative">
+                        <button id="confirm-btn" class="w-full bg-psycho-action text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-green-600/30 btn-press flex items-center justify-center gap-2 cursor-pointer mt-6 mb-2">
+                            <i data-lucide="users" size="24"></i> Create Squad
+                        </button>
+                        <div class="error-container"></div>
+                        
+                        <div class="mt-3 text-[10px] text-psycho-trust text-center bg-psycho-trustBg py-1.5 rounded-lg border border-blue-100 font-medium">
+                            <i data-lucide="shield" size="10" class="inline mb-0.5"></i> Pay safely at delivery. Cancel anytime.
+                        </div>
+
+                        <div id="lock-in-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 rounded-2xl">
+                            <div class="text-center animate-pop">
+                                <div class="w-12 h-12 bg-psycho-action rounded-full flex items-center justify-center mx-auto mb-2 shadow-xl shadow-green-500/40 text-white"><i data-lucide="check" size="24"></i></div>
+                                <div class="text-green-800 font-black text-lg">Squad Created!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            showModalNode(node);
+            const getQty = setupQuantityLogic(node, p, '#price-label');
+            
+            if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
+            state.mandiModalInterval = setInterval(() => {
+                const mandiEl = node.querySelector('.decoration-psycho-urgency');
+                if (mandiEl) mandiEl.innerText = `₹${p.mandiPrice}`;
+            }, 5000);
+
+            const closeLogic = () => {
+                if (state.hesitationInterval) clearInterval(state.hesitationInterval);
+                if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
+                window.closeModal();
+            };
+
+            node.querySelector('#close-modal').addEventListener('click', closeLogic);
+            node.querySelector('#back-btn-modal').addEventListener('click', closeLogic);
+            
+            const confirmBtn = node.querySelector('#confirm-btn');
+
+            if (state.hesitationInterval) clearInterval(state.hesitationInterval);
+            state.hesitationInterval = setInterval(() => {
+                const n = Math.floor(Math.random() * 3);
+                const msgs = [
+                    "📉 Others are joining — price may change",
+                    "🔥 This item is in demand right now",
+                    "⚠ Stock reduces while you wait"
+                ];
+                toast(msgs[n], ["alert-circle", "flame", "package"][n]);
+                triggerVibration();
+            }, 7000);
+
+            confirmBtn.onclick = async function() {
+                this.disabled = true;
+                const name = safeVal(node.querySelector('#inp-name'));
+                const phone = safeVal(node.querySelector('#inp-phone'));
+                const qty = getQty();
+                const errCont = node.querySelector('.error-container');
+
+                if (!name || !/^[6-9]\d{9}$/.test(phone)) {
+                    this.disabled = false;
+                    showFieldError(errCont, 'Enter Valid Name & Phone');
+                    return;
+                }
+
+                document.getElementById('lock-in-overlay').classList.remove('opacity-0');
+                document.getElementById('lock-in-overlay').classList.add('opacity-100');
+                
+                if (state.hesitationInterval) clearInterval(state.hesitationInterval);
+                if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
+
+                try {
+                    saveUser(name, phone);
+                    const gid = 'g' + Date.now();
+                    const expires = Date.now() + EXPIRY_MS;
+                    
+                    const group = { id: gid, productId: pid, ownerName: name, expiresAt: expires, createdAt: Date.now(), status: 'open' };
+                    const member = { groupId: gid, name, phone, isLeader: true, quantity: qty };
+                    
+                    state.groups[gid] = group;
+                    state.members[gid] = [member];
+                    saveData();
+                    
+                    markOrderHabit(); 
+
+                    setTimeout(() => { 
+                        window.closeModal(); 
+                        window.openGroup(gid); 
+                        triggerConfetti();
+                    }, 800); 
+                } catch (err) {
+                    this.disabled = false;
+                    showFieldError(errCont, 'Error saving data');
+                }
+            };
+        };
+
+        window.openAddMemberModal = function(gid) {
+            const members = state.members[gid] || []; if(members.length >= 5) return toast("Group is full!", 'lock');
+            const group = state.groups[gid]; const p = PRODUCTS.find(x => x.id === group.productId);
+            
+            const node = createNodeFromHTML(`<div><div class="flex items-center justify-between mb-6"><h3 class="font-bold text-xl text-slate-800">Add Neighbor</h3><button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer"><i data-lucide="x" size="20"></i></button></div>
+            
+            ${getPricingRoadmapHTML(p, members.length)}
+
+            <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4 mt-2">
+                <div class="ml-1">
+                    <div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div>
+                    <div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btn-minus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer">
+                        <i data-lucide="minus" size="20"></i>
+                    </button>
+                    <span id="qty-display" class="font-black text-xl w-20 text-center text-slate-800 tabular-nums">0.5 kg</span>
+                    <button id="btn-plus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer">
+                        <i data-lucide="plus" size="20"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Neighbor Name</label><input id="m-name" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Friend Name"></div><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Phone Number</label><input id="m-phone" type="tel" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Phone Number"></div></div><div class="mt-auto mb-2"><p class="text-center text-[11px] text-slate-400 font-medium mt-2 flex items-center justify-center gap-1"><i data-lucide="info" size="10"></i> Add neighbor if they are with you.</p></div>
+            <button id="add-btn" class="w-full bg-psycho-action text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-green-600/30 btn-press flex items-center justify-center gap-2 cursor-pointer mt-4">
+                <i data-lucide="plus-circle" size="24"></i> Add Neighbor
+            </button>
+            <div class="error-container"></div>
+            </div>`);
+            
+            showModalNode(node);
+            const getQty = setupQuantityLogic(node, p, null);
+            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
+            
+            const addBtn = node.querySelector('#add-btn');
+            addBtn.onclick = async function() { 
+                this.disabled = true;
+                const name = safeVal(node.querySelector('#m-name')); 
+                const phone = safeVal(node.querySelector('#m-phone')); 
+                const qty = getQty(); 
+                const errCont = node.querySelector('.error-container'); 
+                
+                if (!name || !/^[6-9]\d{9}$/.test(phone)) { 
+                    this.disabled = false; 
+                    showFieldError(errCont, 'Valid Details Required'); 
+                    return; 
+                } 
+                
+                this.innerHTML = '<span class="animate-pulse">Adding...</span>';
+                
+                try { 
+                    const memberData = { groupId: gid, name, phone, isLeader: false, quantity: qty }; 
+                    if (!state.members[gid]) state.members[gid] = []; 
+                    state.members[gid].push(memberData); 
+                    saveData(); 
+                    setTimeout(() => { 
+                        window.closeModal(); 
+                        toast('Added Successfully!', 'check-circle'); 
+                        render(); 
+                        triggerConfetti(); 
+                    }, 500); 
+                } catch (err) { 
+                    toast('Error Saving', 'alert-circle'); 
+                    this.disabled = false;
+                    this.innerHTML = '<i data-lucide="plus-circle" size="24"></i> Add Neighbor';
+                    if(window.lucide) window.lucide.createIcons();
+                } 
+            }; 
+        };
+
+        window.openEditMemberModal = function(gid, memberIndex) {
+            const member = state.members[gid][memberIndex]; const group = state.groups[gid]; const p = PRODUCTS.find(x => x.id === group.productId);
+            const members = state.members[gid] || [];
+            const node = createNodeFromHTML(`<div><div class="flex items-center justify-between mb-6"><h3 class="font-bold text-xl text-slate-800">Edit Order</h3><button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer"><i data-lucide="x" size="20"></i></button></div>
+            
+            ${getPricingRoadmapHTML(p, members.length)}
+
+            <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4 mt-2">
+                <div class="ml-1">
+                    <div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div>
+                    <div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btn-minus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer">
+                        <i data-lucide="minus" size="20"></i>
+                    </button>
+                    <span id="qty-display" class="font-black text-xl w-20 text-center text-slate-800 tabular-nums">...</span>
+                    <button id="btn-plus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer">
+                        <i data-lucide="plus" size="20"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all"></div><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Phone</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all"></div></div><button id="save-btn" class="w-full bg-psycho-action text-white h-14 rounded-2xl font-bold text-lg shadow-lg btn-press flex items-center justify-center gap-2 cursor-pointer">Save Changes</button></div>`);
+            showModalNode(node);
+            const getQty = setupQuantityLogic(node, p, null);
+            const targetQty = member.quantity || 1; const plusBtn = node.querySelector('#btn-plus'); for(let i=1; i<targetQty; i++) { plusBtn.click(); }
+            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
+            node.querySelector('#save-btn').onclick = () => { const name = safeVal(node.querySelector('#m-name')); const phone = safeVal(node.querySelector('#m-phone')); const qty = getQty(); if (!name || !/^[6-9]\d{9}$/.test(phone)) return toast('Valid Name & Phone required', 'alert-circle'); state.members[gid][memberIndex] = { ...member, name, phone, quantity: qty }; saveData(); saveUser(name, phone); window.closeModal(); toast('Order Updated!', 'check-circle'); render(); };
+        };
+
         function renderGroup(el) {
+            // 1. CLEANUP PREVIOUS STATES
             if (state.timerInterval) clearInterval(state.timerInterval);
             if (state.hesitationInterval) clearInterval(state.hesitationInterval);
             if (state.dependencyInterval) clearInterval(state.dependencyInterval);
@@ -1071,64 +1182,25 @@
 
             state.oneHourAlerted = false;
 
+            // 2. DATA PREP
             const g = state.groups[state.currentGroupId]; if (!g) return goHome();
             const p = PRODUCTS.find(x => x.id === g.productId); if (!p) return goHome();
             const members = state.members[g.id] || []; const count = members.length;
             const needed = Math.max(0, 5 - count);
+            
+            // Pricing Logic
             let currentPrice = p.price1;
-            let status = 'Starting...';
-            if (count >= 5) { status = 'DEAL UNLOCKED!'; currentPrice = p.price5; } 
-            else if (count >= 2) { status = 'PRICE DROPPED!'; currentPrice = p.price2; }
+            if (count >= 5) currentPrice = p.price5;
+            else if (count >= 2) currentPrice = p.price2;
 
-            const manualOrderMsg = `⚠️ PRICE DROPPING LIVE \n\nNeed 2 more to unlock ₹${p.price5}/kg (Duvva Shops today ₹${p.mandiPrice}!) \n\nJoin fast before timer ends → jodo.in/g/${g.id}`;
-            const companyLink = `https://wa.me/?text=${encodeURIComponent(manualOrderMsg)}`;
-            const timeLeft = Math.max(0, g.expiresAt - Date.now()); const hrs = Math.floor(timeLeft / 3600000);
-            const isUrgent = hrs < 2; const timerColor = isUrgent ? 'text-red-600' : 'text-slate-800'; const timerBg = isUrgent ? 'bg-red-50 border-red-100' : 'bg-white border-slate-100';
-
-            // GREEN: Savings is good
-            const mandiPrice = p.mandiPrice || 0;
-            const savings = mandiPrice > 0 ? mandiPrice - currentPrice : 0;
-            const savingsHtml = mandiPrice > 0 ? `
-                <div class="flex items-center justify-between text-[11px] font-bold bg-white/50 border-t border-slate-100 p-2 text-slate-600">
-                    <div class="flex flex-col items-center">
-                        <span class="text-[9px] uppercase tracking-wider text-slate-400">Duvva Shops</span>
-                        <span class="text-psycho-urgency line-through decoration-red-500" id="group-mandi-price">₹${mandiPrice}</span>
-                    </div>
-                    <i data-lucide="arrow-right" size="12" class="text-slate-300"></i>
-                    <div class="flex flex-col items-center">
-                        <span class="text-[9px] uppercase tracking-wider text-slate-400">Squad</span>
-                        <span class="text-slate-800" id="group-squad-price">₹${currentPrice}</span>
-                    </div>
-                    <div class="h-4 w-px bg-slate-200"></div>
-                    <div class="text-psycho-action flex items-center gap-1">
-                        <i data-lucide="trending-down" size="12"></i> Save ₹${savings}/kg
-                    </div>
-                </div>
-            ` : '';
-
-            state.mandiGroupInterval = setInterval(() => {
-                const mandiBox = document.querySelector('#group-mandi-price');
-                const squadBox = document.querySelector('#group-squad-price');
-                if (mandiBox) mandiBox.innerText = `₹${p.mandiPrice}`;
-                if (squadBox) squadBox.innerText = `₹${currentPrice}`;
-            }, 5000);
-
-            // Progress Bar Color: Green -> Gold
-            const progressWidth = (count / 5) * 100;
-            const progressColor = count >= 5 ? 'bg-psycho-reward' : 'bg-psycho-action';
-
-            // FIX: Zero loss logic
             const loss = p.price1 - currentPrice;
-            let progressText, progressClass;
-            if (loss > 0) {
-                progressText = `YOU ARE LOSING ₹${loss}/${p.weightUnit.toUpperCase()} RIGHT NOW`;
-                progressClass = "text-[9px] font-bold text-slate-500/80 mix-blend-multiply"; // Kept red for pain if needed, but matched existing style
-            } else {
-                progressText = "ADD NEIGHBORS TO START SAVING";
-                progressClass = "text-[9px] font-bold text-slate-500/80 mix-blend-multiply"; // Neutral
-            }
+            const nextSavings = (count < 2) ? (p.price1 - p.price2) : (count < 5) ? (p.price2 - p.price5) : 0;
+            const totalPotentialSavings = p.price1 - p.price5;
 
-            // Find current user member info for Whatsapp Message
+            // Links
+            const manualOrderMsg = `Hi, I want to join the squad for ${p.name}. Need ${needed} more to unlock ₹${p.price5}/kg. Link: jodo.in/g/${g.id}`;
+            const companyLink = `https://wa.me/?text=${encodeURIComponent(manualOrderMsg)}`;
+            
             const currentUserMember = members.find(m => m.name === state.user.name && m.phone === state.user.phone);
             let waOrderLink = "#";
             if(currentUserMember) {
@@ -1138,256 +1210,243 @@
                 waOrderLink = `https://wa.me/${COMPANY_PHONE}?text=${encodeURIComponent(msg)}`;
             }
 
+            // Expiry Time Format
+            const expiryDate = new Date(g.expiresAt);
+            const now = new Date();
+            
+            let hours = expiryDate.getHours();
+            const minutes = expiryDate.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            const minutesStr = minutes < 10 ? '0'+minutes : minutes;
+            const timeStr = hours + ':' + minutesStr + ' ' + ampm;
 
+            // Dynamic Date Label Logic
+            let dateLabel = "Today";
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            if (expiryDate.toDateString() === now.toDateString()) {
+                dateLabel = "Today";
+            } else if (expiryDate.toDateString() === tomorrow.toDateString()) {
+                dateLabel = "Tomorrow";
+            } else {
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                dateLabel = `${monthNames[expiryDate.getMonth()]} ${expiryDate.getDate()}`;
+            }
+
+            // 3. RENDER HTML (THE NEW CLEAN LAYOUT)
             el.innerHTML = `
-                <div class="fade-in bg-white min-h-screen">
-                    <div class="glass-header sticky top-0 z-40 border-b border-white/10 h-16 flex items-center justify-center shadow-sm relative transition-all duration-300">
-                        <div class="absolute left-3 flex items-center gap-3 z-50">
-                            <button onclick="goHome()" class="p-1 text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"><i data-lucide="arrow-left" size="24"></i></button>
-                            <span id="header-title" class="text-white font-bold text-lg tracking-wide drop-shadow-sm transition-opacity duration-300">Squad Status</span>
+                <div class="fade-in bg-slate-50 min-h-screen pb-40 font-sans">
+                    
+                    <!-- 🧨 SECTION 1: HEADER (Psychological Prime) -->
+                    <div class="bg-slate-900 text-white sticky top-0 z-50 px-4 py-4 flex justify-between items-center shadow-md">
+                        <div class="flex items-center gap-3" onclick="goHome()">
+                            <i data-lucide="arrow-left" size="20" class="text-slate-400"></i>
+                            <span class="font-bold text-sm tracking-wide text-slate-200">Our Gang</span>
                         </div>
-                        <div id="sticky-header-timer" class="hidden opacity-0 translate-y-[-20px] transition-all duration-300 flex items-center gap-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full px-5 py-1.5 shadow-2xl"><div class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div><span id="header-timer-text" class="text-white font-mono text-xl font-black tabular-nums tracking-tight drop-shadow-md">00h 00m 00s 00</span></div>
+                        <div class="font-mono font-bold text-lg tracking-widest text-white tabular-nums" id="header-timer">Loading...</div>
                     </div>
-                    <div class="p-6 pb-40">
-                        <!-- RED: Warning Box (Urgent Loss) -->
-                        <div class="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-3 shadow-sm">
-                            <i data-lucide="alert-triangle" class="text-psycho-urgency shrink-0 mt-0.5" size="18"></i>
-                            <div>
-                                <div class="text-xs font-black text-red-700">⚠ YOU ARE LOSING SAVINGS</div>
-                                <div class="text-[10px] font-medium text-red-600 leading-tight mt-0.5">Leaving this squad now costs you ₹38. Complete it to save.</div>
-                            </div>
-                        </div>
 
-                        <div id="main-timer-card" class="${timerBg} border rounded-2xl mb-8 shadow-sm relative overflow-hidden flex flex-col">
-                            <div class="p-4 flex items-center gap-4 relative z-10">
-                                <div class="bg-white p-3 rounded-xl shadow-sm ${isUrgent ? 'animate-pulse' : ''}">
-                                    <i data-lucide="timer" class="${isUrgent ? 'text-red-500' : 'text-slate-400'}" size="24"></i>
-                                </div>
+                    <div class="p-5">
+                        
+                        <!-- 📦 SECTION 1.5: PRODUCT IDENTITY (Added for Context) -->
+                        ${loss > 0 ? `
+                        <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg shadow-sm animate-in fade-in slide-in-from-top-4">
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="alert-triangle" class="text-red-600 mt-1 shrink-0" size="20"></i>
                                 <div>
-                                    <div class="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-0.5">Squad Expiring In</div>
-                                    <div id="live-timer" class="text-2xl font-mono font-black ${timerColor} tracking-tight tabular-nums">Loading...</div>
+                                    <div class="text-red-900 font-black text-lg leading-tight">⚠ You are losing ₹${loss}/kg right now.</div>
+                                    <div class="text-red-700 text-sm mt-1 font-medium leading-snug">Finish the squad to avoid paying extra.</div>
                                 </div>
                             </div>
-                            ${savingsHtml}
-                        </div>
+                        </div>` : ''}
 
-                        <!-- BLUE: Trust Message -->
-                        <p class="text-[10px] text-psycho-trust text-center mt-1 mb-6 bg-blue-50 py-1 rounded inline-block px-3 border border-blue-100 mx-auto w-fit">
-                            If the squad doesn’t complete, you simply pay today’s normal price. No penalty.
-                        </p>
-
-                        <div class="text-center mb-8"><h1 class="font-black text-3xl text-slate-900 mb-1">${p.name}</h1><p class="text-sm text-slate-500 font-medium">${p.unit} • ${p.nameTe}</p></div>
-                        
-                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-8">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-3">Live Pricing Tiers</div>
-                            ${getPricingRoadmapHTML(p, 'light')}
-                            <div class="mt-4 pt-3 border-t border-slate-200 text-center">
-                                ${count < 5 ? `<p class="text-xs text-slate-600 leading-relaxed">If timer ends now, everyone pays <span class="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-bold">₹${currentPrice}</span>.<br>Add <b class="text-psycho-urgency">${needed} more</b> to unlock <span class="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold">₹${p.price5}</span>!</p>` : `<p class="text-xs font-bold text-psycho-action bg-green-50 p-2 rounded-lg">🏆 Maximum Discount Unlocked! Everyone pays ₹${p.price5}.</p>`}
+                        <!-- ⏳ SECTION 3: DOMINANT COUNTDOWN HERO -->
+                        <div class="text-center mb-10 relative">
+                            <div class="inline-block relative">
+                                <div class="text-6xl font-mono font-black text-slate-900 tracking-tighter tabular-nums relative z-10 leading-none" id="hero-timer">
+                                    --:--:--
+                                </div>
+                                <!-- Subtle glow for urgency -->
+                                <div class="absolute inset-0 bg-red-500/20 blur-2xl rounded-full opacity-50 animate-pulse"></div>
                             </div>
-                        </div>
-                        
-                        <!-- NEW PLACEMENT: Share Button Inside Content -->
-                        <a href="${companyLink}" target="_blank" class="block w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold text-sm text-center border border-slate-200 shadow-sm btn-press flex items-center justify-center gap-2 cursor-pointer mb-8">
-                            <i data-lucide="share-2" size="18"></i> Invite 2 more → Save ₹${p.price1 - p.price5}
-                        </a>
-
-                        <!-- MOVED: FIXED BOTTOM BAR NOW HAS 'CONFIRM ORDER' -->
-                        <div class="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-white/90 backdrop-blur-lg border-t border-slate-200 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-50 flex justify-center">
-                             <div class="w-full max-w-md">
-                                <!-- GREEN: Primary Order Action -->
-                                <a href="${waOrderLink}" target="_blank" class="block w-full bg-psycho-action text-white py-4 rounded-2xl font-black text-lg text-center shadow-lg shadow-green-600/30 btn-press flex items-center justify-center gap-2 cursor-pointer transition-transform hover:-translate-y-0.5 animate-pulse">
-                                    <i data-lucide="message-circle" size="22"></i> Confirm Official Order
-                                </a>
-                             </div>
+                            <div class="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mt-3">Expires ${dateLabel} ${timeStr}</div>
                         </div>
 
-                        <div class="mt-8 border-t border-slate-100 pt-8 pb-24">
-                            <div class="flex flex-col gap-2 mb-6">
-                                <!-- ORANGE: Heat Meter (Attention) -->
-                                <div class="flex items-center gap-2 text-psycho-alert bg-psycho-alertBg px-3 py-1.5 rounded-lg border border-orange-100 mb-2">
-                                    <i data-lucide="flame" size="14" class="fill-orange-500"></i>
-                                    <span class="text-xs font-bold">Squad is heating up! 3 people joined recently.</span>
-                                </div>
-
-                                <div class="flex justify-between items-end">
-                                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Group Members</h3>
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="text-psycho-action font-bold text-xs">${count}/5 Joined</span>
-                                        <span class="flex h-2 w-2 relative">
-                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-psycho-action"></span>
-                                        </span>
+                        <!-- 🟩 SECTION 4: PROGRESS TO PRICE (Motivation) -->
+                        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-8">
+                            <div class="space-y-4 mb-6">
+                                <!-- Step 1 -->
+                                <div class="flex justify-between items-center ${count < 2 ? 'opacity-100' : 'opacity-40 grayscale'} transition-all">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold">1</div>
+                                        <span class="text-sm font-bold text-slate-600">1 Person</span>
                                     </div>
+                                    <span class="text-base font-bold text-slate-900">₹${p.price1}</span>
                                 </div>
-                                <div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner relative">
-                                    <div class="h-full ${progressColor} transition-all duration-500 relative" style="width: ${progressWidth}%">
-                                        <div class="absolute inset-0 bg-white/20 animate-slide-shimmer" style="background-size: 200% 100%"></div>
-                                    </div>
-                                    <div class="absolute inset-0 flex items-center justify-center ${progressClass}">
-                                        ${progressText}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="space-y-4">
-                                ${members.map((m, i) => {
-                                    const isCurrentUser = (state.user.name && m.name === state.user.name && m.phone === state.user.phone);
-                                    // FIX: Formatting for weight
-                                    const rawWeight = m.quantity * p.baseWeight;
-                                    const memberWeight = `${rawWeight.toFixed(2)} ${p.weightUnit}`;
-                                    
-                                    const t1Total = m.quantity * p.price1;
-                                    const t2Total = m.quantity * p.price2;
-                                    const t5Total = m.quantity * p.price5;
-
-                                    const getBoxStyle = (tier) => {
-                                        const base = "flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all";
-                                        // 1 Person: SLATE
-                                        if (tier === 1) {
-                                            if (count < 2) return `${base} bg-slate-800 border-slate-800 text-white shadow-md scale-105 z-10 ring-2 ring-slate-200`;
-                                            return `${base} bg-slate-50 border-slate-100 text-slate-300 line-through grayscale`;
-                                        }
-                                        // 2 People: GREEN
-                                        if (tier === 2) {
-                                            if (count >= 2 && count < 5) return `${base} bg-psycho-action border-psycho-action text-white shadow-md scale-105 z-10 ring-2 ring-green-200`;
-                                            if (count >= 5) return `${base} bg-slate-50 border-slate-100 text-slate-300 line-through grayscale`;
-                                            return `${base} bg-white border-slate-200 text-slate-400`;
-                                        }
-                                        // 5 People: GOLD
-                                        if (tier === 5) {
-                                            if (count >= 5) return `${base} bg-psycho-reward border-psycho-reward text-black shadow-lg scale-110 z-20 ring-2 ring-yellow-200`;
-                                            return `${base} bg-yellow-50 border-yellow-200 text-yellow-700`;
-                                        }
-                                    };
-
-                                    return `
-                                        <div class="flex flex-col bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                                            <div class="p-3 pb-0 flex justify-between items-start">
-                                                <div class="flex items-center gap-3">
-                                                    <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-sm font-black text-slate-400 border border-slate-100 shadow-inner">
-                                                        ${m.name[0]}
-                                                    </div>
-                                                    <div>
-                                                        <div class="flex items-center gap-1.5">
-                                                            <div class="text-sm font-bold text-slate-900 uppercase tracking-tight">${m.name}</div>
-                                                            <!-- GREEN: Leader Badge -->
-                                                            ${i === 0 ? '<span class="text-[8px] bg-green-100 text-psycho-action px-1 py-0.5 rounded font-bold uppercase border border-green-200 flex items-center gap-1"><i data-lucide="shield-check" size="8"></i> Leader</span>' : ''}
-                                                        </div>
-                                                        <div class="flex items-center gap-2 mt-0.5">
-                                                            <div class="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">${memberWeight}</div>
-                                                            <div class="text-[10px] text-slate-300 font-mono">${m.phone}</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                ${isCurrentUser ? `
-                                                    <button onclick="openEditMemberModal('${g.id}', ${i})" class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-100">
-                                                        Edit Qty
-                                                    </button>` 
-                                                : ''}
-                                            </div>
-                                            <div class="p-3">
-                                                <div class="grid grid-cols-3 gap-2">
-                                                    <div class="${getBoxStyle(1)}">
-                                                        <div class="text-[8px] font-bold uppercase tracking-wider mb-0.5 opacity-80">1 Person</div>
-                                                        <div class="text-xs font-black">₹${t1Total}</div>
-                                                    </div>
-                                                    <div class="${getBoxStyle(2)}">
-                                                        <div class="text-[8px] font-bold uppercase tracking-wider mb-0.5 opacity-80">2 People</div>
-                                                        <div class="text-xs font-black">₹${t2Total}</div>
-                                                    </div>
-                                                    <div class="${getBoxStyle(5)}">
-                                                        <div class="text-[8px] font-bold uppercase tracking-wider mb-0.5 opacity-80">5 People</div>
-                                                        <div class="text-sm font-black">₹${t5Total}</div>
-                                                    </div>
-                                                </div>
-                                                ${isCurrentUser && count < 5 ? `<div class="text-[10px] text-center mt-2 text-slate-400 font-medium">Add neighbors to verify your bill at <span class="text-slate-800 font-bold">₹${t5Total}</span></div>` : ''}
-                                            </div>
-                                        </div>`;
-                                }).join('')}
                                 
-                                ${Array(needed).fill(0).map((_, idx) => `
-                                    <div onclick="openAddMemberModal('${g.id}')" class="flex items-center gap-3 p-4 bg-slate-50/50 border-2 border-dashed border-slate-300 rounded-2xl opacity-60 cursor-pointer hover:bg-slate-50 transition-colors group">
-                                            <div class="w-10 h-10 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-300 group-hover:border-slate-400 group-hover:text-slate-400">
-                                                <i data-lucide="plus" size="18"></i>
-                                            </div>
-                                            <div>
-                                                <div class="text-xs font-bold text-slate-400 group-hover:text-slate-500">Open Spot #${count + idx + 1}</div>
-                                                <div class="text-[10px] text-slate-400">Tap to add neighbor...</div>
-                                            </div>
+                                <!-- Step 2 -->
+                                <div class="flex justify-between items-center ${count >= 2 && count < 5 ? 'opacity-100' : (count >= 5 ? 'opacity-40 grayscale' : 'opacity-40 grayscale')} transition-all">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-6 h-6 rounded-full ${count >= 2 ? 'bg-psycho-action text-white' : 'bg-slate-200 text-slate-600'} flex items-center justify-center text-xs font-bold">2</div>
+                                        <span class="text-sm font-bold ${count >= 2 ? 'text-psycho-action' : 'text-slate-600'}">2 People</span>
                                     </div>
-                                `).join('')}
+                                    <span class="text-base font-bold text-slate-900">₹${p.price2}</span>
+                                </div>
+
+                                <!-- Step 3 (Gold) -->
+                                <div class="flex justify-between items-center ${count >= 5 ? 'scale-105' : ''} transition-all p-2 -mx-2 rounded-lg ${count >= 5 ? 'bg-amber-50 border border-amber-100' : ''}">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-6 h-6 rounded-full ${count >= 5 ? 'bg-psycho-reward text-black' : 'bg-slate-200 text-slate-600'} flex items-center justify-center text-xs font-bold">5</div>
+                                        <span class="text-sm font-black ${count >= 5 ? 'text-psycho-reward' : 'text-slate-400'}">5 People (Best Price)</span>
+                                    </div>
+                                    <span class="text-2xl font-black ${count >= 5 ? 'text-psycho-reward' : 'text-slate-300'}">₹${p.price5}</span>
+                                </div>
                             </div>
+
+                            <!-- Progress Text -->
+                            <div class="text-center">
+                                <div class="text-3xl font-black text-slate-900 mb-1">${count} <span class="text-slate-300 text-2xl">/</span> 5</div>
+                                <div class="text-sm font-bold ${count < 5 ? 'text-psycho-action' : 'text-psycho-reward'}">
+                                    ${count < 5 ? `Need ${needed} more to unlock ₹${p.price5}` : '🎉 LOWEST PRICE UNLOCKED!'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 👥 SECTION 5: MEMBERS LIST (Social Proof) -->
+                        <div class="space-y-3 mb-8">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Our Gang</h3>
+                            
+                            ${Array(5).fill(0).map((_, i) => {
+                                const member = members[i];
+                                if (member) {
+                                    const isMe = (state.user.name && member.name === state.user.name && member.phone === state.user.phone);
+                                    
+                                    // Calculate totals for this specific member's quantity
+                                    const t1 = Math.round(member.quantity * p.price1);
+                                    const t2 = Math.round(member.quantity * p.price2);
+                                    const t5 = Math.round(member.quantity * p.price5);
+                                    
+                                    return `
+                                    <div class="bg-white border border-slate-100 p-3 rounded-xl shadow-sm mb-3 transition-all" onclick="openEditMemberModal('${g.id}', ${i})">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 rounded-full ${isMe ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'} flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm">
+                                                    ${member.name[0]}
+                                                </div>
+                                                <div>
+                                                    <div class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                                        ${isMe ? 'YOU' : member.name}
+                                                        ${member.isLeader ? '<i data-lucide="crown" size="12" class="text-amber-500 fill-amber-500"></i>' : ''}
+                                                    </div>
+                                                    <div class="text-xs text-slate-400 font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit} confirmed</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-green-600"><i data-lucide="edit-2" size="16" class="text-slate-300"></i></div>
+                                        </div>
+                                        
+                                        <!-- restored: 1-2-5 Price Matrix for this user -->
+                                        <div class="grid grid-cols-3 gap-2 text-center bg-slate-50/50 rounded-lg p-2 border border-slate-100">
+                                            <div class="flex flex-col">
+                                                <span class="text-[9px] font-bold text-slate-400 uppercase mb-0.5">1 Person</span>
+                                                <span class="text-xs font-medium text-slate-500">₹${t1}</span>
+                                            </div>
+                                            <div class="flex flex-col relative">
+                                                ${count >= 2 && count < 5 ? '<div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] bg-green-100 text-green-700 px-1 rounded font-bold">Current</div>' : ''}
+                                                <span class="text-[9px] font-bold ${count >= 2 ? 'text-psycho-action' : 'text-slate-400'} uppercase mb-0.5">2 People</span>
+                                                <span class="text-xs font-bold ${count >= 2 ? 'text-psycho-action' : 'text-slate-400'}">₹${t2}</span>
+                                            </div>
+                                            <div class="flex flex-col relative">
+                                                ${count >= 5 ? '<div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] bg-amber-100 text-amber-700 px-1 rounded font-bold">Unlocked</div>' : ''}
+                                                <span class="text-[9px] font-bold ${count >= 5 ? 'text-amber-600' : 'text-slate-400'} uppercase mb-0.5">5 People</span>
+                                                <span class="text-xs font-black ${count >= 5 ? 'text-amber-600' : 'text-slate-900'}">₹${t5}</span>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                                } else {
+                                    return `
+                                    <div onclick="openAddMemberModal('${g.id}')" class="flex items-center justify-between bg-slate-50 border-2 border-dashed border-slate-200 p-3 rounded-xl cursor-pointer hover:bg-white hover:border-psycho-action/50 transition-all group mb-3">
+                                        <div class="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
+                                            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400">
+                                                <i data-lucide="user" size="18"></i>
+                                            </div>
+                                            <span class="text-sm font-bold text-slate-500">Open Spot</span>
+                                        </div>
+                                        <div class="text-xs font-bold text-psycho-action bg-green-50 px-2 py-1 rounded border border-green-100">+ Add Neighbor</div>
+                                    </div>`;
+                                }
+                            }).join('')}
+                        </div>
+
+                    </div>
+
+                    <!-- 🟣 SECTION 6 & 7: ACTION BAR (Conversion Engine) -->
+                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 pb-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                        <div class="max-w-md mx-auto">
+                            ${count < 5 ? `
+                            <a href="${companyLink}" target="_blank" class="block w-full bg-psycho-action text-white py-4 rounded-2xl font-black text-lg text-center shadow-lg shadow-green-600/30 btn-press flex items-center justify-center gap-2 relative overflow-hidden group">
+                                <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                                <span>Call Your People</span>
+                                <i data-lucide="arrow-right" size="24"></i>
+                            </a>
+                            <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs font-medium text-slate-500">
+                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                <span>${needed} spots left • Typical squads finish in 6 mins</span>
+                            </div>
+                            ` : `
+                            <a href="${waOrderLink}" target="_blank" class="block w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-lg text-center shadow-xl btn-press flex items-center justify-center gap-2">
+                                <i data-lucide="message-circle" size="24"></i>
+                                <span>Get Best Price Slip</span>
+                            </a>
+                            <div class="text-center mt-3 text-xs font-medium text-green-600 bg-green-50 py-1 rounded inline-block w-full border border-green-100">
+                                🏆 Lowest Price Unlocked!
+                            </div>
+                            `}
                         </div>
                     </div>
+
                 </div>
             `;
 
-            const timerEl = document.getElementById('live-timer');
-            const headerTimerEl = document.getElementById('sticky-header-timer');
-            const headerTimerText = document.getElementById('header-timer-text');
-            const headerTitleEl = document.getElementById('header-title');
-            const mainTimerCard = document.getElementById('main-timer-card');
+            // --- TIMERS & TRIGGERS ---
+            
+            const timerEl = document.getElementById('hero-timer');
+            const headerTimerEl = document.getElementById('header-timer');
 
             if (timerEl) {
                 const tick = () => {
                     const diff = Math.max(0, g.expiresAt - Date.now());
+                    
                     const h = Math.floor(diff / 3600000);
                     const m = Math.floor((diff % 3600000) / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
-                    const ms = Math.floor((diff % 1000) / 10);
-                    const mainStr = `${h}h ${m}m ${s}s ${ms}`;
-                    timerEl.innerText = mainStr;
-                    if(headerTimerText) headerTimerText.innerText = mainStr;
                     
-                    if (diff < 3600000 && !state.oneHourAlerted) {
-                        state.oneHourAlerted = true;
-                        toast("⚠️ 1 hour left — prices may rise", "clock");
-                        triggerVibration();
-                        if(mainTimerCard) mainTimerCard.classList.add("animate-shake");
-                    }
-
-                    if (diff <= 0) {
-                        timerEl.classList.remove('text-slate-800', 'text-red-600'); timerEl.classList.add('text-red-600');
-                        if (headerTimerEl) { headerTimerEl.classList.remove('bg-black/40', 'border-white/10'); headerTimerEl.classList.add('bg-red-600', 'border-red-500'); }
+                    // Format: 01 : 12 : 55
+                    const fmt = (n) => n < 10 ? '0'+n : n;
+                    const mainStr = `${fmt(h)} : ${fmt(m)} : ${fmt(s)}`;
+                    
+                    timerEl.innerText = mainStr;
+                    if(headerTimerEl) headerTimerEl.innerText = mainStr;
+                    
+                    // Red styling if urgent
+                    if (diff < 7200000) { // < 2 hours
+                        timerEl.classList.add('text-red-600');
+                        if(headerTimerEl) headerTimerEl.classList.add('text-red-400');
                     }
                 };
-                state.timerInterval = setInterval(tick, 50);
+                state.timerInterval = setInterval(tick, 1000); 
                 tick();
-
-                state.scrollObserver = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (!entry.isIntersecting) { 
-                            headerTimerEl.classList.remove('hidden', 'opacity-0', 'translate-y-[-20px]'); 
-                            if(headerTitleEl) headerTitleEl.classList.add('opacity-0');
-                        } 
-                        else { 
-                            headerTimerEl.classList.add('opacity-0', 'translate-y-[-20px]'); 
-                            if(headerTitleEl) headerTitleEl.classList.remove('opacity-0');
-                            setTimeout(() => { if (entry.isIntersecting) headerTimerEl.classList.add('hidden'); }, 300); 
-                        }
-                    });
-                }, { threshold: 0.1 });
-                state.scrollObserver.observe(mainTimerCard);
             }
 
-            state.dependencyInterval = setInterval(() => {
-                if (count > 1 && count < 5) {
-                    const randomMember = members.length > 0 ? members[Math.floor(Math.random() * members.length)].name : "Your Neighbor";
-                    showTicker(`👀 ${randomMember} is depending on you to finish this squad`, 'urgent');
-                }
-                if (count === 3) setTimeout(() => showTicker("⚠️ Squad stuck at 3 — they are waiting for you", 'urgent'), 3000);
-                if (count === 4) setTimeout(() => showTicker("🔥 Only ONE more member needed to unlock!", 'good'), 3000);
-            }, 12000); 
-
+            // Triggers - Reduced Frequency to avoid noise
             state.painLoopInterval = setInterval(() => {
-                if (count < 5) {
-                    const loss = p.price1 - currentPrice;
-                    if (loss > 0) {
-                         showTicker(`⚠ You are losing ₹${loss}/kg right now by waiting`, 'urgent');
-                         triggerVibration();
-                    }
+                if (count < 5 && loss > 0) {
+                     showTicker(`⚠ You are losing ₹${loss}/kg right now`, 'urgent');
+                     triggerVibration();
                 }
-            }, 9000); 
+            }, 15000); // Slower loop
         }
         
         function init() {
