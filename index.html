@@ -7,32 +7,45 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥬</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        brand: { 900: '#022c22', 800: '#064e3b', 600: '#059669', 500: '#10b981', 100: '#d1fae5', 50: '#ecfdf5' },
-                        harvest: { 500: '#f59e0b', 400: '#fbbf24', 100: '#fef3c7' },
-                        trust: { 500: '#3b82f6', 50: '#eff6ff' }
+                        // 🧠 PSYCHOLOGY COLOR SYSTEM
+                        psycho: {
+                            action: '#059669',     // GREEN: Action, Savings, Confidence
+                            actionLight: '#10b981', 
+                            urgency: '#ef4444',    // RED: Fear, Loss, Spike
+                            reward: '#f59e0b',     // GOLD: Goal, Best Price, Status
+                            rewardLight: '#fbbf24',
+                            trust: '#3b82f6',      // BLUE: Safety, Verification, Calm
+                            trustBg: '#eff6ff',
+                            alert: '#f97316',      // ORANGE: Attention without Panic
+                            alertBg: '#fff7ed',
+                            neutral: '#64748b',    // SLATE: Baseline, "Bad Deal"
+                            base: '#f8fafc'        // WHITE/SLATE: Eye Reset
+                        }
                     },
                     animation: {
                         'float-slow': 'float 4s ease-in-out infinite',
                         'slide-shimmer': 'shimmer 2s linear infinite',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
                     },
                     keyframes: {
                         float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-6px)' } },
                         shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
-                        pop: { '0%': { transform: 'scale(0.9)' }, '100%': { transform: 'scale(1)' } }
+                        pop: { '0%': { transform: 'scale(0.9)' }, '100%': { transform: 'scale(1)' } },
+                        shake: { '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' }, '20%, 80%': { transform: 'translate3d(2px, 0, 0)' }, '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' }, '40%, 60%': { transform: 'translate3d(4px, 0, 0)' } }
                     }
                 }
             }
         }
     </script>
     <style>
-        :root { --action-green: #059669; --urgency-red: #ef4444; --reward-gold: #f59e0b; }
         body { 
             font-family: 'Inter', system-ui, sans-serif; 
             background: #0f172a; 
@@ -46,7 +59,7 @@
         #app {
             width: 100%;
             max-width: 28rem;
-            background: #f8fafc;
+            background: #f8fafc; /* RESET WHITE */
             height: 100dvh;
             position: relative;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -56,9 +69,8 @@
         .btn-press { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
         .btn-press:active:not(:disabled) { transform: scale(0.97); }
         
-        .card-modern { background: white; border-radius: 1.25rem; box-shadow: 0 8px 20px -6px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); }
-        .glass-header { background: rgba(2, 44, 34, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); }
+        .card-modern { background: white; border-radius: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #f1f5f9; }
+        .glass-header { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -68,9 +80,16 @@
         input[type=range].slider-lock::-webkit-slider-runnable-track { width: 100%; height: 48px; cursor: pointer; background: rgba(0,0,0,0.05); border-radius: 99px; border: 2px solid rgba(255,255,255,0.8); }
         
         .video-grain { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E"); }
+        
+        .pulse-attention { animation: pulse-fast 2s infinite; }
+        .blur-effect { filter: blur(2px) grayscale(0.5); transition: all 0.3s; }
+        .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+
+        /* Trust Badge Style */
+        .bg-trust-badge { background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
     </style>
 </head>
-<body class="pb-10 antialiased selection:bg-brand-100">
+<body class="pb-10 antialiased selection:bg-psycho-actionLight/20">
 
     <div id="app"></div>
 
@@ -78,15 +97,30 @@
         <div id="modal-content" class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-6 pt-8 shadow-2xl transform transition-all relative overflow-hidden pb-8"></div>
     </div>
 
-    <div id="toast" aria-live="polite" role="status" class="fixed top-20 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl hidden z-[90] flex items-center gap-2 pointer-events-none border border-white/10 transition-all duration-300 tracking-wide animate-pop"></div>
+    <!-- TRIGGER 5 & 16: PSYCHOLOGY TICKER (Strict 3-Color Logic) -->
+    <div id="live-ticker" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-full text-xs font-medium shadow-2xl z-[55] flex items-center gap-2 pointer-events-none border border-white/10 whitespace-nowrap hidden max-w-[90%] overflow-hidden transition-all duration-500">
+        <div id="ticker-dot" class="w-2 h-2 rounded-full animate-pulse shrink-0"></div>
+        <span id="ticker-text" class="truncate font-bold tracking-wide">...</span>
+    </div>
+
+    <div id="toast" aria-live="polite" role="status" class="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl hidden z-[90] flex items-center gap-2 pointer-events-none border border-white/10 transition-all duration-300 tracking-wide animate-pop"></div>
 
     <script>
         // --- CONFIG & STATE ---
         const COMPANY_PHONE = "919999999999"; 
+        const GUIDE_VIDEO_SRC = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
         
-        // 🟢 LIVE GUIDE VIDEO SRC
-        const GUIDE_VIDEO_SRC = 'fun.mp4';
-        
+        // 🚨 PSYCHOLOGY TRIGGERS: ANTICIPATION MICRO HITS 🚨
+        const TICKER_MESSAGES = [
+            { msg: "🔥 Ward 7 is beating your ward! Order now.", type: 'urgent' }, // RED
+            { msg: "⚠️ Price rising in 42 minutes.", type: 'urgent' },           // RED
+            { msg: "⚡ 2 people just joined squads near you.", type: 'neutral' }, // SLATE
+            { msg: "📦 Only 12kg left — people are grabbing fast!", type: 'alert' }, // ORANGE (Attention)
+            { msg: "Ramya (Ward 4) saved ₹45 just now.", type: 'good' },          // GREEN
+            { msg: "Suresh (Block B) unlocked Gold Price.", type: 'good' },       // GREEN
+            { msg: "📉 Duvva Shops prices just went UP. Lock your rate now.", type: 'urgent' } // RED
+        ];
+
         const PRODUCTS = [
             { 
                 id: 'onion', 
@@ -95,15 +129,19 @@
                 unit: '500g', 
                 baseWeight: 0.5, 
                 weightUnit: 'kg', 
-                price1: 25, price2: 22, price5: 18, 
+                price1: 25, price2: 22, price5: 18,
+                mandiPrice: 32, // TRIGGER 1 (Duvva Shops Price)
+                farmerPrice: 12, // TRIGGER 2
+                remainingStock: 14, // TRIGGER 11
                 icon: 'layers', 
                 imageColor: 'bg-red-50 text-red-500', 
                 farmer: 'Raju Bhai', 
+                farmerLoc: 'Duvva', // TRIGGER 4
                 location: 'Duvva Fields', 
                 liveViewers: '1.2k', 
-                recentBuys: '124 bought today', 
+                recentBuys: '124', 
                 videoClass: 'bg-gradient-to-br from-red-800 to-red-950', 
-                videoSrc: 'fun.mp4'
+                videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' 
             },
             { 
                 id: 'oil', 
@@ -112,15 +150,19 @@
                 unit: '500ml', 
                 baseWeight: 0.5, 
                 weightUnit: 'L', 
-                price1: 60, price2: 55, price5: 50, 
+                price1: 60, price2: 55, price5: 50,
+                mandiPrice: 65,
+                farmerPrice: 40,
+                remainingStock: 8,
                 icon: 'droplet', 
-                imageColor: 'bg-harvest-100 text-harvest-500', 
-                farmer: 'Sunil Oil Mills', 
+                imageColor: 'bg-psycho-rewardLight text-psycho-reward', 
+                farmer: 'Sunil', 
+                farmerLoc: 'Mills',
                 location: 'Factory Direct', 
                 liveViewers: '850', 
-                recentBuys: '89 bought today', 
+                recentBuys: '89', 
                 videoClass: 'bg-gradient-to-br from-yellow-600 to-yellow-900', 
-                videoSrc: 'onion.mp4'
+                videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' 
             },
             { 
                 id: 'sugar', 
@@ -130,21 +172,53 @@
                 baseWeight: 0.5, 
                 weightUnit: 'kg', 
                 price1: 24, price2: 22, price5: 20, 
+                mandiPrice: 38,
+                farmerPrice: 15,
+                remainingStock: 42,
                 icon: 'package', 
                 imageColor: 'bg-blue-50 text-blue-500', 
-                farmer: 'Co-op Society', 
+                farmer: 'Co-op', 
+                farmerLoc: 'Society',
                 location: 'Local Stock', 
                 liveViewers: '340', 
-                recentBuys: '45 bought today', 
+                recentBuys: '45', 
                 videoClass: 'bg-gradient-to-br from-blue-700 to-blue-950', 
-                videoSrc: 'fun.mp4'
+                videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' 
             }
         ];
 
-        const DB_KEY = 'jodo_local_db_v53';
+        const DB_KEY = 'jodo_local_db_v54';
         const EXPIRY_MS = 2 * 24 * 60 * 60 * 1000;
+        
+        // 1️⃣ HABIT ENGINE
+        const HABIT_KEY = 'jodo_habit_v1';
+        const habitState = {
+            totalOrders: 0,
+            streakDays: 0,
+            lastOrderDate: null // "YYYY-MM-DD"
+        };
 
-        const state = { view: 'home', currentGroupId: null, groups: {}, members: {}, user: { name: '', phone: '' }, timerInterval: null, scrollObserver: null };
+        // 3️⃣ TICKER COOLDOWN
+        let lastTickerTime = 0;
+        const TICKER_COOLDOWN_MS = 6000; // 6 seconds
+
+        // 🧠 UPDATED STATE WITH NEW ENGINES
+        const state = { 
+            view: 'home', 
+            currentGroupId: null, 
+            groups: {}, 
+            members: {}, 
+            user: { name: '', phone: '' }, 
+            timerInterval: null, 
+            scrollObserver: null, 
+            tickerInterval: null, 
+            oneHourAlerted: false,
+            hesitationInterval: null,
+            dependencyInterval: null,
+            painLoopInterval: null,
+            mandiModalInterval: null, 
+            mandiGroupInterval: null  
+        };
 
         // --- UTILS ---
         function toast(msg, icon) { 
@@ -152,7 +226,113 @@
             t.innerHTML = `<i data-lucide="${icon}" size="16"></i> ${msg}`; 
             t.classList.remove('hidden'); 
             if(window.lucide) window.lucide.createIcons(); 
-            setTimeout(() => t.classList.add('hidden'), 3000); 
+            setTimeout(() => t.classList.add('hidden'), 3500); 
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#059669', '#f59e0b', '#ef4444'] });
+            }
+        }
+
+        function triggerVibration() {
+            if (navigator.vibrate) navigator.vibrate(20);
+        }
+
+        // 🚨 1. MICRO NUDGE ENGINE & TICKER (STRICT 3-COLOR LOGIC)
+        function showTicker(msg, type = 'neutral') {
+            // FIX: Don't show ticker if modal or feed is open
+            const modal = document.getElementById('modal-overlay');
+            const feed = document.getElementById('full-feed-overlay');
+            if ((modal && !modal.classList.contains('hidden')) || feed) return;
+
+            const now = Date.now();
+            if (type === 'neutral' && now - lastTickerTime < TICKER_COOLDOWN_MS) {
+                return;
+            }
+            lastTickerTime = now;
+
+            const el = document.getElementById('live-ticker');
+            const txt = document.getElementById('ticker-text');
+            const dot = document.getElementById('ticker-dot');
+            if(!el || !txt || !dot) return;
+
+            txt.innerText = msg;
+            
+            // PSYCHOLOGY MAP:
+            // Urgent = RED (#ef4444) -> Loss / Fear
+            // Good = GREEN (#059669) -> Gain / Social Proof
+            // Alert = ORANGE (#f97316) -> Attention / Warning
+            // Neutral = SLATE (#64748b) -> Info
+            
+            let bgClass, borderClass, dotClass;
+
+            if(type === 'urgent') {
+                bgClass = 'bg-psycho-urgency/95'; borderClass = 'border-psycho-urgency/30'; dotClass = 'bg-white';
+            } else if (type === 'good') {
+                bgClass = 'bg-psycho-action/95'; borderClass = 'border-psycho-action/30'; dotClass = 'bg-white';
+            } else if (type === 'alert') {
+                bgClass = 'bg-psycho-alert/95'; borderClass = 'border-psycho-alert/30'; dotClass = 'bg-white';
+            } else { // neutral
+                bgClass = 'bg-slate-900/95'; borderClass = 'border-white/10'; dotClass = 'bg-psycho-action';
+            }
+
+            el.className = `fixed bottom-4 left-1/2 -translate-x-1/2 ${bgClass} backdrop-blur-md text-white px-4 py-2.5 rounded-full text-xs font-bold shadow-2xl z-[55] flex items-center gap-2 pointer-events-none border ${borderClass} whitespace-nowrap max-w-[90%] overflow-hidden transition-all duration-500`;
+            dot.className = `w-2 h-2 rounded-full animate-pulse shrink-0 ${dotClass}`;
+
+            el.classList.remove('hidden', 'translate-y-10', 'opacity-0');
+            el.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                el.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => el.classList.add('hidden'), 500);
+            }, 5000);
+        }
+
+        function startTicker() {
+            if (state.tickerInterval) clearInterval(state.tickerInterval);
+            
+            const update = () => {
+                const item = TICKER_MESSAGES[Math.floor(Math.random() * TICKER_MESSAGES.length)];
+                showTicker(item.msg, item.type);
+            };
+            
+            update();
+            state.tickerInterval = setInterval(update, 12000); // 12 seconds loop
+        }
+
+        // 🚨 2. BEHAVIOR ENGINE
+        let scrollTimeout;
+        const initBehaviorEngine = () => {
+            const app = document.getElementById('app');
+            app.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    if (state.view === 'home') {
+                        // FIX: Use 'alert' (orange) instead of 'urgent' (red) for neutral nudges
+                        showTicker("⏳ Prices change soon — don't miss today's rate", 'alert');
+                    }
+                }, 4000);
+            });
+        };
+
+        // 🚨 LIVE MARKET PRICE ENGINE (Duvva Shops)
+        function startMandiEngine() {
+            PRODUCTS.forEach(p => {
+                const delta = Math.floor(Math.random() * 4) - 1;  
+                const oldPrice = p.mandiPrice;
+                p.mandiPrice = Math.max(10, p.mandiPrice + delta);
+
+                if (p.mandiPrice !== oldPrice) {
+                    if (delta > 0) {
+                        showTicker(`📈 Duvva Shops price increased to ₹${p.mandiPrice}!`, 'urgent');
+                    } else if (delta < 0) {
+                        showTicker(`📉 Duvva Shops price dropped! Squads filling fast.`, 'good');
+                    }
+                }
+            });
+            render();
+            setTimeout(startMandiEngine, 22000);
         }
 
         function loadData() {
@@ -172,6 +352,7 @@
             try {
                 localStorage.setItem(DB_KEY, JSON.stringify({ groups: state.groups, members: state.members }));
                 window.dispatchEvent(new Event('storage')); 
+                setTimeout(() => showTicker("🏆 Your ward moved up 1 rank due to your order!", 'good'), 2000);
             } catch(e) { console.error("Save Error", e); }
         }
 
@@ -182,7 +363,38 @@
             localStorage.setItem('jodo_user_phone', phone);
         }
 
-        function getUser() { return { name: localStorage.getItem('jodo_user_name') || '', phone: localStorage.getItem('jodo_user_phone') || '' }; }
+        // 1️⃣ HABIT LOGIC
+        function loadHabit() {
+            try {
+                const raw = localStorage.getItem(HABIT_KEY);
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    habitState.totalOrders = data.totalOrders || 0;
+                    habitState.streakDays = data.streakDays || 0;
+                    habitState.lastOrderDate = data.lastOrderDate || null;
+                }
+            } catch (e) {}
+        }
+
+        function saveHabit() {
+            try { localStorage.setItem(HABIT_KEY, JSON.stringify(habitState)); } catch (e) {}
+        }
+
+        function markOrderHabit() {
+            const today = new Date();
+            const todayStr = today.toISOString().slice(0,10);
+            if (!habitState.lastOrderDate) {
+                habitState.streakDays = 1;
+            } else {
+                const last = new Date(habitState.lastOrderDate);
+                const diffDays = Math.round((today - last) / 86400000);
+                if (diffDays === 1) habitState.streakDays += 1;
+                else if (diffDays > 1) habitState.streakDays = 1;
+            }
+            habitState.lastOrderDate = todayStr;
+            habitState.totalOrders += 1;
+            saveHabit();
+        }
 
         function getActiveGroupId(pid) {
             if (state.user.name && state.user.phone) {
@@ -202,11 +414,8 @@
         window.closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
         function showFieldError(c, m) { c.innerHTML = `<div class="field-error text-xs text-red-600 font-bold bg-red-50 p-3 rounded-xl flex items-center gap-2 border border-red-100"><i data-lucide="alert-circle" size="16"></i> ${m}</div>`; if(window.lucide) window.lucide.createIcons(); }
         function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
-        function newId(p='m') { return p + Date.now() + Math.floor(Math.random()*900); }
 
-        function createSliderHTML(label) {
-            return `<div class="relative w-full h-14 mt-6 mb-2 select-none"><div class="absolute inset-0 bg-slate-100 rounded-full flex items-center justify-center pointer-events-none transition-colors duration-300" id="slider-track"><span class="text-slate-400 font-extrabold text-sm tracking-widest uppercase opacity-80 animate-pulse" id="slider-label">${label}</span><div class="absolute inset-0 bg-gradient-to-r from-transparent via-brand-100 to-transparent animate-slide-shimmer" style="background-size: 200% 100%;"></div></div><input type="range" min="0" max="100" value="0" class="slider-lock absolute inset-0 w-full h-full z-10 opacity-0 cursor-pointer" id="unlock-slider"></div><div class="error-container"></div>`;
-        }
+        // REMOVED SLIDER FUNCTION, NO LONGER NEEDED
 
         function getPricingRoadmapHTML(p, theme = 'light') {
             const isGlass = theme === 'glass';
@@ -214,19 +423,93 @@
             const labelColor = isGlass ? 'text-white/70' : 'text-slate-400';
             const priceClass = isGlass ? 'text-white' : 'text-slate-800';
             const boxBase = "px-2.5 py-1.5 rounded-xl border shadow-sm min-w-[3.5rem] mb-3 flex items-center justify-center transition-transform bg-white relative z-10";
-            const boxGray = isGlass ? 'bg-white/10 border-white/10 text-white/90' : 'bg-white border-slate-200 text-slate-500';
-            const boxGreen = isGlass ? 'bg-brand-500/20 border-brand-400/30 text-brand-100' : 'bg-brand-50 border-brand-100 text-brand-600';
-            const boxGold = isGlass ? 'bg-yellow-500/20 border-yellow-400/30 text-yellow-100' : 'bg-yellow-50 border-yellow-100 text-yellow-700';
+            
+            // PSYCHOLOGY: TIER COLORS
+            // 1 Person: SLATE (Undesirable, Baseline)
+            const boxSlate = isGlass ? 'bg-white/10 border-white/10 text-white/90' : 'bg-white border-slate-200 text-slate-500';
+            // 2 People: GREEN (Action, Good)
+            const boxGreen = isGlass ? 'bg-psycho-action/20 border-psycho-action/30 text-psycho-actionLight' : 'bg-green-50 border-green-100 text-psycho-action';
+            // 5 People: GOLD (Reward, Goal)
+            const boxGold = isGlass ? 'bg-yellow-500/20 border-yellow-400/30 text-yellow-100' : 'bg-yellow-50 border-yellow-100 text-psycho-reward';
+            
             const dotBase = `w-3 h-3 rounded-full border-2 ${isGlass ? 'border-black' : 'border-white'} relative z-10`;
 
-            return `
-                <div class="w-full py-4 px-2 select-none relative">
-                    <div class="absolute top-[63%] left-10 right-10 h-1 ${lineColor} -translate-y-1/2 z-0 rounded-full"></div>
-                    <div class="relative z-10 flex justify-between items-end text-center">
-                        <div class="flex flex-col items-center w-1/3"><div class="${boxBase} ${boxGray}"><div class="text-sm font-bold ${priceClass}" id="tier-1-price">₹${p.price1}</div></div><div class="${dotBase} bg-slate-300"></div><div class="text-[9px] font-bold uppercase ${labelColor} mt-2 tracking-wide">1 Person</div></div>
-                        <div class="flex flex-col items-center w-1/3"><div class="${boxBase} ${boxGreen} scale-105"><div class="text-base font-black text-brand-600" id="tier-2-price">₹${p.price2}</div></div><div class="${dotBase} bg-brand-500 shadow-sm ring-2 ring-brand-100 ring-opacity-50"></div><div class="text-[9px] font-bold uppercase text-brand-500 mt-2 tracking-wide">2 People</div></div>
-                        <div class="flex flex-col items-center w-1/3"><div class="${boxBase} ${boxGold} scale-110 origin-bottom"><div class="text-lg font-black text-yellow-600 leading-none" id="tier-5-price">₹${p.price5}</div></div><div class="${dotBase} bg-yellow-500 shadow-sm"></div><div class="text-[9px] font-bold uppercase text-yellow-600 mt-2 tracking-wide">5 People</div></div>
+            const mandiSavings = p.mandiPrice ? p.mandiPrice - p.price5 : 0;
+            
+            // Savings Label: Green (Good)
+            const savingsHtml = p.mandiPrice ? `
+                <div class="absolute -bottom-2 left-0 right-0 flex justify-center w-full">
+                    <div class="bg-slate-100/90 backdrop-blur-sm px-3 py-1 rounded-full text-[9px] font-medium text-slate-500 flex items-center gap-2 border border-slate-200/50 shadow-sm">
+                        <span>Duvva Shops: <span class="line-through decoration-psycho-urgency text-psycho-urgency">₹${p.mandiPrice}</span></span>
+                        <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                        <span class="text-psycho-action font-bold bg-green-50 px-1 rounded">Save ₹${mandiSavings}</span>
                     </div>
+                </div>
+            ` : '';
+
+            return `
+                <div class="w-full py-4 px-2 select-none relative mb-2">
+                    <div class="absolute top-[55%] left-10 right-10 h-1 ${lineColor} -translate-y-1/2 z-0 rounded-full"></div>
+                    <div class="relative z-10 flex justify-between items-end text-center">
+                        <!-- TIER 1: SLATE -->
+                        <div class="flex flex-col items-center w-1/3"><div class="${boxBase} ${boxSlate}"><div class="text-sm font-bold ${priceClass}" id="tier-1-price">₹${p.price1}</div></div><div class="${dotBase} bg-slate-300"></div><div class="text-[9px] font-bold uppercase ${labelColor} mt-2 tracking-wide">1 Person</div></div>
+                        <!-- TIER 2: GREEN -->
+                        <div class="flex flex-col items-center w-1/3"><div class="${boxBase} ${boxGreen} scale-105"><div class="text-base font-black text-psycho-action" id="tier-2-price">₹${p.price2}</div></div><div class="${dotBase} bg-psycho-action shadow-sm ring-2 ring-green-100 ring-opacity-50"></div><div class="text-[9px] font-bold uppercase text-psycho-action mt-2 tracking-wide">2 People</div></div>
+                        <!-- TIER 5: GOLD -->
+                        <div class="flex flex-col items-center w-1/3"><div class="${boxBase} ${boxGold} scale-110 origin-bottom"><div class="text-lg font-black text-yellow-600 leading-none" id="tier-5-price">₹${p.price5}</div></div><div class="${dotBase} bg-psycho-reward shadow-sm"></div><div class="text-[9px] font-bold uppercase text-psycho-reward mt-2 tracking-wide">5 People</div></div>
+                    </div>
+                    ${savingsHtml}
+                </div>
+            `;
+        }
+
+        // TRIGGER 2: BREAKDOWN MODAL COMPONENT
+        function getPriceBreakdownHTML(p) {
+            const savings = p.mandiPrice ? p.mandiPrice - p.price5 : 0;
+            return `
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-4 relative overflow-hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">True Cost Breakdown</span>
+                        <!-- GREEN: Savings is positive -->
+                        <span class="text-[10px] text-psycho-action font-black bg-green-100 px-2 py-0.5 rounded border border-green-200 animate-pulse">YOU SAVE ₹${savings}/${p.weightUnit}</span>
+                    </div>
+                    
+                    <div class="space-y-3 relative z-10">
+                        <div class="flex justify-between items-center opacity-60 grayscale">
+                            <span class="text-xs font-bold text-slate-500">Duvva Shops Price</span>
+                            <!-- RED: High Price = Bad -->
+                            <span class="text-sm font-black text-psycho-urgency line-through decoration-2 decoration-red-500/50">₹${p.mandiPrice}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100 shadow-sm">
+                            <div class="flex items-center gap-2">
+                                <!-- BLUE: Trust / Verification -->
+                                <span class="text-sm font-bold text-slate-700">Farmer (${p.farmer})</span>
+                                <i data-lucide="check-circle" size="14" class="text-psycho-trust fill-blue-100"></i>
+                            </div>
+                            <span class="text-base font-black text-slate-600">₹${p.farmerPrice}</span>
+                        </div>
+                        <div class="flex justify-between items-center px-2">
+                            <span class="text-xs font-medium text-slate-400">Logistics & Packaging</span>
+                            <span class="text-xs font-bold text-slate-400">₹${p.price5 - p.farmerPrice}</span>
+                        </div>
+                        <div class="h-px bg-slate-200 w-full my-1"></div>
+                        <div class="flex justify-between items-center px-2">
+                            <span class="text-sm font-black text-slate-900 uppercase">Your Squad Price</span>
+                            <div class="flex items-center gap-2">
+                                <!-- GOLD: The Goal Price -->
+                                <span class="text-xl font-black text-psycho-reward">₹${p.price5}</span>
+                                <span class="text-[10px] font-bold text-slate-400">/${p.unit}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- BLUE: Social Proof / Trust Layer -->
+                <div class="flex items-center gap-2 mb-6 px-2 bg-psycho-trustBg p-2 rounded-lg border border-blue-100">
+                    <div class="flex -space-x-2">
+                        <div class="w-6 h-6 rounded-full bg-slate-200 border-2 border-white"></div>
+                        <div class="w-6 h-6 rounded-full bg-slate-300 border-2 border-white"></div>
+                    </div>
+                    <span class="text-[10px] text-psycho-trust font-bold">Verified by 124 neighbors today</span>
                 </div>
             `;
         }
@@ -264,9 +547,16 @@
         // --- ACTIONS ---
         function goHome() { 
             if (state.timerInterval) clearInterval(state.timerInterval);
+            if (state.hesitationInterval) clearInterval(state.hesitationInterval);
+            if (state.dependencyInterval) clearInterval(state.dependencyInterval);
+            if (state.painLoopInterval) clearInterval(state.painLoopInterval);
+            if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
+            if (state.mandiGroupInterval) clearInterval(state.mandiGroupInterval);
             if (state.scrollObserver) state.scrollObserver.disconnect();
+            
             try { if (window.location.protocol !== 'blob:') history.pushState({}, '', location.pathname); } catch(e) {} 
             state.view = 'home'; state.currentGroupId = null; render(); 
+            startTicker(); 
         }
 
         function openGroup(gid) { 
@@ -284,14 +574,9 @@
                             <video src="${videoSrc}" autoplay loop playsinline controls class="w-full h-full object-cover"></video>
                             <div class="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse shadow-lg z-20">🔴 LIVE GUIDE</div>
                         </div>
-                        <div class="text-center text-white mt-6 px-6">
-                            <h3 class="text-2xl font-bold mb-2 tracking-tight">How to Order on JODO</h3>
-                            <p class="text-sm text-slate-300 font-medium leading-relaxed">Watch this quick guide to learn how to form squads and save big with your neighbors!</p>
-                        </div>
                     </div>
                 </div>
             `);
-            
             node.querySelector('#close-guide').onclick = () => node.remove();
             document.body.appendChild(node);
             lucide.createIcons();
@@ -301,14 +586,16 @@
         window.openGroup = openGroup;
         window.openLiveGuide = openLiveGuide;
 
-        window.openFullFeed = function(startPid) {
-            const activeGid = getActiveGroupId(startPid);
-            if (activeGid) { window.openGroup(activeGid); return; }
+        window.openFullFeed = function(startPid, forceOpen = false) {
+            if (!forceOpen) {
+                const activeGid = getActiveGroupId(startPid);
+                if (activeGid) { window.openGroup(activeGid); return; }
+            }
             const slidesHtml = PRODUCTS.map(p => {
-                // Removed 'muted' here so videos play with sound on user interaction
-                let backgroundContent = p.videoSrc ? `<div class="absolute inset-0 w-full h-full bg-black rounded-2xl overflow-hidden"><video src="${p.videoSrc}" autoplay loop playsinline controls class="w-full h-full object-cover"></video></div>` : `<div class="absolute inset-0 z-0 ${p.videoClass} video-grain hidden"></div>`;
+                let backgroundContent = p.videoSrc ? `<div class="absolute inset-0 w-full h-full bg-black rounded-2xl overflow-hidden"><video src="${p.videoSrc}" autoplay loop playsinline muted controls class="w-full h-full object-cover"></video></div>` : `<div class="absolute inset-0 z-0 ${p.videoClass} video-grain hidden"></div>`;
                 const slideActiveGid = getActiveGroupId(p.id);
-                let buttonHtml = slideActiveGid ? `<button onclick="openGroup('${slideActiveGid}')" class="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect cursor-pointer"><span>Check My Group</span><i data-lucide="arrow-right" size="16"></i></button>` : `<button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect transition-all active:scale-95 cursor-pointer"><span>Buy Together</span><span class="bg-black/20 text-[10px] px-1.5 py-0.5 rounded border border-white/10 font-medium ml-1">Save ₹${p.price1 - p.price5}</span></button>`;
+                // GREEN = Action Button
+                let buttonHtml = slideActiveGid ? `<button onclick="openGroup('${slideActiveGid}')" class="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect cursor-pointer"><span>Check My Group</span><i data-lucide="arrow-right" size="16"></i></button>` : `<button onclick="openStartModal('${p.id}')" class="w-full bg-psycho-action text-white py-3.5 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 tap-effect transition-all active:scale-95 cursor-pointer"><span>Buy Together</span><span class="bg-black/20 text-[10px] px-1.5 py-0.5 rounded border border-white/10 font-medium ml-1">Save ₹${p.price1 - p.price5}</span></button>`;
                 return `<div id="slide-${p.id}" class="snap-center shrink-0 relative w-full h-full bg-black overflow-hidden flex flex-col"><div class="absolute inset-0 z-0">${backgroundContent}<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div></div><div class="absolute top-6 left-4 right-4 z-40 flex justify-between items-start"><div class="bg-red-600/90 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm"><span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE DEAL</div><div class="bg-black/30 backdrop-blur-md text-white text-[10px] font-medium px-2 py-1 rounded-full border border-white/10 flex items-center gap-1"><i data-lucide="eye" size="10"></i> ${p.liveViewers}</div></div><div class="absolute bottom-0 left-0 right-0 p-4 pb-6 z-30 flex flex-col gap-3"><div class="text-white drop-shadow-md flex flex-col gap-1"><div class="flex items-center gap-2"><div class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">@${p.farmer}</div></div><h3 class="font-black text-xl leading-tight">${p.name}</h3><div class="text-slate-200 text-xs font-medium opacity-90 truncate">${p.unit} Bundle • ${p.nameTe}</div></div>${getPricingRoadmapHTML(p, 'glass')}${buttonHtml}</div></div>`;
             }).join('');
             const node = createNodeFromHTML(`<div id="full-feed-overlay" class="fixed inset-0 z-[70] flex justify-center items-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200"><button id="close-feed" class="absolute top-6 right-6 z-[80] p-2 bg-white/10 backdrop-blur-md rounded-full text-white border border-white/10 hover:bg-white/20 transition-colors cursor-pointer tap-effect"><i data-lucide="x" size="24"></i></button><div class="w-full max-w-md h-full bg-black relative shadow-2xl overflow-hidden"><div class="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black scroll-container">${slidesHtml}</div></div></div>`);
@@ -345,115 +632,189 @@
             const p = PRODUCTS.find(x => x.id === pid);
             const user = state.user;
             const savings = p.price1 - p.price5;
-            const timerId = 'modal-timer-' + Date.now();
             
             const node = createNodeFromHTML(`
-                <div class="flex flex-col h-full">
-                    <div class="flex items-center justify-between mb-6">
+                <div class="flex flex-col h-full transition-all duration-300" id="modal-container-inner">
+                    <div class="flex items-center justify-between mb-4">
                         <h3 class="font-black text-xl text-slate-800 tracking-tight">Start Group Buy</h3>
                         <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer transition-colors"><i data-lucide="x" size="20"></i></button>
                     </div>
                     
-                    <div class="flex items-start gap-4 mb-6">
-                        <div class="w-16 h-16 ${p.imageColor} rounded-2xl flex items-center justify-center shrink-0 text-white shadow-md"><i data-lucide="${p.icon}" size="32"></i></div>
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="w-16 h-16 ${p.imageColor} rounded-2xl flex items-center justify-center shrink-0 text-white shadow-md relative overflow-hidden">
+                            <div class="absolute bottom-0 left-0 w-full h-1/3 bg-black/40 backdrop-blur-sm flex items-center justify-center text-[8px] font-bold text-white z-10">${p.farmer}</div>
+                            <i data-lucide="${p.icon}" size="32"></i>
+                        </div>
                         <div class="flex-1">
                             <h4 class="font-black text-xl text-slate-900 leading-tight mb-1">${p.name}</h4>
-                            <div class="inline-flex items-center gap-1.5 bg-green-100 text-green-800 px-2 py-0.5 rounded-md text-xs font-bold border border-green-200">
-                                <i data-lucide="lock-open" size="10"></i> Unlock ₹${p.price5} (Save ₹${savings})
+                            
+                            <!-- ORANGE: Scarcity / Attention -->
+                            <div class="flex flex-wrap gap-1.5 mt-1">
+                                <span class="bg-psycho-alertBg text-psycho-alert px-1.5 py-0.5 rounded text-[9px] font-bold border border-orange-100 flex items-center gap-1 animate-pulse"><i data-lucide="flame" size="8"></i> Only ${p.remainingStock}kg left</span>
                             </div>
                         </div>
                     </div>
                     
                     ${getPricingRoadmapHTML(p, 'light')}
 
-                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 mb-6">
-                        <div class="flex justify-between items-center mb-3 border-b border-slate-200 pb-2">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Packet Size</span>
-                            <span class="text-xs font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-100 shadow-sm">Pack of ${p.unit}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-bold text-slate-500">Your Order</span>
-                            <div class="flex items-center gap-3 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                                <button id="btn-minus" class="w-10 h-10 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"><i data-lucide="minus" size="18"></i></button>
-                                <span id="qty-display" class="font-black text-lg w-20 text-center text-slate-800 tabular-nums">0.5 kg</span>
-                                <button id="btn-plus" class="w-10 h-10 rounded-lg bg-brand-500 hover:bg-brand-600 text-white flex items-center justify-center shadow-md transition-colors cursor-pointer"><i data-lucide="plus" size="18"></i></button>
-                            </div>
-                        </div>
-                    </div>
+                    ${getPriceBreakdownHTML(p)}
                     
                     <div class="space-y-4 mb-2">
-                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="user" size="16"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-slate-300 py-3.5 pl-10 pr-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all placeholder-slate-300 text-sm" placeholder="Your Name"></div>
-                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="phone" size="16"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-slate-300 py-3.5 pl-10 pr-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all placeholder-slate-300 text-sm" placeholder="Phone Number"></div>
+                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="user" size="16"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-slate-300 py-3.5 pl-10 pr-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Your Name"></div>
+                        <div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="phone" size="16"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-slate-300 py-3.5 pl-10 pr-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Phone Number"></div>
                     </div>
 
-                    <div class="mt-auto">
-                        ${createSliderHTML('Slide to Confirm Order')}
+                    <div class="mt-auto relative">
+                        <!-- CHANGED BUTTON TO 'CREATE SQUAD' ONLY -->
+                        <button id="confirm-btn" class="w-full bg-psycho-action text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-green-600/30 btn-press flex items-center justify-center gap-2 cursor-pointer mt-6 mb-2">
+                            <i data-lucide="users" size="24"></i> Create Squad
+                        </button>
+                        <div class="error-container"></div>
+                        
+                        <!-- BLUE: Trust / Safety (No Penalty) -->
+                        <div class="mt-3 text-[10px] text-psycho-trust text-center bg-psycho-trustBg py-1.5 rounded-lg border border-blue-100 font-medium">
+                            <i data-lucide="shield" size="10" class="inline mb-0.5"></i> Pay safely at delivery. Cancel anytime.
+                        </div>
+
+                        <div id="lock-in-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 rounded-2xl">
+                            <div class="text-center animate-pop">
+                                <div class="w-12 h-12 bg-psycho-action rounded-full flex items-center justify-center mx-auto mb-2 shadow-xl shadow-psycho-action/40 text-white"><i data-lucide="check" size="24"></i></div>
+                                <div class="text-green-800 font-black text-lg">Squad Created!</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `);
             showModalNode(node);
             const getQty = setupQuantityLogic(node, p, '#price-label');
             
-            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
+            if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
+            state.mandiModalInterval = setInterval(() => {
+                const mandiEl = node.querySelector('.decoration-psycho-urgency');
+                if (mandiEl) mandiEl.innerText = `₹${p.mandiPrice}`;
+            }, 5000);
+
+            node.querySelector('#close-modal').addEventListener('click', () => {
+                if (state.hesitationInterval) clearInterval(state.hesitationInterval);
+                if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
+                window.closeModal();
+            });
             
-            const slider = node.querySelector('#unlock-slider');
-            slider.oninput = async function() {
-                if (this.value > 90) {
-                    this.disabled = true;
-                    const name = safeVal(node.querySelector('#inp-name'));
-                    const phone = safeVal(node.querySelector('#inp-phone'));
-                    const qty = getQty();
-                    const errCont = node.querySelector('.error-container');
+            const confirmBtn = node.querySelector('#confirm-btn');
 
-                    if (!name || !/^[6-9]\d{9}$/.test(phone)) {
-                        this.value = 0; this.disabled = false;
-                        showFieldError(errCont, 'Enter Valid Name & Phone');
-                        return;
-                    }
+            if (state.hesitationInterval) clearInterval(state.hesitationInterval);
+            state.hesitationInterval = setInterval(() => {
+                const n = Math.floor(Math.random() * 3);
+                const msgs = [
+                    "📉 Others are joining — price may change",
+                    "🔥 This item is in demand right now",
+                    "⚠ Stock reduces while you wait"
+                ];
+                toast(msgs[n], ["alert-circle", "flame", "package"][n]);
+                triggerVibration();
+            }, 7000);
 
-                    const track = document.getElementById('slider-track');
-                    track.classList.remove('bg-slate-100');
-                    track.classList.add('bg-brand-600');
-                    document.getElementById('slider-label').innerText = 'Creating Order...';
-                    document.getElementById('slider-label').classList.replace('text-slate-400', 'text-white');
+            confirmBtn.onclick = async function() {
+                this.disabled = true;
+                const name = safeVal(node.querySelector('#inp-name'));
+                const phone = safeVal(node.querySelector('#inp-phone'));
+                const qty = getQty();
+                const errCont = node.querySelector('.error-container');
 
-                    try {
-                        saveUser(name, phone);
-                        const gid = 'g' + Date.now();
-                        const expires = Date.now() + EXPIRY_MS;
-                        
-                        const group = { id: gid, productId: pid, ownerName: name, expiresAt: expires, createdAt: Date.now(), status: 'open' };
-                        const member = { groupId: gid, name, phone, isLeader: true, quantity: qty };
-                        
-                        state.groups[gid] = group;
-                        state.members[gid] = [member];
-                        saveData();
+                if (!name || !/^[6-9]\d{9}$/.test(phone)) {
+                    this.disabled = false;
+                    showFieldError(errCont, 'Enter Valid Name & Phone');
+                    return;
+                }
 
-                        setTimeout(() => { window.closeModal(); window.openGroup(gid); }, 600);
-                    } catch (err) {
-                        this.value = 0; this.disabled = false;
-                        showFieldError(errCont, 'Error saving data');
-                    }
+                document.getElementById('lock-in-overlay').classList.remove('opacity-0');
+                document.getElementById('lock-in-overlay').classList.add('opacity-100');
+                
+                if (state.hesitationInterval) clearInterval(state.hesitationInterval);
+                if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
+
+                try {
+                    saveUser(name, phone);
+                    const gid = 'g' + Date.now();
+                    const expires = Date.now() + EXPIRY_MS;
+                    
+                    const group = { id: gid, productId: pid, ownerName: name, expiresAt: expires, createdAt: Date.now(), status: 'open' };
+                    const member = { groupId: gid, name, phone, isLeader: true, quantity: qty };
+                    
+                    state.groups[gid] = group;
+                    state.members[gid] = [member];
+                    saveData();
+                    
+                    markOrderHabit(); 
+
+                    // REMOVED WHATSAPP OPENING HERE. JUST REDIRECT.
+                    setTimeout(() => { 
+                        window.closeModal(); 
+                        window.openGroup(gid); 
+                        triggerConfetti();
+                    }, 800); 
+                } catch (err) {
+                    this.disabled = false;
+                    showFieldError(errCont, 'Error saving data');
                 }
             };
-            slider.onchange = function() { if(this.value < 90) this.value = 0; };
         };
 
         window.openAddMemberModal = function(gid) {
             const members = state.members[gid] || []; if(members.length >= 5) return toast("Group is full!", 'lock');
             const group = state.groups[gid]; const p = PRODUCTS.find(x => x.id === group.productId);
-            const node = createNodeFromHTML(`<div><div class="flex items-center justify-between mb-6"><h3 class="font-bold text-xl text-slate-800">Add Neighbor</h3><button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer"><i data-lucide="x" size="20"></i></button></div>${getPricingRoadmapHTML(p, 'light')}<div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6 mt-4"><div class="ml-1"><div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div><div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div></div><div class="flex items-center gap-3"><button id="btn-minus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="minus" size="20"></i></button><span id="qty-display" class="font-black text-xl w-20 text-center text-slate-800 tabular-nums">0.5 kg</span><button id="btn-plus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="plus" size="20"></i></button></div></div><div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Neighbor Name</label><input id="m-name" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all placeholder-slate-300 text-sm" placeholder="Friend Name"></div><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Phone Number</label><input id="m-phone" type="tel" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all placeholder-slate-300 text-sm" placeholder="Phone Number"></div></div><div class="mt-auto mb-2"><p class="text-center text-[11px] text-slate-400 font-medium mt-2 flex items-center justify-center gap-1"><i data-lucide="info" size="10"></i> Add neighbor if they are with you.</p></div>${createSliderHTML('Slide to Add')}</div>`);
+            
+            const node = createNodeFromHTML(`<div><div class="flex items-center justify-between mb-6"><h3 class="font-bold text-xl text-slate-800">Add Neighbor</h3><button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer"><i data-lucide="x" size="20"></i></button></div>${getPricingRoadmapHTML(p, 'light')}<div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6 mt-4"><div class="ml-1"><div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div><div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div></div><div class="flex items-center gap-3"><button id="btn-minus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="minus" size="20"></i></button><span id="qty-display" class="font-black text-xl w-20 text-center text-slate-800 tabular-nums">0.5 kg</span><button id="btn-plus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="plus" size="20"></i></button></div></div><div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Neighbor Name</label><input id="m-name" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Friend Name"></div><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Phone Number</label><input id="m-phone" type="tel" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all placeholder-slate-300 text-sm" placeholder="Phone Number"></div></div><div class="mt-auto mb-2"><p class="text-center text-[11px] text-slate-400 font-medium mt-2 flex items-center justify-center gap-1"><i data-lucide="info" size="10"></i> Add neighbor if they are with you.</p></div>
+            <button id="add-btn" class="w-full bg-psycho-action text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-green-600/30 btn-press flex items-center justify-center gap-2 cursor-pointer mt-4">
+                <i data-lucide="plus-circle" size="24"></i> Add Neighbor
+            </button>
+            <div class="error-container"></div>
+            </div>`);
+            
             showModalNode(node);
             const getQty = setupQuantityLogic(node, p, null);
             node.querySelector('#close-modal').addEventListener('click', window.closeModal);
-            const slider = node.querySelector('#unlock-slider');
-            slider.oninput = async function() { if (this.value > 90) { this.disabled = true; const name = safeVal(node.querySelector('#m-name')); const phone = safeVal(node.querySelector('#m-phone')); const qty = getQty(); const errCont = node.querySelector('.error-container'); if (!name || !/^[6-9]\d{9}$/.test(phone)) { this.value = 0; this.disabled = false; showFieldError(errCont, 'Valid Details Required'); return; } const track = document.getElementById('slider-track'); track.classList.remove('bg-slate-100'); track.classList.add('bg-brand-600'); document.getElementById('slider-label').innerText = 'Adding...'; document.getElementById('slider-label').classList.replace('text-slate-400', 'text-white'); try { const memberData = { groupId: gid, name, phone, isLeader: false, quantity: qty }; if (!state.members[gid]) state.members[gid] = []; state.members[gid].push(memberData); saveData(); setTimeout(() => { window.closeModal(); toast('Added Successfully!', 'check-circle'); render(); }, 500); } catch (err) { toast('Error Saving', 'alert-circle'); } } }; slider.onchange = function() { if(this.value < 90) this.value = 0; };
+            
+            const addBtn = node.querySelector('#add-btn');
+            addBtn.onclick = async function() { 
+                this.disabled = true;
+                const name = safeVal(node.querySelector('#m-name')); 
+                const phone = safeVal(node.querySelector('#m-phone')); 
+                const qty = getQty(); 
+                const errCont = node.querySelector('.error-container'); 
+                
+                if (!name || !/^[6-9]\d{9}$/.test(phone)) { 
+                    this.disabled = false; 
+                    showFieldError(errCont, 'Valid Details Required'); 
+                    return; 
+                } 
+                
+                this.innerHTML = '<span class="animate-pulse">Adding...</span>';
+                
+                try { 
+                    const memberData = { groupId: gid, name, phone, isLeader: false, quantity: qty }; 
+                    if (!state.members[gid]) state.members[gid] = []; 
+                    state.members[gid].push(memberData); 
+                    saveData(); 
+                    setTimeout(() => { 
+                        window.closeModal(); 
+                        toast('Added Successfully!', 'check-circle'); 
+                        render(); 
+                        triggerConfetti(); 
+                    }, 500); 
+                } catch (err) { 
+                    toast('Error Saving', 'alert-circle'); 
+                    this.disabled = false;
+                    this.innerHTML = '<i data-lucide="plus-circle" size="24"></i> Add Neighbor';
+                    if(window.lucide) window.lucide.createIcons();
+                } 
+            }; 
         };
         window.openAddMemberModal = openAddMemberModal;
 
         window.openEditMemberModal = function(gid, memberIndex) {
             const member = state.members[gid][memberIndex]; const group = state.groups[gid]; const p = PRODUCTS.find(x => x.id === group.productId);
-            const node = createNodeFromHTML(`<div><div class="flex items-center justify-between mb-6"><h3 class="font-bold text-xl text-slate-800">Edit Order</h3><button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer"><i data-lucide="x" size="20"></i></button></div>${getPricingRoadmapHTML(p, 'light')}<div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6 mt-4"><div class="ml-1"><div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div><div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div></div><div class="flex items-center gap-3"><button id="btn-minus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="minus" size="20"></i></button><span id="qty-display" class="font-black text-xl w-20 text-center text-slate-800">...</span><button id="btn-plus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="plus" size="20"></i></button></div></div><div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"></div><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Phone</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"></div></div><button id="save-btn" class="w-full bg-brand-600 text-white h-14 rounded-2xl font-bold text-lg shadow-lg btn-press flex items-center justify-center gap-2 cursor-pointer">Save Changes</button></div>`);
+            const node = createNodeFromHTML(`<div><div class="flex items-center justify-between mb-6"><h3 class="font-bold text-xl text-slate-800">Edit Order</h3><button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer"><i data-lucide="x" size="20"></i></button></div>${getPricingRoadmapHTML(p, 'light')}<div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-6 mt-4"><div class="ml-1"><div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div><div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div></div><div class="flex items-center gap-3"><button id="btn-minus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="minus" size="20"></i></button><span id="qty-display" class="font-black text-xl w-20 text-center text-slate-800">...</span><button id="btn-plus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="plus" size="20"></i></button></div></div><div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all"></div><div><label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Phone</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-white border border-slate-300 p-4 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-psycho-action transition-all"></div></div><button id="save-btn" class="w-full bg-psycho-action text-white h-14 rounded-2xl font-bold text-lg shadow-lg btn-press flex items-center justify-center gap-2 cursor-pointer">Save Changes</button></div>`);
             showModalNode(node);
             const getQty = setupQuantityLogic(node, p, null);
             const targetQty = member.quantity || 1; const plusBtn = node.querySelector('#btn-plus'); for(let i=1; i<targetQty; i++) { plusBtn.click(); }
@@ -466,40 +827,184 @@
 
         function renderHome(el) {
             if (state.timerInterval) clearInterval(state.timerInterval);
+            if (state.hesitationInterval) clearInterval(state.hesitationInterval);
+            if (state.dependencyInterval) clearInterval(state.dependencyInterval);
+            if (state.painLoopInterval) clearInterval(state.painLoopInterval);
+            if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
+            if (state.mandiGroupInterval) clearInterval(state.mandiGroupInterval);
+            if (state.scrollObserver) state.scrollObserver.disconnect();
+            
             const user = state.user;
-            const userActiveGroupIds = {}; let primaryActiveGroup = null;
-            if (user.name && user.phone) { Object.values(state.groups).forEach(g => { const members = state.members[g.id] || []; if (members.some(m => m.name === user.name && m.phone === user.phone)) { userActiveGroupIds[g.productId] = g.id; if (!primaryActiveGroup) primaryActiveGroup = g; } }); }
-            let headerTargetTime, headerLabel; if (primaryActiveGroup) { headerTargetTime = primaryActiveGroup.expiresAt; headerLabel = "Offer Ends In"; } else { const midnight = new Date(); midnight.setHours(24, 0, 0, 0); headerTargetTime = midnight.getTime(); headerLabel = "Market Closes"; }
+            const userActiveGroupIds = {}; 
+            const activeUserGroups = [];
+            if (user.name && user.phone) { 
+                Object.values(state.groups).forEach(g => { 
+                    const members = state.members[g.id] || []; 
+                    if (members.some(m => m.name === user.name && m.phone === user.phone)) { 
+                        userActiveGroupIds[g.productId] = g.id; 
+                        activeUserGroups.push(g);
+                    } 
+                }); 
+            }
+            activeUserGroups.sort((a, b) => b.createdAt - a.createdAt);
+
+            let headerTargetTime, headerLabel; 
+            if (activeUserGroups.length > 0) { 
+                const soonest = [...activeUserGroups].sort((a,b) => a.expiresAt - b.expiresAt)[0];
+                headerTargetTime = soonest.expiresAt; 
+                headerLabel = "Offer Ends In"; 
+            } else { 
+                const midnight = new Date(); midnight.setHours(24, 0, 0, 0); headerTargetTime = midnight.getTime(); headerLabel = "Market Closes"; 
+            }
             const sortedProducts = [...PRODUCTS].sort((a, b) => { const aActive = !!userActiveGroupIds[a.id]; const bActive = !!userActiveGroupIds[b.id]; if (aActive && !bActive) return 1; if (!aActive && bActive) return -1; return 0; });
+            
+            const featuredMandiPrice = PRODUCTS[0].mandiPrice || 32;
+            const featuredSquadPrice = PRODUCTS[0].price5 || 18;
+
+            let heroContent = '';
+            if (activeUserGroups.length > 0) {
+                const cardsHtml = activeUserGroups.map(g => {
+                    const p = PRODUCTS.find(x => x.id === g.productId);
+                    if (!p) return '';
+                    const members = state.members[g.id] || [];
+                    const count = members.length;
+                    const needed = Math.max(0, 5 - count);
+                    const progress = (count / 5) * 100;
+                    
+                    return `
+                    <div onclick="openGroup('${g.id}')" class="snap-center shrink-0 w-[85%] max-w-[300px] cursor-pointer animate-in fade-in zoom-in duration-300">
+                        <div class="bg-slate-900 rounded-2xl p-4 shadow-xl shadow-slate-900/20 border border-slate-800 relative overflow-hidden group h-full flex flex-col justify-between">
+                            <!-- Background Glow -->
+                            <div class="absolute -right-10 -top-10 w-40 h-40 bg-psycho-action/20 rounded-full blur-3xl"></div>
+                            
+                            <div class="flex justify-between items-start mb-3 relative z-10">
+                                <div class="flex items-center gap-2">
+                                    <span class="relative flex h-2.5 w-2.5">
+                                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                    </span>
+                                    <span class="text-[10px] font-black text-white tracking-widest uppercase">Live Squad</span>
+                                </div>
+                                <div class="bg-white/10 backdrop-blur px-2 py-1 rounded text-[10px] font-mono font-bold text-white/90 border border-white/10 live-timer-home" data-expires="${g.expiresAt}">...</div>
+                            </div>
+
+                            <div class="flex items-center gap-3 mb-3 relative z-10">
+                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-900 shadow-sm shrink-0">
+                                    <i data-lucide="${p.icon}" size="24"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-black text-white text-base leading-none mb-1 truncate">${p.name}</h3>
+                                    <div class="flex items-center gap-1.5 text-[10px]">
+                                        <span class="text-white font-bold">${count}/5</span>
+                                        <span class="text-slate-500">•</span>
+                                        ${needed > 0 ? `<span class="text-psycho-rewardLight font-bold">Need ${needed}</span>` : `<span class="text-green-400 font-bold">Unlocked</span>`}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-psycho-action to-green-400 transition-all duration-1000" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                heroContent = `<div class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-4 gap-3 mt-4 mb-2 pb-2">${cardsHtml}</div>`;
+            } else {
+                heroContent = `
+                <div onclick="openLiveGuide()" class="px-4 mt-4 mb-2 cursor-pointer">
+                    <div class="relative w-full h-48 bg-slate-900 rounded-2xl overflow-hidden shadow-lg border border-slate-200 group">
+                        <video src="${GUIDE_VIDEO_SRC}" autoplay loop muted playsinline class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"></video>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                            <div class="bg-white/20 backdrop-blur-md text-white px-5 py-3 rounded-full font-black text-sm border border-white/30 flex items-center gap-2 shadow-xl transform group-hover:scale-110 transition-transform">
+                                <div class="bg-white text-slate-900 rounded-full p-1"><i data-lucide="play" size="14" fill="currentColor"></i></div>
+                                How to Order?
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                        <div class="absolute bottom-4 left-4 right-4 text-center">
+                            <div class="text-white font-bold text-sm mb-0.5">Watch 30s Guide</div>
+                            <div class="text-white/70 text-[10px] font-medium uppercase tracking-widest">Learn to Save 60%</div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            setTimeout(() => {
+                const ts = document.getElementById('trust-strip');
+                // REMOVED PULSE ANIMATION HERE
+                // if(ts) ts.classList.add('pulse-attention'); 
+            }, 1000);
 
             el.innerHTML = `
                 <div class="fade-in pb-32">
-                    <div class="glass-header text-white p-5 sticky top-0 z-40 border-b border-white/10 shadow-xl shadow-brand-900/10"><div class="flex justify-between items-center mb-4"><div><h1 class="font-black text-3xl tracking-tighter">JODO</h1><div class="text-[11px] text-brand-100 font-bold tracking-widest uppercase opacity-90">Group Up. Price Down.</div></div><div class="bg-red-500/20 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black tracking-wide flex items-center gap-2 border border-red-400/30"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span> LIVE</div></div><div class="flex items-center justify-between gap-3 text-xs font-semibold text-brand-50 bg-black/20 p-2.5 rounded-xl border border-white/10 backdrop-blur-sm transition-colors duration-300" id="home-header-timer-container"><div class="flex items-center gap-2 opacity-80"><i data-lucide="clock" size="14" class="animate-pulse"></i><span class="uppercase text-[10px] font-bold tracking-wider">${headerLabel}</span></div><div class="font-mono font-bold tracking-widest text-white text-sm tabular-nums" id="appbar-header-timer" data-expires="${headerTargetTime}">Loading...</div></div></div>
-                    
-                    <!-- NEW: HOW TO ORDER VIDEO -->
-                    <div onclick="openLiveGuide()" class="px-4 mt-5 mb-2 cursor-pointer">
-                        <div class="relative w-full h-48 bg-slate-900 rounded-2xl overflow-hidden shadow-lg border border-slate-200 group">
-                            <!-- Auto-playing background video -->
-                            <video src="${GUIDE_VIDEO_SRC}" autoplay loop muted playsinline class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"></video>
-                            
-                            <!-- Overlay Content -->
-                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                                <div class="bg-white/20 backdrop-blur-md text-white px-5 py-3 rounded-full font-black text-sm border border-white/30 flex items-center gap-2 shadow-xl transform group-hover:scale-110 transition-transform">
-                                    <div class="bg-white text-slate-900 rounded-full p-1"><i data-lucide="play" size="14" fill="currentColor"></i></div>
-                                    How to Order?
+                    <div class="glass-header text-white p-5 sticky top-0 z-40 border-b border-white/10 shadow-xl shadow-slate-900/20">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h1 class="font-black text-3xl tracking-tighter">JODO</h1>
+                                ${
+                                    habitState.streakDays >= 3
+                                    ? `<div class="text-[11px] text-psycho-actionLight font-bold opacity-90">
+                                           You’ve ordered <span class="underline decoration-green-400">${habitState.streakDays} days</span> in a row.
+                                       </div>`
+                                    : habitState.totalOrders >= 3
+                                    ? `<div class="text-[11px] text-psycho-actionLight font-bold opacity-90">
+                                           You saved with squads ${habitState.totalOrders} times.
+                                       </div>`
+                                    : `<div class="text-[11px] text-white font-bold tracking-widest uppercase opacity-90">
+                                           Group Up. Price Down.
+                                       </div>`
+                                }
+                            </div>
+                            <button onclick="openFullFeed('${PRODUCTS[0].id}', true)" class="group relative overflow-hidden bg-slate-900/30 backdrop-blur-md border border-white/10 rounded-full pr-4 pl-1.5 py-1.5 flex items-center gap-2.5 shadow-xl active:scale-95 transition-all cursor-pointer hover:bg-slate-800/50 hover:border-white/20">
+                                <div class="absolute inset-0 bg-gradient-to-r from-pink-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div class="relative w-7 h-7 bg-gradient-to-br from-pink-600 via-red-500 to-yellow-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 ring-2 ring-black/20">
+                                    <i data-lucide="play" size="10" class="fill-white text-white ml-0.5"></i>
                                 </div>
+                                <span class="relative text-[10px] font-black tracking-widest text-white/90 group-hover:text-white">JODO TV</span>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 text-xs font-semibold text-white/70 bg-black/20 p-2.5 rounded-xl border border-white/10 backdrop-blur-sm transition-colors duration-300" id="home-header-timer-container">
+                            <div class="flex items-center gap-2 opacity-80"><i data-lucide="clock" size="14" class="animate-pulse"></i><span class="uppercase text-[10px] font-bold tracking-wider">${headerLabel}</span></div>
+                            <div class="font-mono font-bold tracking-widest text-white text-sm tabular-nums" id="appbar-header-timer" data-expires="${headerTargetTime}">Loading...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 🟢 TRIGGER 1 & 17: TRUST STRIP + WARD LEADERBOARD -->
+                    <div class="px-4 mt-3 mb-1">
+                        <!-- BLUE: Trust Strip. Safe Information -->
+                        <div id="trust-strip" class="bg-psycho-trustBg border border-blue-200 rounded-xl py-2 px-3 flex justify-between items-center shadow-sm relative overflow-hidden transition-all duration-300">
+                            <div class="flex flex-col relative z-10">
+                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">Duvva Shops Today <span class="text-[8px] text-slate-300 font-normal">5:02 AM</span></span>
+                                <span class="text-xs font-black text-psycho-urgency line-through decoration-red-500/50">₹${featuredMandiPrice}/kg</span>
                             </div>
                             
-                            <!-- Gradient Overlay -->
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-                            
-                            <!-- Bottom Text -->
-                            <div class="absolute bottom-4 left-4 right-4 text-center">
-                                <div class="text-white font-bold text-sm mb-0.5">Watch 30s Guide</div>
-                                <div class="text-white/70 text-[10px] font-medium uppercase tracking-widest">Learn to Save 60%</div>
+                            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                                <i data-lucide="arrow-right" size="14" class="text-blue-300"></i>
+                            </div>
+
+                            <div class="flex flex-col items-end relative z-10">
+                                <span class="text-[9px] font-bold text-psycho-trust uppercase tracking-wider flex items-center gap-1">
+                                    Your Squad Price <i data-lucide="shield-check" size="10" class="text-psycho-trust"></i>
+                                </span>
+                                <span class="text-sm font-black text-psycho-action">₹${featuredSquadPrice}/kg</span>
+                            </div>
+                        </div>
+                        
+                        <!-- WARD COMPETITION -->
+                        <div class="mt-2 flex items-center justify-between text-[10px] font-bold text-slate-500 bg-white border border-slate-100 px-3 py-1.5 rounded-lg shadow-sm">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 bg-psycho-action rounded-full"></span>
+                                <span>Ward 7: <span class="text-slate-800">45 orders</span></span>
+                            </div>
+                            <!-- RED text only for "Catch Up" urgency -->
+                            <div class="text-psycho-urgency flex items-center gap-1">
+                                Your Ward: 12 orders <span class="bg-red-50 px-1 rounded text-[9px] uppercase">Catch Up</span>
                             </div>
                         </div>
                     </div>
+
+                    ${heroContent}
 
                     <div class="px-4 space-y-4 mt-4"><h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Fresh Harvest</h2>${sortedProducts.map(p => {
                         const activeGid = userActiveGroupIds[p.id]; const activeGroup = activeGid ? state.groups[activeGid] : null;
@@ -508,13 +1013,40 @@
                             timerHtml = `<div class="flex items-center gap-1.5 bg-red-50 text-red-600 px-2 py-1 rounded-md border border-red-100 shadow-sm ml-auto mb-2"><div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div><span class="text-[10px] font-mono font-bold live-timer-home" data-expires="${activeGroup.expiresAt}">...</span></div>`;
                             buttonHtml = `<button onclick="openGroup('${activeGid}')" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold text-sm shadow-xl flex items-center justify-center gap-2 border border-slate-700 mt-3 cursor-pointer"><span>View Your Squad</span><i data-lucide="arrow-right" size="16"></i></button>`;
                         } else {
-                            buttonHtml = `<button onclick="openStartModal('${p.id}')" class="w-full bg-brand-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all hover:shadow-brand-500/40 mt-3 cursor-pointer"><span>Start Live Squad</span><span class="bg-black/20 text-xs px-2 py-0.5 rounded border border-white/10 font-medium">Save ₹${p.price1 - p.price5}</span></button>`;
+                            // GREEN: Start Squad (Action)
+                            buttonHtml = `<button onclick="openStartModal('${p.id}')" class="w-full bg-psycho-action text-white py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all hover:shadow-psycho-action/40 mt-3 cursor-pointer"><span>Start Live Squad</span><span class="bg-black/20 text-xs px-2 py-0.5 rounded border border-white/10 font-medium">Save ₹${p.price1 - p.price5}</span></button>`;
                         }
-                        // PRODUCT THUMBNAIL
-                        let backgroundContent = p.videoSrc ? `<div class="w-20 h-20 rounded-xl flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden border border-black/5"><video src="${p.videoSrc}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-90"></video><div class="absolute top-0 left-0 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-br-lg border-b border-r border-white/10 z-20 shadow-sm">₹${p.price5}</div><div class="absolute bottom-1 right-1 bg-black/50 text-white text-[8px] px-1.5 rounded flex items-center gap-1 z-10"><i data-lucide="play" size="8"></i> Live</div></div>` : `<div class="w-20 h-20 ${p.videoClass} video-grain rounded-xl flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden border border-black/5"><div class="absolute top-0 left-0 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-br-lg border-b border-r border-white/10 z-20 shadow-sm">₹${p.price5}</div><i data-lucide="${p.icon}" size="32" class="text-white/80 z-10 relative group-hover/img:scale-110 transition-transform"></i></div>`;
+                        
+                        let backgroundContent = p.videoSrc ? `<div class="w-28 h-40 rounded-xl flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden border border-black/5"><video src="${p.videoSrc}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-90"></video><div class="absolute top-0 left-0 bg-black/60 backdrop-blur-md text-white text-[8px] font-bold px-1.5 py-0.5 rounded-br-lg border-b border-r border-white/10 z-20 shadow-sm">${p.farmer}</div><div class="absolute bottom-1 right-1 bg-black/50 text-white text-[8px] px-1.5 rounded flex items-center gap-1 z-10"><i data-lucide="play" size="8"></i> Live</div></div>` : `<div class="w-28 h-40 ${p.videoClass} video-grain rounded-xl flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden border border-black/5"><div class="absolute top-0 left-0 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-br-lg border-b border-r border-white/10 z-20 shadow-sm">₹${p.price5}</div><i data-lucide="${p.icon}" size="32" class="text-white/80 z-10 relative group-hover/img:scale-110 transition-transform"></i></div>`;
 
-                        return `<div class="card-modern relative overflow-hidden group"><div class="absolute top-0 right-0 bg-gradient-to-bl from-harvest-400 to-harvest-500 text-white text-[10px] font-black px-2.5 py-1 rounded-bl-xl shadow-md z-10">SAVE ₹${p.price1 - p.price5}</div><div class="p-3.5"><div class="flex gap-3 mb-3 cursor-pointer group/img" onclick="openFullFeed('${p.id}')">${backgroundContent}<div class="flex-1 py-0.5"><h3 class="font-black text-xl text-slate-800 leading-tight mb-1">${p.name}</h3><div class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md inline-block mb-1">${p.unit}</div><div class="text-xs text-slate-400 font-medium">${p.nameTe}</div><div class="flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded mt-2 w-fit"><i data-lucide="truck" size="12"></i> Get by Tomorrow, 9 AM</div></div></div><div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden">${timerHtml}${getPricingRoadmapHTML(p, 'light')}</div>${buttonHtml}</div></div>`;
+                        return `
+                        <div class="card-modern relative overflow-hidden group">
+                            <!-- GOLD: Best Price Badge -->
+                            <div class="absolute top-0 right-0 bg-gradient-to-bl from-amber-400 to-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-bl-xl shadow-md z-10">SAVE ₹${p.price1 - p.price5}</div>
+                            <div class="p-3.5">
+                                <div class="flex gap-3 mb-3 cursor-pointer group/img" onclick="openFullFeed('${p.id}')">
+                                    ${backgroundContent}
+                                    <div class="flex-1 py-0.5">
+                                        <h3 class="font-black text-xl text-slate-800 leading-tight mb-1">${p.name}</h3>
+                                        <div class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md inline-block mb-1">${p.unit}</div>
+                                        <div class="text-xs text-slate-400 font-medium">${p.nameTe}</div>
+                                        <!-- BLUE: Trust / Guarantee -->
+                                        <div class="flex items-center gap-1 text-[10px] font-bold text-psycho-trust bg-psycho-trustBg px-2 py-1 rounded mt-2 w-fit border border-blue-100"><i data-lucide="truck" size="12"></i> Get by Tomorrow, 9 AM</div>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden">${timerHtml}${getPricingRoadmapHTML(p, 'light')}</div>
+                                ${buttonHtml}
+                            </div>
+                        </div>`;
                     }).join('')}</div></div>`;
+
+            const mandiPriceEl = document.querySelector('#trust-strip .line-through');
+            const squadPriceEl = document.querySelector('#trust-strip .text-psycho-action');
+            if (mandiPriceEl && squadPriceEl) {
+                const p = PRODUCTS[0];
+                mandiPriceEl.innerText = `₹${p.mandiPrice}/kg`;
+                squadPriceEl.innerText = `₹${p.price5}/kg`;
+            }
 
             const updateHomeTimers = () => {
                 const now = Date.now();
@@ -524,11 +1056,20 @@
                 document.querySelectorAll('.live-timer-home').forEach(el => { const expires = parseInt(el.dataset.expires); const diff = expires - now; el.innerText = formatTime(diff); if (diff <= 0) el.classList.add('text-red-300'); });
             };
             updateHomeTimers(); state.timerInterval = setInterval(updateHomeTimers, 50);
+            startTicker();
+            initBehaviorEngine();
         }
 
         function renderGroup(el) {
             if (state.timerInterval) clearInterval(state.timerInterval);
+            if (state.hesitationInterval) clearInterval(state.hesitationInterval);
+            if (state.dependencyInterval) clearInterval(state.dependencyInterval);
+            if (state.painLoopInterval) clearInterval(state.painLoopInterval);
+            if (state.mandiModalInterval) clearInterval(state.mandiModalInterval);
+            if (state.mandiGroupInterval) clearInterval(state.mandiGroupInterval);
             if (state.scrollObserver) state.scrollObserver.disconnect();
+
+            state.oneHourAlerted = false;
 
             const g = state.groups[state.currentGroupId]; if (!g) return goHome();
             const p = PRODUCTS.find(x => x.id === g.productId); if (!p) return goHome();
@@ -539,10 +1080,64 @@
             if (count >= 5) { status = 'DEAL UNLOCKED!'; currentPrice = p.price5; } 
             else if (count >= 2) { status = 'PRICE DROPPED!'; currentPrice = p.price2; }
 
-            const manualOrderMsg = `📦 *New Order Alert*\n\nProduct: ${p.name}\nGroup ID: ${g.id}\nStatus: ${count}/5 Joined\n💰 *Final Price per Unit: ₹${currentPrice}*\n\n*Members:*\n` + members.map((m, i) => `${i+1}. ${m.name} (${(m.quantity || 1) * p.baseWeight} ${p.weightUnit}) - ${m.phone}`).join('\n');
-            const companyLink = `https://wa.me/${COMPANY_PHONE}?text=${encodeURIComponent(manualOrderMsg)}`;
+            const manualOrderMsg = `⚠️ PRICE DROPPING LIVE \n\nNeed 2 more to unlock ₹${p.price5}/kg (Duvva Shops today ₹${p.mandiPrice}!) \n\nJoin fast before timer ends → jodo.in/g/${g.id}`;
+            const companyLink = `https://wa.me/?text=${encodeURIComponent(manualOrderMsg)}`;
             const timeLeft = Math.max(0, g.expiresAt - Date.now()); const hrs = Math.floor(timeLeft / 3600000);
             const isUrgent = hrs < 2; const timerColor = isUrgent ? 'text-red-600' : 'text-slate-800'; const timerBg = isUrgent ? 'bg-red-50 border-red-100' : 'bg-white border-slate-100';
+
+            // GREEN: Savings is good
+            const mandiPrice = p.mandiPrice || 0;
+            const savings = mandiPrice > 0 ? mandiPrice - currentPrice : 0;
+            const savingsHtml = mandiPrice > 0 ? `
+                <div class="flex items-center justify-between text-[11px] font-bold bg-white/50 border-t border-slate-100 p-2 text-slate-600">
+                    <div class="flex flex-col items-center">
+                        <span class="text-[9px] uppercase tracking-wider text-slate-400">Duvva Shops</span>
+                        <span class="text-psycho-urgency line-through decoration-red-500" id="group-mandi-price">₹${mandiPrice}</span>
+                    </div>
+                    <i data-lucide="arrow-right" size="12" class="text-slate-300"></i>
+                    <div class="flex flex-col items-center">
+                        <span class="text-[9px] uppercase tracking-wider text-slate-400">Squad</span>
+                        <span class="text-slate-800" id="group-squad-price">₹${currentPrice}</span>
+                    </div>
+                    <div class="h-4 w-px bg-slate-200"></div>
+                    <div class="text-psycho-action flex items-center gap-1">
+                        <i data-lucide="trending-down" size="12"></i> Save ₹${savings}/kg
+                    </div>
+                </div>
+            ` : '';
+
+            state.mandiGroupInterval = setInterval(() => {
+                const mandiBox = document.querySelector('#group-mandi-price');
+                const squadBox = document.querySelector('#group-squad-price');
+                if (mandiBox) mandiBox.innerText = `₹${p.mandiPrice}`;
+                if (squadBox) squadBox.innerText = `₹${currentPrice}`;
+            }, 5000);
+
+            // Progress Bar Color: Green -> Gold
+            const progressWidth = (count / 5) * 100;
+            const progressColor = count >= 5 ? 'bg-psycho-reward' : 'bg-psycho-action';
+
+            // FIX: Zero loss logic
+            const loss = p.price1 - currentPrice;
+            let progressText, progressClass;
+            if (loss > 0) {
+                progressText = `YOU ARE LOSING ₹${loss}/${p.weightUnit.toUpperCase()} RIGHT NOW`;
+                progressClass = "text-[9px] font-bold text-slate-500/80 mix-blend-multiply"; // Kept red for pain if needed, but matched existing style
+            } else {
+                progressText = "ADD NEIGHBORS TO START SAVING";
+                progressClass = "text-[9px] font-bold text-slate-500/80 mix-blend-multiply"; // Neutral
+            }
+
+            // Find current user member info for Whatsapp Message
+            const currentUserMember = members.find(m => m.name === state.user.name && m.phone === state.user.phone);
+            let waOrderLink = "#";
+            if(currentUserMember) {
+                const totalWeight = currentUserMember.quantity * p.baseWeight;
+                const formattedWeight = parseFloat(totalWeight.toFixed(2));
+                const msg = `Hi JODO, Confirming my order!\n\nProduct: ${p.name}\nQuantity: ${formattedWeight} ${p.weightUnit}\nName: ${currentUserMember.name}\nPhone: ${currentUserMember.phone}\n\nPlease confirm my slot.`;
+                waOrderLink = `https://wa.me/${COMPANY_PHONE}?text=${encodeURIComponent(msg)}`;
+            }
+
 
             el.innerHTML = `
                 <div class="fade-in bg-white min-h-screen">
@@ -554,82 +1149,119 @@
                         <div id="sticky-header-timer" class="hidden opacity-0 translate-y-[-20px] transition-all duration-300 flex items-center gap-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full px-5 py-1.5 shadow-2xl"><div class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div><span id="header-timer-text" class="text-white font-mono text-xl font-black tabular-nums tracking-tight drop-shadow-md">00h 00m 00s 00</span></div>
                     </div>
                     <div class="p-6 pb-40">
-                        <div id="main-timer-card" class="${timerBg} border rounded-2xl p-4 mb-8 shadow-sm relative overflow-hidden"><div class="flex items-center gap-4 relative z-10"><div class="bg-white p-3 rounded-xl shadow-sm ${isUrgent ? 'animate-pulse' : ''}"><i data-lucide="timer" class="${isUrgent ? 'text-red-500' : 'text-slate-400'}" size="24"></i></div><div><div class="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-0.5">Offer Ends In</div><div id="live-timer" class="text-2xl font-mono font-black ${timerColor} tracking-tight tabular-nums">Loading...</div></div></div></div>
-                        <div class="text-center mb-8"><h1 class="font-black text-3xl text-brand-900 mb-1">${p.name}</h1><p class="text-sm text-slate-500 font-medium">${p.unit} • ${p.nameTe}</p></div>
-                        
-                        <!-- REMOVED SQUAD RING -->
+                        <!-- RED: Warning Box (Urgent Loss) -->
+                        <div class="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-3 shadow-sm">
+                            <i data-lucide="alert-triangle" class="text-psycho-urgency shrink-0 mt-0.5" size="18"></i>
+                            <div>
+                                <div class="text-xs font-black text-red-700">⚠ YOU ARE LOSING SAVINGS</div>
+                                <div class="text-[10px] font-medium text-red-600 leading-tight mt-0.5">Leaving this squad now costs you ₹38. Complete it to save.</div>
+                            </div>
+                        </div>
+
+                        <div id="main-timer-card" class="${timerBg} border rounded-2xl mb-8 shadow-sm relative overflow-hidden flex flex-col">
+                            <div class="p-4 flex items-center gap-4 relative z-10">
+                                <div class="bg-white p-3 rounded-xl shadow-sm ${isUrgent ? 'animate-pulse' : ''}">
+                                    <i data-lucide="timer" class="${isUrgent ? 'text-red-500' : 'text-slate-400'}" size="24"></i>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-0.5">Squad Expiring In</div>
+                                    <div id="live-timer" class="text-2xl font-mono font-black ${timerColor} tracking-tight tabular-nums">Loading...</div>
+                                </div>
+                            </div>
+                            ${savingsHtml}
+                        </div>
+
+                        <!-- BLUE: Trust Message -->
+                        <p class="text-[10px] text-psycho-trust text-center mt-1 mb-6 bg-blue-50 py-1 rounded inline-block px-3 border border-blue-100 mx-auto w-fit">
+                            If the squad doesn’t complete, you simply pay today’s normal price. No penalty.
+                        </p>
+
+                        <div class="text-center mb-8"><h1 class="font-black text-3xl text-slate-900 mb-1">${p.name}</h1><p class="text-sm text-slate-500 font-medium">${p.unit} • ${p.nameTe}</p></div>
                         
                         <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-8">
                             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-3">Live Pricing Tiers</div>
                             ${getPricingRoadmapHTML(p, 'light')}
                             <div class="mt-4 pt-3 border-t border-slate-200 text-center">
-                                ${count < 5 ? `<p class="text-xs text-slate-600 leading-relaxed">If timer ends now, everyone pays <span class="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-bold">₹${currentPrice}</span>.<br>Add <b class="text-red-500">${needed} more</b> to unlock <span class="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold">₹${p.price5}</span>!</p>` : `<p class="text-xs font-bold text-brand-600 bg-brand-50 p-2 rounded-lg">🏆 Maximum Discount Unlocked! Everyone pays ₹${p.price5}.</p>`}
+                                ${count < 5 ? `<p class="text-xs text-slate-600 leading-relaxed">If timer ends now, everyone pays <span class="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-bold">₹${currentPrice}</span>.<br>Add <b class="text-psycho-urgency">${needed} more</b> to unlock <span class="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold">₹${p.price5}</span>!</p>` : `<p class="text-xs font-bold text-psycho-action bg-green-50 p-2 rounded-lg">🏆 Maximum Discount Unlocked! Everyone pays ₹${p.price5}.</p>`}
                             </div>
                         </div>
                         
-                        <!-- Sticky Bottom Action Bar -->
+                        <!-- NEW PLACEMENT: Share Button Inside Content -->
+                        <a href="${companyLink}" target="_blank" class="block w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold text-sm text-center border border-slate-200 shadow-sm btn-press flex items-center justify-center gap-2 cursor-pointer mb-8">
+                            <i data-lucide="share-2" size="18"></i> Invite 2 more → Save ₹${p.price1 - p.price5}
+                        </a>
+
+                        <!-- MOVED: FIXED BOTTOM BAR NOW HAS 'CONFIRM ORDER' -->
                         <div class="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-white/90 backdrop-blur-lg border-t border-slate-200 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-50 flex justify-center">
                              <div class="w-full max-w-md">
-                                <a href="${companyLink}" target="_blank" class="block w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg text-center shadow-lg shadow-green-600/30 btn-press flex items-center justify-center gap-2 cursor-pointer transition-transform hover:-translate-y-0.5"><i data-lucide="message-circle" size="22"></i> Send List on WhatsApp</a>
+                                <!-- GREEN: Primary Order Action -->
+                                <a href="${waOrderLink}" target="_blank" class="block w-full bg-psycho-action text-white py-4 rounded-2xl font-black text-lg text-center shadow-lg shadow-green-600/30 btn-press flex items-center justify-center gap-2 cursor-pointer transition-transform hover:-translate-y-0.5 animate-pulse">
+                                    <i data-lucide="message-circle" size="22"></i> Confirm Official Order
+                                </a>
                              </div>
                         </div>
 
                         <div class="mt-8 border-t border-slate-100 pt-8 pb-24">
                             <div class="flex flex-col gap-2 mb-6">
+                                <!-- ORANGE: Heat Meter (Attention) -->
+                                <div class="flex items-center gap-2 text-psycho-alert bg-psycho-alertBg px-3 py-1.5 rounded-lg border border-orange-100 mb-2">
+                                    <i data-lucide="flame" size="14" class="fill-orange-500"></i>
+                                    <span class="text-xs font-bold">Squad is heating up! 3 people joined recently.</span>
+                                </div>
+
                                 <div class="flex justify-between items-end">
                                     <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Group Members</h3>
                                     <div class="flex items-center gap-1.5">
-                                        <span class="text-brand-600 font-bold text-xs">${count}/5 Joined</span>
+                                        <span class="text-psycho-action font-bold text-xs">${count}/5 Joined</span>
                                         <span class="flex h-2 w-2 relative">
-                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-psycho-action"></span>
                                         </span>
                                     </div>
                                 </div>
-                                <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div class="h-full bg-brand-500 transition-all duration-500" style="width: ${(count/5)*100}%"></div>
+                                <div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner relative">
+                                    <div class="h-full ${progressColor} transition-all duration-500 relative" style="width: ${progressWidth}%">
+                                        <div class="absolute inset-0 bg-white/20 animate-slide-shimmer" style="background-size: 200% 100%"></div>
+                                    </div>
+                                    <div class="absolute inset-0 flex items-center justify-center ${progressClass}">
+                                        ${progressText}
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="space-y-4">
                                 ${members.map((m, i) => {
                                     const isCurrentUser = (state.user.name && m.name === state.user.name && m.phone === state.user.phone);
-                                    const memberTotalCost = m.quantity * currentPrice;
-                                    const memberWeight = (m.quantity * p.baseWeight) + p.weightUnit;
+                                    // FIX: Formatting for weight
+                                    const rawWeight = m.quantity * p.baseWeight;
+                                    const memberWeight = `${rawWeight.toFixed(2)} ${p.weightUnit}`;
                                     
-                                    // Calculate Totals for ALL levels for this specific member
                                     const t1Total = m.quantity * p.price1;
                                     const t2Total = m.quantity * p.price2;
                                     const t5Total = m.quantity * p.price5;
 
-                                    // Helper to style the 3 boxes
                                     const getBoxStyle = (tier) => {
                                         const base = "flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all";
-                                        
-                                        // TIER 1 BOX
+                                        // 1 Person: SLATE
                                         if (tier === 1) {
-                                            if (count < 2) return `${base} bg-slate-800 border-slate-800 text-white shadow-md scale-105 z-10 ring-2 ring-slate-200`; // Active
-                                            return `${base} bg-slate-50 border-slate-100 text-slate-300 line-through grayscale`; // Passed
+                                            if (count < 2) return `${base} bg-slate-800 border-slate-800 text-white shadow-md scale-105 z-10 ring-2 ring-slate-200`;
+                                            return `${base} bg-slate-50 border-slate-100 text-slate-300 line-through grayscale`;
                                         }
-                                        
-                                        // TIER 2 BOX
+                                        // 2 People: GREEN
                                         if (tier === 2) {
-                                            if (count >= 2 && count < 5) return `${base} bg-brand-600 border-brand-600 text-white shadow-md scale-105 z-10 ring-2 ring-brand-200`; // Active
-                                            if (count >= 5) return `${base} bg-slate-50 border-slate-100 text-slate-300 line-through grayscale`; // Passed
-                                            return `${base} bg-white border-slate-200 text-slate-400`; // Future
+                                            if (count >= 2 && count < 5) return `${base} bg-psycho-action border-psycho-action text-white shadow-md scale-105 z-10 ring-2 ring-green-200`;
+                                            if (count >= 5) return `${base} bg-slate-50 border-slate-100 text-slate-300 line-through grayscale`;
+                                            return `${base} bg-white border-slate-200 text-slate-400`;
                                         }
-
-                                        // TIER 3 BOX (GOAL)
+                                        // 5 People: GOLD
                                         if (tier === 5) {
-                                            if (count >= 5) return `${base} bg-yellow-500 border-yellow-500 text-black shadow-lg scale-110 z-20 ring-2 ring-yellow-200`; // Active Winner
-                                            return `${base} bg-yellow-50 border-yellow-200 text-yellow-700`; // Future Goal
+                                            if (count >= 5) return `${base} bg-psycho-reward border-psycho-reward text-black shadow-lg scale-110 z-20 ring-2 ring-yellow-200`;
+                                            return `${base} bg-yellow-50 border-yellow-200 text-yellow-700`;
                                         }
                                     };
 
                                     return `
                                         <div class="flex flex-col bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                                            
-                                            <!-- Top Section: User Info -->
                                             <div class="p-3 pb-0 flex justify-between items-start">
                                                 <div class="flex items-center gap-3">
                                                     <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-sm font-black text-slate-400 border border-slate-100 shadow-inner">
@@ -638,7 +1270,8 @@
                                                     <div>
                                                         <div class="flex items-center gap-1.5">
                                                             <div class="text-sm font-bold text-slate-900 uppercase tracking-tight">${m.name}</div>
-                                                            ${i === 0 ? '<span class="text-[8px] bg-slate-100 text-slate-500 px-1 py-0.5 rounded font-bold uppercase border border-slate-200">Leader</span>' : ''}
+                                                            <!-- GREEN: Leader Badge -->
+                                                            ${i === 0 ? '<span class="text-[8px] bg-green-100 text-psycho-action px-1 py-0.5 rounded font-bold uppercase border border-green-200 flex items-center gap-1"><i data-lucide="shield-check" size="8"></i> Leader</span>' : ''}
                                                         </div>
                                                         <div class="flex items-center gap-2 mt-0.5">
                                                             <div class="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">${memberWeight}</div>
@@ -646,55 +1279,41 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
                                                 ${isCurrentUser ? `
                                                     <button onclick="openEditMemberModal('${g.id}', ${i})" class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-100">
                                                         Edit Qty
                                                     </button>` 
                                                 : ''}
                                             </div>
-
-                                            <!-- Bottom Section: The 3-Step Price Grid -->
                                             <div class="p-3">
                                                 <div class="grid grid-cols-3 gap-2">
-                                                    <!-- Step 1 -->
                                                     <div class="${getBoxStyle(1)}">
                                                         <div class="text-[8px] font-bold uppercase tracking-wider mb-0.5 opacity-80">1 Person</div>
                                                         <div class="text-xs font-black">₹${t1Total}</div>
                                                     </div>
-                                                    
-                                                    <!-- Step 2 -->
                                                     <div class="${getBoxStyle(2)}">
                                                         <div class="text-[8px] font-bold uppercase tracking-wider mb-0.5 opacity-80">2 People</div>
                                                         <div class="text-xs font-black">₹${t2Total}</div>
                                                     </div>
-
-                                                    <!-- Step 3 -->
                                                     <div class="${getBoxStyle(5)}">
                                                         <div class="text-[8px] font-bold uppercase tracking-wider mb-0.5 opacity-80">5 People</div>
                                                         <div class="text-sm font-black">₹${t5Total}</div>
                                                     </div>
                                                 </div>
-                                                
-                                                ${isCurrentUser && count < 5 ? 
-                                                    `<div class="text-[10px] text-center mt-2 text-slate-400 font-medium">
-                                                        Add neighbors to verify your bill at <span class="text-slate-800 font-bold">₹${t5Total}</span>
-                                                     </div>` 
-                                                : ''}
+                                                ${isCurrentUser && count < 5 ? `<div class="text-[10px] text-center mt-2 text-slate-400 font-medium">Add neighbors to verify your bill at <span class="text-slate-800 font-bold">₹${t5Total}</span></div>` : ''}
                                             </div>
                                         </div>`;
                                 }).join('')}
                                 
-                                <!-- Empty Slots Visualization (Clickable to Add Neighbor) -->
                                 ${Array(needed).fill(0).map((_, idx) => `
                                     <div onclick="openAddMemberModal('${g.id}')" class="flex items-center gap-3 p-4 bg-slate-50/50 border-2 border-dashed border-slate-300 rounded-2xl opacity-60 cursor-pointer hover:bg-slate-50 transition-colors group">
-                                        <div class="w-10 h-10 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-300 group-hover:border-slate-400 group-hover:text-slate-400">
-                                            <i data-lucide="plus" size="18"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-slate-400 group-hover:text-slate-500">Open Spot #${count + idx + 1}</div>
-                                            <div class="text-[10px] text-slate-400">Tap to add neighbor...</div>
-                                        </div>
+                                            <div class="w-10 h-10 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-300 group-hover:border-slate-400 group-hover:text-slate-400">
+                                                <i data-lucide="plus" size="18"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs font-bold text-slate-400 group-hover:text-slate-500">Open Spot #${count + idx + 1}</div>
+                                                <div class="text-[10px] text-slate-400">Tap to add neighbor...</div>
+                                            </div>
                                     </div>
                                 `).join('')}
                             </div>
@@ -719,6 +1338,14 @@
                     const mainStr = `${h}h ${m}m ${s}s ${ms}`;
                     timerEl.innerText = mainStr;
                     if(headerTimerText) headerTimerText.innerText = mainStr;
+                    
+                    if (diff < 3600000 && !state.oneHourAlerted) {
+                        state.oneHourAlerted = true;
+                        toast("⚠️ 1 hour left — prices may rise", "clock");
+                        triggerVibration();
+                        if(mainTimerCard) mainTimerCard.classList.add("animate-shake");
+                    }
+
                     if (diff <= 0) {
                         timerEl.classList.remove('text-slate-800', 'text-red-600'); timerEl.classList.add('text-red-600');
                         if (headerTimerEl) { headerTimerEl.classList.remove('bg-black/40', 'border-white/10'); headerTimerEl.classList.add('bg-red-600', 'border-red-500'); }
@@ -742,10 +1369,31 @@
                 }, { threshold: 0.1 });
                 state.scrollObserver.observe(mainTimerCard);
             }
+
+            state.dependencyInterval = setInterval(() => {
+                if (count > 1 && count < 5) {
+                    const randomMember = members.length > 0 ? members[Math.floor(Math.random() * members.length)].name : "Your Neighbor";
+                    showTicker(`👀 ${randomMember} is depending on you to finish this squad`, 'urgent');
+                }
+                if (count === 3) setTimeout(() => showTicker("⚠️ Squad stuck at 3 — they are waiting for you", 'urgent'), 3000);
+                if (count === 4) setTimeout(() => showTicker("🔥 Only ONE more member needed to unlock!", 'good'), 3000);
+            }, 12000); 
+
+            state.painLoopInterval = setInterval(() => {
+                if (count < 5) {
+                    const loss = p.price1 - currentPrice;
+                    if (loss > 0) {
+                         showTicker(`⚠ You are losing ₹${loss}/kg right now by waiting`, 'urgent');
+                         triggerVibration();
+                    }
+                }
+            }, 9000); 
         }
         
         function init() {
             loadData();
+            loadHabit(); 
+            startMandiEngine();
             const handleRoute = () => {
                 const params = new URLSearchParams(location.search);
                 state.currentGroupId = params.get('group') || null;
@@ -756,12 +1404,7 @@
             window.addEventListener('storage', () => { loadData(); render(); });
             handleRoute();
         }
-
-        // START
         document.addEventListener('DOMContentLoaded', init);
-
     </script>
 </body>
 </html>
-
-
