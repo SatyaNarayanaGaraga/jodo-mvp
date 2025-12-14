@@ -7,934 +7,846 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        jodo: {
-                            // 1. BASE
-                            base: '#FFFFFF',
-                            textPrimary: '#111827',
-                            textSecondary: '#6B7280',
-
-                            // 2. PRICE SYSTEM
-                            priceFinal: '#166534',    // Green is standard for final price
-                            priceCut: '#E53935',      // Red for savings
-                            priceOld: '#9CA3AF',
-
-                            // 3. CTA BUTTONS & BRANDING (RESTORED TO RED)
-                            ctaPrimary: '#E53935',    // JODO Red (Action/Header)
-                            ctaSuccess: '#16A34A',    // Green (Success)
-
-                            // 4. GROUP / PROGRESS (RESTORED TO YELLOW)
-                            progress: '#FFD600',      // Vibrant Yellow
-                            progressBg: '#F3F4F6',
-                            bonus: '#FFD600',         // Vibrant Yellow
-
-                            // 5. URGENCY
-                            urgency: '#E53935',       // Red
-
-                            // 6. UTILS
-                            border: '#E5E7EB',
+                        psycho: {
+                            action: '#E53935', actionLight: '#FF5252', actionBg: '#FFF5F5',
+                            urgency: '#B71C1C', urgencyBg: '#FFEBEE',
+                            reward: '#FFD600', rewardText: '#374151', rewardBg: '#FFFDE7',
+                            trust: '#F57C00', trustBg: '#FFF3E0',
+                            alert: '#FF6D00', alertBg: '#FFF8E1',
+                            neutral: '#6B7280', base: '#FFFFFF'
                         }
                     },
-                    fontFamily: {
-                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-                    },
                     animation: {
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                        'fade-in-up': 'fadeInUp 0.5s ease-out'
+                        'fade-in-up': 'fadeInUp 0.5s ease-out',
+                        'zoom-in': 'zoomIn 0.3s ease-out'
                     },
                     keyframes: {
                         pop: { '0%': { transform: 'scale(0.95)' }, '100%': { transform: 'scale(1)' } },
                         fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-                        explode: { '0%': { transform: 'scale(1)', opacity: '1' }, '50%': { transform: 'scale(1.2) rotate(5deg)', opacity: '0.8' }, '100%': { transform: 'scale(0) rotate(20deg)', opacity: '0' } }
+                        zoomIn: { '0%': { opacity: '0', transform: 'scale(0.95)' }, '100%': { opacity: '1', transform: 'scale(1)' } }
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background: #FFFFFF; color: #111827; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; }
-        #app { width: 100%; max-width: 448px; background: #FFFFFF; min-height: 100dvh; position: relative; overflow-y: auto; display: flex; flex-direction: column; }
-        .btn-press { transition: transform 0.1s; cursor: pointer; user-select: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #111827; color: #111827; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; align-items: flex-start; margin: 0; overscroll-behavior-y: none; }
+        #app { width: 100%; max-width: 448px; background: #F9FAFB; min-height: 100dvh; position: relative; box-shadow: 0 0 40px rgba(0, 0, 0, 0.3); overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; }
+        .btn-press { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; user-select: none; }
         .btn-press:active:not(:disabled) { transform: scale(0.96); }
-        .card-modern { background: #FFFFFF; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #E5E7EB; }
-        .glass-header { background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border-bottom: 1px solid #E5E7EB; }
+        .card-modern { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #F3F4F6; transform-style: preserve-3d; transition: transform 0.1s ease-out; }
+        .glass-header { background: #E53935; box-shadow: 0 2px 10px rgba(229, 57, 53, 0.3); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tilt-card { transition: transform 0.15s ease-out; transform-style: preserve-3d; }
+        .hold-btn { position: relative; overflow: hidden; user-select: none; touch-action: none; }
+        .hold-btn-fill { position: absolute; top: 0; left: 0; height: 100%; background: rgba(0,0,0,0.25); width: 0%; transition: width 0s linear; }
+        .hold-btn.holding .hold-btn-fill { width: 100%; transition: width 1.2s linear; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
         .fade-in { animation: fadeInUp 0.5s ease-out forwards; }
-        .tilt-card { transition: transform 0.15s ease-out; transform-style: preserve-3d; }
-        .animate-explode { animation: explode 0.4s ease-out forwards; }
-        
-        /* Price Anchor */
-        .price-anchor { color: #166534; font-weight: 900; letter-spacing: -0.025em; }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased selection:bg-psycho-action/20">
 
     <div id="app"></div>
 
-    <div id="modal-overlay" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300">
-        <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[2rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[70vh] flex flex-col overflow-hidden"></div>
+    <!-- MODAL OVERLAY -->
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/80 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300">
+        <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[2rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden"></div>
     </div>
 
-    <div id="live-ticker" class="hidden"></div>
-    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe"></div>
+    <!-- PSYCHOLOGY TICKER -->
+    <div id="live-ticker" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-full text-xs font-medium shadow-2xl z-[55] flex items-center gap-2 pointer-events-none border border-white/10 whitespace-nowrap hidden max-w-[90%] overflow-hidden transition-all duration-500 pb-safe">
+        <div id="ticker-dot" class="w-2 h-2 rounded-full animate-pulse shrink-0"></div>
+        <span id="ticker-text" class="truncate font-bold tracking-wide">...</span>
+    </div>
 
-    <script>
-        const COMPANY_PHONE = "918500742671"; 
-        const GUIDE_VIDEO_SRC = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
+    <!-- TOAST -->
+    <div id="toast" aria-live="polite" role="status" class="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl hidden z-[90] flex items-center gap-2 pointer-events-none border border-white/10 transition-all duration-300 tracking-wide animate-pop pt-safe"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, arrayUnion, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- 1. FIREBASE CONFIG ---
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const PUBLIC_GROUPS_COLL = 'groups';
+
+        // --- 2. CONFIG & STATE ---
+        const COMPANY_PHONE = "919999999999"; 
+        const ADMIN_PASSWORD = "JODO2025"; // 🔒 CHANGE THIS PASSWORD
+        const GUIDE_IMG_SRC = 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1000&auto=format&fit=crop';
         
-        // 🔒 CANONICAL SITE URL (CHANGE THIS AFTER GITHUB DEPLOY)
-        const SITE_BASE_URL = "https://satyanarayanagaraga.github.io/jodo-mvp/";
-
-        // ================= GOOGLE SHEET BACKEND =================
-        const SHEET_API = "https://script.google.com/macros/s/AKfycbxDsU-xD2k_RWHgkGFj0sU7iuDr0FgqZ5QsH6jaHw0oRUGWFlHXCi6CzdxxlPEyZAux/exec";
-        // ✅ REAL GOOGLE FORM LINK CONNECTED
-        const JOIN_FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSdkPSHKnb2Uh4a_p17cgL3AHcei3SOjRdpftgOI1-C5QJW50w/viewform";
-        // Poll interval (ms)
-        const GROUP_POLL_INTERVAL = 8000;
-
-        const PRODUCTS = [
-            { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price5: 18, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-red-50 text-red-600', location: 'Duvva Fields', videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
-            { id: 'oil', name: 'Sunflower Oil', nameTe: 'పొద్దుతిరుగుడు నూనె', unit: '500ml', baseWeight: 0.5, weightUnit: 'L', price1: 60, price5: 50, mandiPrice: 65, remainingStock: 8, icon: 'droplet', imageColor: 'bg-yellow-50 text-yellow-600', location: 'Factory Direct', videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' },
-            { id: 'sugar', name: 'Sugar', nameTe: 'చక్కెర', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 24, price5: 20, mandiPrice: 38, remainingStock: 42, icon: 'package', imageColor: 'bg-blue-50 text-blue-600', location: 'Local Stock', videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' }
-        ];
-
-        const DB_KEY = 'jodo_local_db_v64'; 
-        const HABIT_KEY = 'jodo_habit_v1';
-        
-        const DELIVERY_DAYS = [3, 6]; 
-        const CUTOFF_HOUR = 20; 
-        const FULFILLMENT_FEE = 6; 
-
-        function getNextDeliveryDate() {
-            const now = new Date();
-            for (let i = 0; i < 7; i++) {
-                const d = new Date();
-                d.setDate(now.getDate() + i);
-                if (DELIVERY_DAYS.includes(d.getDay())) {
-                    if (i === 0 && now.getHours() >= CUTOFF_HOUR) continue;
-                    return d;
-                }
-            }
-            return null;
-        }
-
-        function cleanOldCycles() {
-            const now = Date.now();
-            let changed = false;
-            for (const gid in state.groups) {
-                const g = state.groups[gid];
-                if (!g) continue;
-                if (g.expiresAt && g.expiresAt < now) {
-                    delete state.groups[gid];
-                    delete state.members[gid];
-                    changed = true;
-                }
-            }
-            if (changed) saveData();
-        }
-
         const state = { 
             view: 'home', 
             currentGroupId: null, 
             groups: {}, 
             members: {}, 
-            user: { name: '', phone: '', ward: '' }, 
+            adminGroups: [],
+            user: { name: '', phone: '', uid: null },
             timerInterval: null, 
-            lastMemberCount: 0,
-            groupPoller: null
+            tickerInterval: null,
+            firebaseUnsubscribe: null,
+            adminUnsubscribe: null,
+            isAdmin: false // 🔒 Admin State
         };
 
-        const habitState = { totalOrders: 0, streakDays: 0, lastOrderDate: null };
-        let JODO_INITIALIZED = false;
-        
-        function loadData() {
+        const PRODUCTS = [
+            { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price5: 18, remainingStock: 14, icon: 'layers', imageColor: 'bg-red-50 text-red-600', image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=500&q=80' },
+            { id: 'oil', name: 'Sunflower Oil', nameTe: 'పొద్దుతిరుగుడు నూనె', unit: '500ml', baseWeight: 0.5, weightUnit: 'L', price1: 60, price5: 50, remainingStock: 8, icon: 'droplet', imageColor: 'bg-yellow-50 text-yellow-600', image: 'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?w=500&q=80' },
+            { id: 'sugar', name: 'Sugar', nameTe: 'చక్కెర', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 24, price5: 20, remainingStock: 42, icon: 'package', imageColor: 'bg-blue-50 text-blue-600', image: 'https://images.unsplash.com/photo-1612196023694-072b22300b75?w=500&q=80' }
+        ];
+
+        // --- 3. HELPER FUNCTIONS ---
+        function toast(msg, icon) { 
+            const t = document.getElementById('toast'); 
+            t.innerHTML = `<i data-lucide="${icon}" size="16"></i> ${msg}`; 
+            t.classList.remove('hidden'); 
+            if(window.lucide) window.lucide.createIcons(); 
+            setTimeout(() => t.classList.add('hidden'), 3500); 
+        }
+
+        function triggerConfetti() { if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#E53935', '#FDD835', '#ffffff'] }); }
+        function triggerVibration() { if (navigator.vibrate) navigator.vibrate(20); }
+        function createNodeFromHTML(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+        function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
+        function showFieldError(c, m) { c.innerHTML = `<div class="text-xs text-red-600 font-bold bg-red-50 p-2 rounded flex gap-2"><i data-lucide="alert-circle" size="14"></i> ${m}</div>`; if(window.lucide) window.lucide.createIcons(); }
+
+        // --- 4. UTILS & UI ---
+        function initCardTilt() {
+             const cards = document.querySelectorAll('.tilt-card');
+             if(cards.length === 0) return;
+             cards.forEach(card => {
+                 card.addEventListener('mousemove', (e) => {
+                     const rect = card.getBoundingClientRect();
+                     const x = e.clientX - rect.left;
+                     const y = e.clientY - rect.top;
+                     const centerX = rect.width / 2;
+                     const centerY = rect.height / 2;
+                     const rotateX = ((y - centerY) / centerY) * -3; 
+                     const rotateY = ((x - centerX) / centerX) * 3;
+                     card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                 });
+                 card.addEventListener('mouseleave', () => {
+                     card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+                 });
+             });
+        }
+
+        window.closeModal = () => {
+             const overlay = document.getElementById('modal-overlay');
+             const content = document.getElementById('modal-content');
+             content.classList.add('translate-y-full');
+             setTimeout(() => {
+                 overlay.classList.add('hidden');
+                 content.innerHTML = ''; 
+             }, 200); 
+        };
+
+        function showModalNode(node) {
+             const overlay = document.getElementById('modal-overlay');
+             const content = document.getElementById('modal-content');
+             content.innerHTML = ''; content.appendChild(node);
+             overlay.classList.remove('hidden'); 
+             requestAnimationFrame(() => { overlay.classList.remove('opacity-0'); content.classList.remove('translate-y-full'); });
+             if(node.querySelector('input')) node.querySelector('input').focus();
+             if(window.lucide) window.lucide.createIcons();
+        }
+
+        // --- 5. AUTH & DATA ---
+        async function initAuth() {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                try { await signInWithCustomToken(auth, __initial_auth_token); } catch(e) { await signInAnonymously(auth); }
+            } else {
+                await signInAnonymously(auth);
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    state.user.uid = user.uid;
+                    checkUrlForGroup(); 
+                }
+            });
+        }
+
+        function loadLocalData() {
             try {
                 state.user.name = localStorage.getItem('jodo_user_name') || '';
                 state.user.phone = localStorage.getItem('jodo_user_phone') || '';
-                state.user.ward = localStorage.getItem('jodo_user_ward') || '';
-                const raw = localStorage.getItem(DB_KEY);
+                // Load local DB cache for instant UI
+                const raw = localStorage.getItem('jodo_local_db_v54');
                 if (raw) {
                     const data = JSON.parse(raw);
-                    state.groups = data.groups || {};
-                    // We don't load members from local anymore, we fetch them
-                    // state.members = data.members || {}; 
+                    state.groups = { ...state.groups, ...data.groups };
+                    state.members = { ...state.members, ...data.members };
                 }
-            } catch(e) { console.error("Load Error", e); }
+            } catch(e) {}
         }
 
-        function saveData() {
+        function saveLocalData() {
             try {
-                localStorage.setItem(DB_KEY, JSON.stringify({ groups: state.groups, members: {} })); // Don't save members locally
-                window.dispatchEvent(new Event('storage')); 
-            } catch(e) { console.error("Save Error", e); }
+                localStorage.setItem('jodo_local_db_v54', JSON.stringify({ groups: state.groups, members: state.members }));
+            } catch(e) {}
         }
-
-        function saveUser(name, phone, ward) {
+        
+        function saveUserLocally(name, phone) {
             state.user.name = name;
             state.user.phone = phone;
             localStorage.setItem('jodo_user_name', name);
             localStorage.setItem('jodo_user_phone', phone);
-            if (ward) {
-                state.user.ward = ward;
-                localStorage.setItem('jodo_user_ward', ward);
-            }
         }
 
-        function loadHabit() {
-            try {
-                const raw = localStorage.getItem(HABIT_KEY);
-                if (raw) {
-                    const data = JSON.parse(raw);
-                    habitState.totalOrders = data.totalOrders || 0;
-                    habitState.streakDays = data.streakDays || 0;
-                    habitState.lastOrderDate = data.lastOrderDate || null;
-                }
-            } catch (e) {}
-        }
-
-        function saveHabit() {
-            try { localStorage.setItem(HABIT_KEY, JSON.stringify(habitState)); } catch (e) {}
-        }
-
-        function markOrderHabit() {
-            const today = new Date();
-            const todayStr = today.toISOString().slice(0,10);
-            if (!habitState.lastOrderDate) {
-                habitState.streakDays = 1;
-            } else {
-                const last = new Date(habitState.lastOrderDate);
-                const diffDays = Math.round((today - last) / 86400000);
-                if (diffDays === 1) habitState.streakDays += 1;
-                else if (diffDays > 1) habitState.streakDays = 1;
-            }
-            habitState.lastOrderDate = todayStr;
-            habitState.totalOrders += 1;
-            saveHabit();
-        }
-
-        function startMandiEngine() { render(); }
-
-        function toast(msg, icon) { const t = document.getElementById('toast'); t.innerHTML = `<i data-lucide="${icon}" size="16"></i> ${msg}`; t.classList.remove('hidden'); if(window.lucide) window.lucide.createIcons(); setTimeout(() => t.classList.add('hidden'), 3000); }
-        function triggerVibration() { if (navigator.vibrate) navigator.vibrate(20); }
-        function createNodeFromHTML(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+        // --- 6. CORE LOGIC (FIRESTORE) ---
         
-        function showModalNode(node) { 
-            const overlay = document.getElementById('modal-overlay');
-            const content = document.getElementById('modal-content');
-            content.innerHTML = ''; content.appendChild(node); 
-            overlay.classList.remove('hidden'); 
-            requestAnimationFrame(() => { overlay.classList.remove('opacity-0'); content.classList.remove('translate-y-full'); });
-            if(node.querySelector('input')) node.querySelector('input').focus(); 
-            if(window.lucide) window.lucide.createIcons(); 
-        }
+        async function createGroup(pid, name, phone, qty, isSolo) {
+            const gid = 'g' + Date.now();
+            const expires = Date.now() + (2 * 24 * 60 * 60 * 1000); // 48h
+            
+            const member = { 
+                name, phone, quantity: qty, isLeader: true, joinedAt: Date.now(),
+                uid: state.user.uid 
+            };
 
-        window.closeModal = () => {
-            const overlay = document.getElementById('modal-overlay');
-            const content = document.getElementById('modal-content');
-            content.classList.add('translate-y-full');
-            setTimeout(() => { overlay.classList.add('hidden'); content.innerHTML = ''; }, 200);
-        };
+            const groupData = {
+                id: gid,
+                productId: pid,
+                ownerName: name,
+                expiresAt: expires,
+                createdAt: Date.now(),
+                status: 'open',
+                type: isSolo ? 'solo' : 'group',
+                members: [member] 
+            };
 
-        function showFieldError(c, m) { c.innerHTML = `<div class="field-error text-xs text-jodo-urgency font-bold bg-red-50 p-3 rounded-lg flex items-center gap-2 border border-red-100"><i data-lucide="alert-circle" size="16"></i> ${m}</div>`; if(window.lucide) window.lucide.createIcons(); }
-        function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
+            // Optimistic update
+            state.groups[gid] = groupData;
+            state.members[gid] = [member];
+            saveLocalData();
+            saveUserLocally(name, phone);
 
-        function startTicker() { /* DISABLED */ }
-        function startLocalHeatEngine() { /* DISABLED */ }
-        function initCardTilt() { /* DISABLED */ }
-
-        window.openGroup = function(gid) { 
-            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', `?group=${gid}`); } catch(e) {} 
-            state.currentGroupId = gid; state.view = 'group'; render(); 
-        };
-
-        window.goHome = function() { 
-            if (state.timerInterval) clearInterval(state.timerInterval);
-            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', location.pathname); } catch(e) {} 
-            state.view = 'home'; state.currentGroupId = null; render(); 
-        };
-
-        window.closeTvFeed = () => {
-            document.body.style.overflow = '';
-            const container = document.getElementById('full-feed-container');
-            if (container) container.innerHTML = '';
-        };
-
-        window.openProductVideo = function(videoSrc) {
-            const html = `
-                <div class="flex flex-col bg-black rounded-t-[2rem] overflow-hidden max-h-[60vh]">
-                     <div class="flex-1 relative flex items-center justify-center bg-black">
-                        <video src="${videoSrc}" autoplay controls playsinline class="w-full max-h-full object-contain"></video>
-                        <button onclick="window.closeModal()" class="absolute top-4 right-4 bg-white/20 p-2 rounded-full text-white backdrop-blur-md hover:bg-white/30 transition-colors"><i data-lucide="x" size="24"></i></button>
-                     </div>
-                </div>
-            `;
-            showModalNode(createNodeFromHTML(html));
-        };
-
-        window.openLiveGuide = function() {
-            const html = `
-                <div class="flex flex-col h-[70vh] bg-black rounded-t-[2rem] overflow-hidden">
-                     <div class="flex-1 relative flex items-center justify-center bg-black">
-                        <video src="${GUIDE_VIDEO_SRC}" autoplay controls playsinline class="w-full max-h-full object-contain"></video>
-                        <button onclick="window.closeModal()" class="absolute top-4 right-4 bg-white/20 p-2 rounded-full text-white backdrop-blur-md hover:bg-white/30 transition-colors"><i data-lucide="x" size="24"></i></button>
-                     </div>
-                     <div class="bg-white p-5 shrink-0">
-                        <h3 class="font-black text-xl text-jodo-textPrimary mb-1">How JODO Works</h3>
-                        <p class="text-sm text-jodo-textSecondary font-medium">1. Pick a Deal • 2. Join Neighbors • 3. Unlock Wholesale Price</p>
-                     </div>
-                </div>
-            `;
-            showModalNode(createNodeFromHTML(html));
-        };
-
-        window.openSupportOptions = function() {
-            const html = `
-                <div class="bg-white rounded-t-[2rem] p-6 pb-12">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="font-black text-xl text-jodo-textPrimary">Contact Support</h3>
-                        <button onclick="window.closeModal()" class="p-2 bg-gray-100 rounded-full text-jodo-textSecondary hover:bg-gray-200 transition-colors"><i data-lucide="x" size="20"></i></button>
-                    </div>
-                    <div class="grid gap-3">
-                        <a href="tel:${COMPANY_PHONE}" class="flex items-center gap-4 p-4 rounded-xl bg-blue-50 border border-blue-100 active:scale-[0.98] transition-all">
-                            <div class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-md"><i data-lucide="phone" size="24"></i></div>
-                            <div>
-                                <div class="font-bold text-jodo-textPrimary text-lg">Direct Call</div>
-                                <div class="text-xs font-semibold text-blue-600">Speak to us now</div>
-                            </div>
-                            <div class="ml-auto text-gray-300"><i data-lucide="chevron-right" size="24"></i></div>
-                        </a>
-                        <a href="https://wa.me/${COMPANY_PHONE}" target="_blank" class="flex items-center gap-4 p-4 rounded-xl bg-green-50 border border-green-100 active:scale-[0.98] transition-all">
-                            <div class="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center shadow-md"><i data-lucide="message-circle" size="24"></i></div>
-                            <div>
-                                <div class="font-bold text-jodo-textPrimary text-lg">WhatsApp Message</div>
-                                <div class="text-xs font-semibold text-green-600">Chat with support</div>
-                            </div>
-                            <div class="ml-auto text-gray-300"><i data-lucide="chevron-right" size="24"></i></div>
-                        </a>
-                    </div>
-                </div>
-            `;
-            showModalNode(createNodeFromHTML(html));
-        };
-
-        // --- NEW GOOGLE BACKEND FUNCTIONS ---
-
-        function shareJoinLink(gid) {
-            // REMOVE &join=1 for cleaner sharing - user lands on group page first
-            // FIXED: Use canonical URL to avoid preview environment garbage
-            const link = `${SITE_BASE_URL}?group=${gid}`;
-            const msg = `🛒 Join my JODO group & unlock wholesale price:\n${link}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
-        }
-
-        function redirectToJoinForm(gid, qty = 2) {
-            // ✅ EXACT GOOGLE FORM REDIRECT LOGIC WITH REAL IDS
-            const url =
-                `${JOIN_FORM_BASE}` +
-                `?entry.1962588497=${gid}` + // Group ID
-                `&entry.1926360261=${encodeURIComponent(state.user.name || "")}` + // Name
-                `&entry.430795843=${encodeURIComponent(state.user.phone || "")}` + // Phone
-                `&entry.826445249=${encodeURIComponent(state.user.ward || "")}` + // Ward
-                `&entry.217585953=${qty}`; // Quantity
-
-            console.log("Redirecting to:", url);
-            window.location.href = url;
-        }
-
-        // FETCH GROUP META AND MEMBERS FROM SHEET
-        async function fetchGroupDetails(gid) {
             try {
-                // Use a different query param if your apps script handles metadata specific requests
-                // Or if your script returns everything in one go.
-                // Assuming standard endpoint returns format: { group: { ... }, members: [...] }
-                // or if we use query param ?group_meta=gid to differentiate.
-                // Let's assume standard fetch returns object with group metadata if available.
-                const res = await fetch(`${SHEET_API}?group=${gid}&meta=true`);
-                const data = await res.json();
-                return data; // Expected { group: {...}, members: [...] }
+                // Real-time Cloud Save
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', PUBLIC_GROUPS_COLL, gid);
+                await setDoc(docRef, groupData);
             } catch(e) {
-                console.error("Meta fetch failed", e);
-                return null;
+                console.error("Firestore create error", e);
+                toast("Network Error: Using Local Storage", "wifi-off");
+            }
+
+            return gid;
+        }
+
+        async function addMemberToGroup(gid, name, phone, qty) {
+            const groupRef = doc(db, 'artifacts', appId, 'public', 'data', PUBLIC_GROUPS_COLL, gid);
+            
+            const newMember = {
+                name, phone, quantity: qty, isLeader: false, joinedAt: Date.now(),
+                uid: state.user.uid || 'anon'
+            };
+
+            // Optimistic update
+            if (!state.members[gid]) state.members[gid] = [];
+            state.members[gid].push(newMember);
+            saveLocalData();
+            saveUserLocally(name, phone); 
+
+            try {
+                // Real-time Cloud Update
+                await updateDoc(groupRef, {
+                    members: arrayUnion(newMember)
+                });
+            } catch(e) {
+                console.error("Firestore join error", e);
+                toast("Offline mode: Saved locally", "wifi-off");
             }
         }
 
-        async function fetchGroupMembers(gid) {
-          try {
-            const res = await fetch(`${SHEET_API}?group=${gid}`);
-            const data = await res.json();
+        function listenToGroup(gid) {
+            if (state.firebaseUnsubscribe) state.firebaseUnsubscribe(); 
+            
+            const groupRef = doc(db, 'artifacts', appId, 'public', 'data', PUBLIC_GROUPS_COLL, gid);
+            
+            state.firebaseUnsubscribe = onSnapshot(groupRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    state.groups[gid] = data;
+                    state.members[gid] = data.members || [];
+                    saveLocalData(); 
+                    
+                    if (state.view === 'group' && state.currentGroupId === gid) {
+                        render(); 
+                    }
+                } else {
+                    if (state.view === 'group' && state.currentGroupId === gid) {
+                        toast("Squad Ended or Expired", "clock");
+                        setTimeout(() => window.goHome(), 2000);
+                    }
+                }
+            }, (err) => {
+                console.log("Snapshot error", err);
+            });
+        }
 
-            if (!Array.isArray(data.members)) return;
+        function listenToAllGroupsForAdmin() {
+            if (state.adminUnsubscribe) return;
+            
+            // Real-time listener for ALL groups
+            const groupsRef = collection(db, 'artifacts', appId, 'public', 'data', PUBLIC_GROUPS_COLL);
+            
+            state.adminUnsubscribe = onSnapshot(groupsRef, (snapshot) => {
+                const groups = [];
+                snapshot.forEach((doc) => {
+                    groups.push(doc.data());
+                });
+                state.adminGroups = groups.sort((a, b) => b.createdAt - a.createdAt);
+                if (state.view === 'admin') render();
+            }, (err) => {
+                console.error("Admin sync error", err);
+                toast("Admin Sync Failed", "wifi-off");
+            });
+        }
 
-            // FIX: Only render if count changed (Prevent aggressive re-rendering)
-            if (data.members.length !== state.lastMemberCount) {
-                state.members[gid] = data.members;
-                state.lastMemberCount = data.members.length;
+        function checkUrlForGroup() {
+            const params = new URLSearchParams(location.search);
+            const view = params.get('view');
+            const gid = params.get('group');
+            
+            if (view === 'admin') {
+                // Intercept Admin Load for Password
+                if(state.isAdmin) {
+                    state.view = 'admin';
+                    listenToAllGroupsForAdmin();
+                    render();
+                } else {
+                    window.goToAdmin(); // Triggers modal
+                }
+            } else if (gid) {
+                window.openGroup(gid);
+            } else {
+                window.goHome();
+            }
+        }
+
+        // --- 7. GLOBAL WINDOW FUNCTIONS ---
+
+        window.goHome = () => {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            if (state.firebaseUnsubscribe) { state.firebaseUnsubscribe(); state.firebaseUnsubscribe = null; }
+            try { history.pushState({}, '', location.pathname); } catch(e) {}
+            state.view = 'home';
+            state.currentGroupId = null;
+            render();
+        };
+
+        window.openGroup = (gid) => {
+            try { history.pushState({}, '', `?group=${gid}`); } catch(e) {}
+            state.currentGroupId = gid;
+            state.view = 'group';
+            listenToGroup(gid);
+            render();
+        };
+
+        window.goToAdmin = () => {
+            // PASSWORD PROTECTION LOGIC
+            if(state.isAdmin) {
+                try { history.pushState({}, '', `?view=admin`); } catch(e) {}
+                state.view = 'admin';
+                listenToAllGroupsForAdmin();
                 render();
+                return;
             }
 
-          } catch (e) {
-            console.error("Sheet fetch failed", e);
-          }
+            const node = createNodeFromHTML(`
+                <div class="bg-white p-6 rounded-2xl w-[90%] max-w-sm m-auto relative top-[20vh] shadow-2xl">
+                    <h3 class="font-black text-xl text-slate-900 mb-4">Partner Login</h3>
+                    <input id="admin-pass" type="password" class="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-center mb-4" placeholder="Enter Password">
+                    <button id="admin-login-btn" class="w-full bg-slate-900 text-white p-3 rounded-xl font-bold">Access Dashboard</button>
+                    <button onclick="window.closeModal()" class="w-full text-slate-400 p-2 mt-2 font-bold text-sm">Cancel</button>
+                </div>
+            `);
+            showModalNode(node);
+            
+            node.querySelector('#admin-login-btn').onclick = () => {
+                const val = node.querySelector('#admin-pass').value;
+                if(val === ADMIN_PASSWORD) {
+                    state.isAdmin = true;
+                    window.closeModal();
+                    window.goToAdmin();
+                    toast("Welcome Partner", "shield-check");
+                } else {
+                    toast("Wrong Password", "lock");
+                    triggerVibration();
+                }
+            };
         }
+
+        window.shareToWhatsApp = () => {
+            const group = state.groups[state.currentGroupId];
+            const p = PRODUCTS.find(x => x.id === group.productId);
+            const url = encodeURIComponent(window.location.href);
+            const text = encodeURIComponent(`Join my ${p.name} squad on JODO! Buy together to unlock wholesale prices. 👇\n\n`);
+            window.open(`https://wa.me/?text=${text}${url}`, '_blank');
+        };
+
+        window.shareGroupLink = () => {
+             const url = window.location.href;
+             navigator.clipboard.writeText(url).then(() => {
+                 toast("Link Copied!", "copy");
+                 triggerVibration();
+             }).catch(err => {
+                 const input = document.createElement('input');
+                 input.value = url;
+                 document.body.appendChild(input);
+                 input.select();
+                 document.execCommand('copy');
+                 document.body.removeChild(input);
+                 toast("Link Copied!", "copy");
+             });
+        }
+
+        window.confirmOrderWhatsApp = () => {
+            const group = state.groups[state.currentGroupId];
+            const p = PRODUCTS.find(x => x.id === group.productId);
+            const me = (state.members[group.id] || []).find(m => m.name === state.user.name && m.phone === state.user.phone);
+            
+            if(!me) return toast("Identity not found", "alert-circle");
+
+            const text = `*New JODO Order*\n\n` +
+                         `📦 Product: ${p.name}\n` +
+                         `⚖️ Qty: ${(me.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit}\n` +
+                         `💰 Price: ₹${Math.round(me.quantity * p.price5)} (Unbeatable!)\n` +
+                         `------------------\n` +
+                         `👤 Name: ${me.name}\n` +
+                         `📱 Phone: ${me.phone}\n` +
+                         `🆔 Squad: ${group.id}`;
+            
+            const encoded = encodeURIComponent(text);
+            window.open(`https://wa.me/${COMPANY_PHONE}?text=${encoded}`, '_blank');
+        }
+
+        window.openStartModal = (pid) => {
+            const p = PRODUCTS.find(x => x.id === pid);
+            const user = state.user;
+            const node = createNodeFromHTML(`
+                <div class="flex flex-col h-[90vh] bg-slate-50 rounded-t-[2rem] overflow-hidden">
+                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-slate-100 shrink-0">
+                        <h3 class="font-black text-xl text-slate-800 uppercase">Start Buying</h3>
+                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500"><i data-lucide="x" size="20"></i></button>
+                    </div>
+                    <div class="p-5 overflow-y-auto flex-1">
+                        <div class="flex gap-4 mb-6"><div class="w-20 h-20 rounded-2xl shadow-md border border-slate-100 relative overflow-hidden shrink-0"><div class="absolute inset-0 ${p.imageColor} flex items-center justify-center"><i data-lucide="${p.icon}" size="32" class="text-white/80"></i></div></div><div class="flex-1 flex flex-col justify-center"><h4 class="font-black text-xl text-slate-900 leading-none mb-1">${p.name}</h4><div class="text-sm font-semibold text-slate-400 mb-2">${p.nameTe}</div></div></div>
+                        <div class="bg-white p-4 rounded-2xl border-2 border-psycho-reward bg-psycho-rewardBg mb-6 shadow-sm">
+                            <div class="font-bold text-yellow-800 text-xs uppercase tracking-wider mb-0.5">Group Price</div>
+                            <div class="font-black text-3xl text-slate-900">₹${p.price5} <span class="text-base text-slate-400 font-medium line-through">₹${p.price1}</span></div>
+                        </div>
+                        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm mb-6 flex items-center justify-between">
+                            <div class="pl-2"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quantity</div><div class="text-[10px] text-psycho-urgency font-bold">Min 1kg</div></div>
+                            <div class="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                                <button id="btn-minus" class="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center"><i data-lucide="minus" size="18"></i></button>
+                                <div class="text-xl font-black text-slate-900 w-20 text-center leading-none" id="qty-display">1.0 kg</div>
+                                <button id="btn-plus" class="w-10 h-10 rounded-lg bg-psycho-action text-white shadow-md flex items-center justify-center"><i data-lucide="plus" size="18"></i></button>
+                            </div>
+                        </div>
+                        <div class="space-y-4 mb-8">
+                            <input id="inp-name" value="${user.name}" class="w-full bg-white border-2 border-slate-100 py-4 px-4 rounded-xl font-bold text-slate-900" placeholder="Your Name">
+                            <input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border-2 border-slate-100 py-4 px-4 rounded-xl font-bold text-slate-900" placeholder="Mobile Number">
+                        </div>
+                    </div>
+                    <div class="bg-white border-t border-slate-100 p-4 shrink-0 pb-safe">
+                        <button id="start-btn" class="w-full bg-psycho-action text-white h-[64px] rounded-2xl font-black text-xl shadow-lg flex items-center justify-center gap-2">
+                            <span>Start Group & Share</span> <i data-lucide="arrow-right" size="24"></i>
+                        </button>
+                    </div>
+                </div>
+            `);
+            
+            showModalNode(node);
+            
+            let qty = 2; 
+            const updateQty = () => { node.querySelector('#qty-display').innerText = `${(qty * p.baseWeight).toFixed(1)} ${p.weightUnit}`; };
+            node.querySelector('#btn-minus').onclick = () => { if(qty > 2) { qty--; updateQty(); } else { toast('Min 1kg required', 'alert-circle'); }};
+            node.querySelector('#btn-plus').onclick = () => { qty++; updateQty(); };
+            node.querySelector('#close-modal').onclick = window.closeModal;
+            updateQty();
+
+            node.querySelector('#start-btn').onclick = async () => {
+                const name = safeVal(node.querySelector('#inp-name'));
+                const phone = safeVal(node.querySelector('#inp-phone'));
+                if(!name || !phone) return toast("Details required", "alert-circle");
+                
+                node.querySelector('#start-btn').innerText = "Creating...";
+                const gid = await createGroup(pid, name, phone, qty, false);
+                window.closeModal();
+                window.openGroup(gid);
+                triggerConfetti();
+            };
+        };
+
+        window.openAddMemberModal = (gid) => {
+             const group = state.groups[gid];
+             const p = PRODUCTS.find(x => x.id === group.productId);
+             const node = createNodeFromHTML(`
+                <div class="flex flex-col h-[85vh] bg-slate-50 rounded-t-[2rem]">
+                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-slate-100">
+                        <h3 class="font-black text-xl text-slate-800 uppercase">Join Squad</h3>
+                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500"><i data-lucide="x" size="20"></i></button>
+                    </div>
+                    <div class="p-5 overflow-y-auto flex-1">
+                        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm mb-6 flex items-center justify-between">
+                            <div class="pl-2"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quantity</div><div class="text-[10px] text-psycho-urgency font-bold">Min 1kg</div></div>
+                            <div class="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                                <button id="btn-minus" class="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center"><i data-lucide="minus" size="18"></i></button>
+                                <div class="text-xl font-black text-slate-900 w-20 text-center leading-none" id="qty-display">1.0 kg</div>
+                                <button id="btn-plus" class="w-10 h-10 rounded-lg bg-psycho-action text-white shadow-md flex items-center justify-center"><i data-lucide="plus" size="18"></i></button>
+                            </div>
+                        </div>
+                         <div class="space-y-4 mb-8">
+                            <input id="m-name" class="w-full bg-white border-2 border-slate-100 py-4 px-4 rounded-xl font-bold text-slate-900" placeholder="Your Name">
+                            <input id="m-phone" class="w-full bg-white border-2 border-slate-100 py-4 px-4 rounded-xl font-bold text-slate-900" placeholder="Mobile Number">
+                        </div>
+                    </div>
+                    <div class="bg-white border-t border-slate-100 p-4 shrink-0 pb-safe">
+                        <button id="add-btn" class="w-full bg-psycho-action text-white h-[64px] rounded-2xl font-black text-xl shadow-lg flex items-center justify-center gap-2">
+                           <i data-lucide="user-plus"></i> <span>Confirm & Join</span>
+                        </button>
+                    </div>
+                </div>
+             `);
+             showModalNode(node);
+             
+             let qty = 2;
+             const updateQty = () => { node.querySelector('#qty-display').innerText = `${(qty * p.baseWeight).toFixed(1)} ${p.weightUnit}`; };
+             node.querySelector('#btn-minus').onclick = () => { if(qty > 2) { qty--; updateQty(); }};
+             node.querySelector('#btn-plus').onclick = () => { qty++; updateQty(); };
+             node.querySelector('#close-modal').onclick = window.closeModal;
+             updateQty();
+
+             node.querySelector('#add-btn').onclick = async () => {
+                 const name = safeVal(node.querySelector('#m-name'));
+                 const phone = safeVal(node.querySelector('#m-phone'));
+                 if(!name || !phone) return toast("Details required", "alert-circle");
+                 
+                 node.querySelector('#add-btn').innerText = "Joining...";
+                 await addMemberToGroup(gid, name, phone, qty);
+                 window.closeModal();
+                 triggerConfetti();
+                 toast("Welcome to the Squad!", "check-circle");
+             };
+        }
+
+        window.openLiveGuide = window.openLiveGuide || (() => { 
+             const node = createNodeFromHTML(`<div class="flex flex-col h-[70vh]"><div class="flex-1 bg-black relative rounded-t-[2rem] overflow-hidden"><img src="${GUIDE_IMG_SRC}" class="w-full h-full object-cover opacity-80"><button onclick="window.closeModal()" class="absolute top-4 right-4 bg-white/20 p-2 rounded-full text-white"><i data-lucide="x" size="20"></i></button><div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-black/40"><h3 class="text-white text-2xl font-black mb-2">How JODO Works</h3><p class="text-white/90 text-sm mb-6">1. Pick Product<br>2. Share Link<br>3. Squad fills, Price drops!</p><button onclick="window.closeModal()" class="bg-white text-black px-8 py-3 rounded-full font-bold shadow-xl">Got it!</button></div></div></div>`);
+             showModalNode(node);
+        });
+
+        // --- 8. RENDER FUNCTIONS ---
 
         function render() {
             const app = document.getElementById('app');
-            if (!app) { console.error('JODO: #app root not found'); return; }
-            if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
             if (state.view === 'home') renderHome(app);
+            else if (state.view === 'admin') renderAdmin(app);
             else renderGroup(app);
-            if (window.lucide) window.lucide.createIcons();
+            if(window.lucide) window.lucide.createIcons();
         }
 
-        // Disabled local modals
-        window.openAddMemberModal = function(gid) { };
-        window.openEditMemberModal = function(gid, memberIndex) { };
+        function renderAdmin(el) {
+            el.innerHTML = `
+                <div class="fade-in bg-slate-100 min-h-screen pb-safe font-sans">
+                    <div class="bg-slate-900 text-white h-[68px] sticky top-0 z-50 px-4 flex justify-between items-center shadow-md">
+                        <div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="window.goHome()"><i data-lucide="arrow-left" size="24" class="text-white"></i><span class="font-black text-lg tracking-wide text-white">Company Admin</span></div>
+                        <div class="text-xs bg-slate-800 px-2 py-1 rounded border border-slate-700 pt-safe">Live Mode</div>
+                    </div>
+                    <div class="p-4">
+                        <h2 class="font-bold text-slate-500 uppercase text-xs tracking-widest mb-4">All Active Squads</h2>
+                        ${state.adminGroups.length === 0 ? '<div class="text-center text-slate-400 mt-10">Fetching active squads...</div>' : 
+                          state.adminGroups.map(g => {
+                              const p = PRODUCTS.find(x => x.id === g.productId);
+                              const count = (g.members || []).length;
+                              const isFull = count >= 2;
+                              return `
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0"><i data-lucide="${p ? p.icon : 'package'}" size="20" class="text-slate-500"></i></div>
+                                            <div>
+                                                <div class="font-black text-slate-900">${p ? p.name : 'Unknown'}</div>
+                                                <div class="text-xs text-slate-400 font-mono">${g.id}</div>
+                                            </div>
+                                        </div>
+                                        <div class="px-2 py-1 rounded text-[10px] font-bold uppercase ${isFull ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${isFull ? 'Deal Unlocked' : 'Pending'}</div>
+                                    </div>
+                                    <div class="border-t border-slate-100 pt-3 space-y-2">
+                                        ${(g.members || []).map(m => `
+                                            <div class="flex justify-between items-center text-sm">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-2 h-2 rounded-full ${m.isLeader ? 'bg-blue-500' : 'bg-slate-300'}"></div>
+                                                    <span class="font-bold text-slate-700">${m.name}</span>
+                                                    <span class="text-slate-400 text-xs">${m.phone}</span>
+                                                </div>
+                                                <div class="font-mono font-bold text-slate-900">${m.quantity}kg</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    ${isFull ? `
+                                    <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
+                                        <div class="text-xs text-slate-400 font-bold uppercase">Total Order: ${(g.members.reduce((acc, m) => acc + (m.quantity || 0), 0) * (p ? p.baseWeight : 0.5)).toFixed(1)} kg</div>
+                                        <a href="https://wa.me/${g.members[0].phone}" target="_blank" class="text-green-600 text-xs font-bold hover:underline">Contact Leader</a>
+                                    </div>` : ''}
+                                </div>
+                              `;
+                          }).join('')
+                        }
+                    </div>
+                </div>
+            `;
+        }
 
-        function renderGroup(el) {
-            if (!el) return console.error('JODO: renderGroup error');
-            if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
-            
-            const g = state.groups[state.currentGroupId]; 
-            if (!g) return goHome();
-            
-            // Poll for updates
-            if (state.groupPoller) clearInterval(state.groupPoller);
-            state.groupPoller = setInterval(() => {
-                fetchGroupMembers(g.id);
-            }, GROUP_POLL_INTERVAL);
+        function renderHome(el) {
+            const user = state.user;
+            const userActiveGroupIds = {}; 
+            const activeUserGroups = []; 
 
-            const p = PRODUCTS.find(x => x.id === g.productId); 
-            if (!p) { toast('Product not found', 'alert-circle'); return goHome(); }
-            
-            const members = state.members[g.id] || []; 
-            const count = members.length;
-            const needed = Math.max(0, 3 - count);
-            let currentPrice = p.price1;
-            if (count >= 3) currentPrice = p.price5;
-            
-            const currentUserMember = members.find(m => m.name === state.user.name && m.phone === state.user.phone);
-            let waOrderLink = "#";
-            if (members.length > 0) {
-                const pricePerUnit = (count >= 3) ? p.price5 : p.price1;
-                let membersDetails = "";
-                let grandTotal = 0;
-                let grandWeight = 0;
-                members.forEach((m, i) => {
-                    const w = parseFloat((m.quantity * p.baseWeight).toFixed(2));
-                    const productCost = Math.round(m.quantity * pricePerUnit);
-                    const totalMemberCost = productCost + FULFILLMENT_FEE;
-                    grandTotal += totalMemberCost;
-                    grandWeight += w;
-                    membersDetails += `\n${i+1}. *${m.name}* ${m.isLeader ? '👑' : ''}\n   📞 ${m.phone}\n   📍 Ward: ${m.ward || 'N/A'}\n   📦 ${w} ${p.weightUnit} (₹${totalMemberCost} incl. ₹${FULFILLMENT_FEE} fee)`;
-                });
-                const formattedGrandWeight = parseFloat(grandWeight.toFixed(2));
-                const msg = `*New Order Request* 🛒\n` + `---------------------------\n` + `*Product:* ${p.name} (${p.nameTe})\n` + `*Total Qty:* ${formattedGrandWeight} ${p.weightUnit}\n` + `*Total Value:* ₹${grandTotal}\n` + `---------------------------\n` + `*Customer Details:*` + `${membersDetails}\n` + `---------------------------\n` + `*Group ID:* ${g.id}\n` + `Please confirm delivery! ✅`;
-                waOrderLink = `https://wa.me/${COMPANY_PHONE}?text=${encodeURIComponent(msg)}`;
+            if (user.name && user.phone) { 
+                Object.values(state.groups).forEach(g => { 
+                    const members = state.members[g.id] || []; 
+                    if (members.some(m => m.name === user.name && m.phone === user.phone)) { 
+                        userActiveGroupIds[g.productId] = g.id;
+                        activeUserGroups.push(g); 
+                    } 
+                }); 
             }
+            activeUserGroups.sort((a, b) => b.createdAt - a.createdAt);
 
-            const expiryDate = new Date(g.expiresAt);
-            const now = new Date();
-            const isExpired = g.expiresAt < now.getTime();
-            let hours = expiryDate.getHours();
-            const minutes = expiryDate.getMinutes();
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12; hours = hours ? hours : 12; 
-            const minutesStr = minutes < 10 ? '0'+minutes : minutes;
-            const timeStr = hours + ':' + minutesStr + ' ' + ampm;
-            let dateLabel = "Today";
-            const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
-            if (expiryDate.toDateString() === now.toDateString()) dateLabel = "Today";
-            else if (expiryDate.toDateString() === tomorrow.toDateString()) dateLabel = "Tomorrow";
-            else { const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; dateLabel = `${monthNames[expiryDate.getMonth()]} ${expiryDate.getDate()}`; }
+            const sortedProducts = [...PRODUCTS].sort((a, b) => {
+                const aActive = !!userActiveGroupIds[a.id];
+                const bActive = !!userActiveGroupIds[b.id];
+                if (aActive && !bActive) return 1;
+                if (!aActive && bActive) return -1;
+                return 0;
+            });
 
-            // Simplified Group Status Logic
-            const statusText = count >= 3 
-                ? `You're paying the lowest price: ₹${p.price5}` 
-                : `Join ${needed} more neighbors to pay ₹${p.price5} instead of ₹${p.price1}`;
-            
-            // --- ACTION BUTTON LOGIC ---
-            let bottomCtaHtml = '';
-            if (!currentUserMember) {
-                // CHANGE: Join Button for non-members
-                bottomCtaHtml = `
-                    <button 
-                      onclick="redirectToJoinForm('${g.id}')"
-                      class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg btn-press">
-                      Join This Group
-                    </button>
-                    <div class="text-center mt-3 text-xs text-jodo-textSecondary font-medium">You must join to get the deal</div>
-                `;
+            let heroContent = '';
+            if (activeUserGroups.length > 0) {
+                heroContent = `<div class="mt-6 mb-4 px-4 flex gap-3 overflow-x-auto snap-x no-scrollbar pb-2">
+                    ${activeUserGroups.map(g => {
+                        const p = PRODUCTS.find(x => x.id === g.productId);
+                        if(!p) return '';
+                        const members = state.members[g.id] || [];
+                        const count = members.length;
+                        return `<div onclick="window.openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
+                            <div class="bg-slate-900 rounded-2xl p-4 shadow-md border border-slate-800 relative overflow-hidden h-full flex flex-col justify-between">
+                                <div class="absolute -right-10 -top-10 w-40 h-40 bg-psycho-action/10 rounded-full blur-3xl"></div>
+                                <div class="flex items-center gap-3 mb-3 relative z-10 mt-2">
+                                    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-900 shadow-sm shrink-0"><i data-lucide="${p.icon}" size="24"></i></div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-black text-white text-base leading-none mb-1 truncate">${p.name}</h3>
+                                        <div class="flex items-center gap-1.5 text-[10px]">
+                                            <span class="text-white font-bold">${count}/2</span>
+                                            <span class="text-psycho-reward font-bold">In Progress</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="absolute inset-y-0 left-0 bg-psycho-action" style="width: ${(count/2)*100}%"></div>
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>`;
             } else {
-                 // Existing logic for members
-                 if (count < 3) {
-                     bottomCtaHtml = `
-                        <a href="${isExpired ? '#' : waOrderLink}" target="_blank" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2 relative overflow-hidden group ${isExpired ? 'grayscale opacity-50 pointer-events-none' : ''}">
-                            <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                            <span>Send Order to Company</span>
-                            <i data-lucide="message-circle" size="24"></i>
-                        </a>
-                        <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs font-medium text-jodo-textSecondary"><span class="w-2 h-2 bg-jodo-progress rounded-full animate-pulse"></span><span>${needed} spots left • ${isExpired ? 'Expired' : 'Typical squads finish in 6 mins'}</span></div>
-                     `;
-                 } else {
-                     bottomCtaHtml = `
-                        <a href="${waOrderLink}" target="_blank" class="block w-full bg-jodo-ctaSuccess text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2"><i data-lucide="message-circle" size="24"></i><span>Get Best Price Slip</span></a>
-                        <div class="text-center mt-3 text-xs font-medium text-green-700 bg-green-50 py-1 rounded inline-block w-full border border-green-100">Best price applied</div>
-                     `;
-                 }
+                heroContent = `<div onclick="window.openLiveGuide()" class="px-4 mt-6 mb-4 cursor-pointer tilt-card">
+                    <div class="relative w-full h-48 bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-100"><img src="${GUIDE_IMG_SRC}" class="w-full h-full object-cover opacity-90"><div class="absolute bottom-4 left-4 right-4 text-center"><div class="text-white font-bold text-sm">Quick Guide</div><div class="text-slate-200 text-[10px] font-medium uppercase tracking-widest">Learn to Save 60%</div></div></div>
+                </div>`;
             }
 
             el.innerHTML = `
-                <div class="fade-in bg-white min-h-screen pb-40 font-sans">
-                    <div class="glass-header h-[64px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white shadow-sm">
-                        <div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="goHome()">
-                            <i data-lucide="arrow-left" size="24" class="text-jodo-textPrimary"></i>
-                            <span class="font-bold text-lg tracking-wide text-jodo-textPrimary">Group #${g.id.slice(-4)}</span>
-                        </div>
-                        <div class="font-mono font-bold text-lg tracking-widest text-jodo-textPrimary tabular-nums pt-safe" id="header-timer">Loading...</div>
+                <div class="pb-safe fade-in">
+                    <div class="glass-header h-[68px] flex items-center justify-between px-4 sticky top-0 z-40 shadow-md">
+                        <div class="pt-safe"><h1 class="font-black text-2xl tracking-tight text-white">JODO</h1><div class="text-[10px] text-white/80 font-medium">Group Up. Price Down.</div></div>
+                    </div>
+                    ${heroContent}
+                    <div class="px-3 space-y-3 mt-2 pb-24">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2">Daily Deals</h2>
+                        ${sortedProducts.map(p => {
+                            const activeGid = userActiveGroupIds[p.id];
+                            const savings = p.price1 - p.price5;
+                            const actionAttr = activeGid ? `onclick="window.openGroup('${activeGid}')"` : `onclick="window.openStartModal('${p.id}')"`;
+                            return `<div class="bg-white p-3 rounded-xl flex gap-3 shadow-sm border border-slate-100 relative overflow-hidden active:scale-[0.99] transition-transform duration-100" ${actionAttr}>
+                                <div class="w-32 h-32 bg-slate-100 rounded-lg relative overflow-hidden shrink-0 border border-slate-100">
+                                    <img src="${p.image}" class="absolute inset-0 w-full h-full object-cover" />
+                                    <div class="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-md text-white text-[8px] font-black px-1.5 py-0.5 rounded flex items-center gap-1 z-10"><div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div> LIVE</div>
+                                    <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] font-medium text-center py-0.5 backdrop-blur-sm">Only ${p.remainingStock}kg left</div>
+                                </div>
+                                <div class="flex-1 flex flex-col justify-between py-0.5 min-w-0">
+                                    <div>
+                                        <div class="flex items-center gap-1.5 mb-1.5 flex-wrap"><span class="bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]">Brand</span><span class="border border-psycho-action text-psycho-action text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] flex items-center gap-0.5"><i data-lucide="zap" size="8"></i> Best Price</span></div>
+                                        <h3 class="font-bold text-base text-slate-900 leading-tight line-clamp-2 mb-1">${p.name}</h3>
+                                        <div class="inline-flex items-center gap-1 bg-red-50 text-psycho-action text-[10px] px-1.5 py-0.5 rounded border border-red-100 mb-1"><span>Save ₹${savings} with Squad</span></div>
+                                    </div>
+                                    <div class="flex items-end justify-between mt-1">
+                                        <div class="relative top-1"><div class="text-[10px] text-slate-400 font-medium mb-[-2px]">Group Price</div><div class="flex items-baseline gap-0.5 text-psycho-action"><span class="text-xs font-bold">₹</span><span class="text-2xl font-black tracking-tighter">${p.price5}</span></div></div>
+                                        <div class="bg-gradient-to-r from-red-500 to-psycho-action text-white px-3 py-1.5 rounded-lg shadow-md flex flex-col items-center justify-center min-w-[70px]"><span class="text-[10px] font-medium opacity-90 leading-none mb-0.5">Limited</span><span class="text-xs font-black leading-none uppercase">Grab</span></div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                    <div class="text-center pb-8 pt-4">
+                        <button onclick="window.goToAdmin()" class="text-slate-300 text-[10px] uppercase font-bold tracking-widest hover:text-slate-500 transition-colors">Partner Login</button>
+                    </div>
+                </div>`;
+            initCardTilt();
+        }
+
+        function renderGroup(el) {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            const g = state.groups[state.currentGroupId]; 
+            if (!g) {
+                el.innerHTML = `<div class="flex items-center justify-center h-screen flex-col"><div class="animate-spin w-8 h-8 border-4 border-slate-200 border-t-psycho-action rounded-full mb-4"></div><div class="text-slate-400 font-bold">Searching Global Database...</div></div>`;
+                return;
+            }
+            const p = PRODUCTS.find(x => x.id === g.productId);
+            const members = state.members[g.id] || [];
+            const count = members.length;
+            const needed = Math.max(0, 2 - count);
+            const isMeJoined = members.some(m => m.name === state.user.name && m.phone === state.user.phone);
+
+            el.innerHTML = `
+                <div class="fade-in bg-slate-50 min-h-screen pb-40 font-sans">
+                    <div class="bg-psycho-action text-white h-[68px] sticky top-0 z-50 px-4 flex justify-between items-center shadow-none">
+                        <div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="window.goHome()"><i data-lucide="arrow-left" size="24" class="text-white"></i><span class="font-black text-lg tracking-wide text-white">Our Gang</span></div>
+                        <div class="font-mono font-bold text-lg tracking-widest text-white tabular-nums pt-safe" id="header-timer"></div>
                     </div>
 
                     <div class="p-4">
-                        <div class="flex flex-col items-center mb-6 mt-6 animate-in fade-in-up duration-300">
-                            <h1 class="text-3xl font-black text-jodo-textPrimary leading-none mb-1 tracking-tight">${p.name}</h1>
-                            <p class="text-sm font-bold text-jodo-textSecondary">${p.nameTe} • ${p.unit} Bundle</p>
+                        <div class="flex flex-col items-center mb-6 mt-2 animate-in fade-in-up duration-300">
+                            <h1 class="text-2xl font-black text-slate-900 leading-none mb-1 tracking-tight">${p.name}</h1>
+                            <p class="text-sm font-bold text-slate-400">${p.nameTe} • ${p.unit} Bundle</p>
                         </div>
-
-                        ${isExpired ? `
-                        <div class="bg-gray-100 text-jodo-textSecondary p-4 mb-6 rounded-xl shadow-sm text-center border border-gray-200">
-                            <div class="font-bold text-xl uppercase mb-1">Squad Expired</div>
-                            <div class="text-sm">This deal has ended.</div>
-                        </div>` : ''}
-
-                        <div class="text-center mb-8 relative">
-                            <div class="inline-block relative">
-                                <div class="text-6xl font-mono font-black text-jodo-textPrimary tracking-tighter tabular-nums relative z-10 leading-none" id="hero-timer">--:--:--</div>
+                        
+                        <div class="card-modern p-4 mb-6 tilt-card">
+                            <div class="space-y-4 mb-6">
+                                <div class="flex justify-between items-center ${count < 2 ? 'opacity-100' : 'opacity-40 grayscale'} transition-all">
+                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold">1</div><span class="text-sm font-bold text-slate-600">Solo Price</span></div>
+                                    <span class="text-base font-bold text-slate-900">₹${p.price1}</span>
+                                </div>
+                                <div class="flex justify-between items-center ${count >= 2 ? 'scale-105' : ''} transition-all p-3 -mx-3 rounded-xl ${count >= 2 ? 'bg-psycho-rewardBg border border-psycho-reward shadow-sm' : ''}">
+                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full ${count >= 2 ? 'bg-psycho-reward text-black' : 'bg-slate-200 text-slate-600'} flex items-center justify-center text-xs font-bold">2+</div><span class="text-sm font-black ${count >= 2 ? 'text-psycho-rewardText' : 'text-slate-400'}">Group Price</span></div>
+                                    <span class="text-2xl font-black ${count >= 2 ? 'text-psycho-rewardText' : 'text-slate-300'}">₹${p.price5}</span>
+                                </div>
                             </div>
-                            <div class="text-jodo-textSecondary text-xs font-bold uppercase tracking-[0.2em] mt-3">Expires ${dateLabel} ${timeStr}</div>
-                        </div>
-
-                        <!-- SIMPLIFIED GROUP STATUS -->
-                        <div class="bg-white border border-jodo-border rounded-xl p-6 mb-6 shadow-sm text-center">
-                            <div class="text-lg font-bold text-jodo-textPrimary mb-1">${statusText}</div>
-                            ${count >= 3 ? '<div class="text-sm text-green-600 font-medium">Best price applied</div>' : ''}
-                            
-                            <!-- FIX: User Join Status -->
-                            ${currentUserMember ? 
-                                '<div class="text-xs text-green-700 font-bold mt-2 bg-green-50 inline-block px-2 py-1 rounded border border-green-100">You are in this group</div>' :
-                                '<div class="text-xs text-red-600 font-bold mt-2 bg-red-50 inline-block px-2 py-1 rounded border border-red-100">You have not joined yet</div>'
-                            }
+                            <div class="text-center">
+                                <div class="text-3xl font-black text-slate-900 mb-1">${count} <span class="text-slate-300 text-2xl">/</span> 2+</div>
+                                <div class="text-sm font-bold ${count < 2 ? 'text-psycho-action' : 'text-psycho-rewardText'}">${count < 2 ? `Need ${needed} more to unlock ₹${p.price5}` : '🎉 LOWEST PRICE UNLOCKED!'}</div>
+                            </div>
                         </div>
 
                         <div class="space-y-3 mb-8">
-                            <h3 class="text-xs font-bold text-jodo-textSecondary uppercase tracking-widest mb-4">Our Gang (${count} Joined)</h3>
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Squad Members</h3>
                             ${(() => {
-                                const totalSlots = Math.max(members.length + 1, 3); 
+                                const totalSlots = Math.max(members.length + 1, 2); 
                                 return Array(totalSlots).fill(0).map((_, i) => {
                                     const member = members[i];
                                     if (member) {
                                         const isMe = (state.user.name && member.name === state.user.name && member.phone === state.user.phone);
-                                        const productCost = Math.round(member.quantity * p.price5); // Use current lowest
-                                        const t5 = productCost + FULFILLMENT_FEE;
-                                        return `<div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mb-3 transition-all" onclick="openEditMemberModal('${g.id}', ${i})">
+                                        return `<div class="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm mb-3">
                                             <div class="flex items-center justify-between mb-3">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="w-10 h-10 rounded-full ${isMe ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm">${member.name[0]}</div>
-                                                    <div><div class="text-sm font-bold text-jodo-textPrimary flex items-center gap-2">${isMe ? 'YOU' : member.name} ${member.isLeader ? '<span class="text-[9px] bg-green-100 text-green-800 px-1 rounded border border-green-200 font-bold uppercase">Squad Leader</span>' : ''}</div><div class="text-xs text-jodo-textSecondary font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit} confirmed</div></div>
+                                                    <div class="w-10 h-10 rounded-full ${isMe ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'} flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm">${member.name[0]}</div>
+                                                    <div><div class="text-sm font-bold text-slate-900 flex items-center gap-2">${isMe ? 'YOU' : member.name} ${member.isLeader ? '<span class="text-[9px] bg-yellow-100 text-yellow-800 px-1 rounded border border-yellow-200 font-bold uppercase">Leader</span>' : ''}</div><div class="text-xs text-slate-400 font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit} confirmed</div></div>
                                                 </div>
-                                                <!-- Edit button removed since local writes disabled -->
-                                            </div>
-                                            <div class="grid grid-cols-2 gap-2 text-center bg-gray-50 rounded-lg p-2 border border-gray-100">
-                                                <div class="flex flex-col"><span class="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Status</span><span class="text-xs font-medium text-gray-500">Confirmed</span></div>
-                                                <div class="flex flex-col relative">${count >= 3 ? '<div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] bg-jodo-bonus text-black px-1 rounded font-bold border border-white shadow-sm">Unlocked</div>' : ''}<span class="text-[9px] font-bold ${count >= 3 ? 'text-yellow-700' : 'text-gray-400'} uppercase mb-0.5">To Pay</span><span class="text-xs font-black ${count >= 3 ? 'text-yellow-700' : 'text-jodo-textPrimary'}">₹${t5}</span></div>
                                             </div>
                                         </div>`;
                                     } else {
-                                        return `<div onclick="shareJoinLink('${g.id}')" class="flex items-center justify-between bg-white border-2 border-dashed border-gray-200 p-4 rounded-xl cursor-pointer hover:border-jodo-ctaPrimary/50 transition-all group mb-3 ${isExpired ? 'opacity-50 pointer-events-none' : ''}">
-                                            <div class="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity"><div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><i data-lucide="user" size="18"></i></div><span class="text-sm font-bold text-gray-500">Open Spot</span></div>
-                                            <div class="text-xs font-bold text-jodo-ctaPrimary bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">+ Add Neighbor</div>
-                                        </div>`;
+                                        if (isMeJoined) {
+                                            return `<div onclick="window.shareGroupLink()" class="flex items-center justify-between bg-white border-2 border-dashed border-slate-300 p-4 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all group mb-3">
+                                                <div class="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><i data-lucide="share-2" size="18"></i></div>
+                                                    <span class="text-sm font-bold text-slate-400">Waiting for friend...</span>
+                                                </div>
+                                                <div class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">Invite via Link</div>
+                                            </div>`;
+                                        } else {
+                                            return `<div onclick="window.openAddMemberModal('${g.id}')" class="flex items-center justify-between bg-slate-50 border-2 border-dashed border-psycho-action/30 p-4 rounded-2xl cursor-pointer hover:bg-white hover:border-psycho-action transition-all group mb-3 animate-pulse">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-10 h-10 rounded-full bg-psycho-action/10 text-psycho-action flex items-center justify-center"><i data-lucide="user-plus" size="18"></i></div>
+                                                    <span class="text-sm font-bold text-slate-900">Open Spot</span>
+                                                </div>
+                                                <div class="text-xs font-bold text-white bg-psycho-action px-3 py-1.5 rounded-lg shadow-sm">Join Squad</div>
+                                            </div>`;
+                                        }
                                     }
                                 }).join('');
                             })()}
                         </div>
                     </div>
 
-                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-jodo-border p-4 pb-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 pb-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                         <div class="max-w-md mx-auto">
-                            ${bottomCtaHtml}
+                            ${count < 2 ? `
+                            <div class="mb-3 text-center bg-psycho-urgencyBg text-psycho-urgency text-xs font-black uppercase py-1 rounded-lg border border-psycho-urgency/20 animate-pulse">
+                                ⚠ 1 Person Away from Deal
+                            </div>
+                            <button onclick="window.shareToWhatsApp()" class="w-full bg-[#25D366] text-white h-[56px] flex items-center justify-center rounded-2xl font-black text-lg shadow-xl btn-press gap-2 mb-3">
+                                <i data-lucide="message-circle" size="24"></i> <span>Share on WhatsApp</span>
+                            </button>
+                            <button onclick="window.shareGroupLink()" class="w-full bg-slate-900 text-white h-[56px] flex items-center justify-center rounded-2xl font-bold text-base shadow-lg btn-press gap-2">
+                                <i data-lucide="copy" size="20"></i> <span>Copy Link</span>
+                            </button>
+                            ` : `
+                            ${isMeJoined ? `
+                            <button onclick="window.confirmOrderWhatsApp()" class="w-full bg-green-600 text-white h-[56px] flex items-center justify-center rounded-2xl font-black text-lg shadow-xl btn-press gap-2">
+                                <i data-lucide="check-circle" size="20"></i> <span>Confirm Order via WhatsApp</span>
+                            </button>
+                            ` : `
+                            <div class="text-center text-slate-400 font-bold mb-2">Deal Unlocked! Join to buy.</div>
+                            `}
+                            `}
                         </div>
                     </div>
                 </div>
             `;
-
-            const timerEl = el.querySelector('#hero-timer');
-            const headerTimerEl = el.querySelector('#header-timer');
-            if (timerEl) {
+            
+            // Re-init timer
+            const timerEl = document.getElementById('header-timer');
+            if(timerEl) {
                 const tick = () => {
-                    const now = Date.now();
-                    const diff = Math.max(0, g.expiresAt - now);
-                    const h = Math.floor(diff / 3600000);
-                    const m = Math.floor((diff % 3600000) / 60000);
-                    const s = Math.floor((diff % 60000) / 1000);
-                    const fmt = (n) => n < 10 ? '0'+n : n;
-                    const mainStr = `${fmt(h)}:${fmt(m)}:${fmt(s)}`;
-                    timerEl.innerText = mainStr;
-                    if (headerTimerEl) headerTimerEl.innerText = mainStr;
-                    if (diff < 7200000 && diff > 0) { timerEl.classList.add('text-jodo-urgency'); if (headerTimerEl) headerTimerEl.classList.add('text-jodo-urgency'); }
-                    if (diff <= 0) { timerEl.innerText = "00:00:00"; timerEl.classList.add('text-gray-400'); if (headerTimerEl) headerTimerEl.classList.add('text-gray-400'); clearInterval(state.timerInterval); state.timerInterval = null; }
+                   const diff = Math.max(0, g.expiresAt - Date.now());
+                   const h = Math.floor(diff / 3600000);
+                   const m = Math.floor((diff % 3600000) / 60000);
+                   timerEl.innerText = `${h}:${m<10?'0'+m:m}`;
                 };
                 state.timerInterval = setInterval(tick, 1000); tick();
             }
-        }
-
-        // 2-STEP START MODAL
-        window.openStartModal = function(pid) {
-            const p = PRODUCTS.find(x => x.id === pid);
-            const user = state.user;
-            let qty = 2; let isGroupMode = true; 
-            const nextDelivery = getNextDeliveryDate();
-            const deliveryTime = new Date(nextDelivery);
-            deliveryTime.setHours(CUTOFF_HOUR, 0, 0, 0); 
-
-            // Create container
-            const node = createNodeFromHTML(`
-                <div class="flex flex-col h-[70vh] bg-white relative rounded-t-[2rem] overflow-hidden" id="start-modal-content">
-                    <!-- Dynamic content injected here -->
-                </div>
-            `);
-            showModalNode(node);
-
-            // Step 1 Render
-            const renderStep1 = () => {
-                const savings = p.price1 - p.price5;
-                node.innerHTML = `
-                    <div class="p-6 flex flex-col h-full">
-                        <div class="flex justify-between items-start mb-6">
-                            <div>
-                                <h3 class="font-black text-2xl text-jodo-textPrimary mb-1">${p.name}</h3>
-                                <p class="text-sm text-jodo-textSecondary">${p.nameTe}</p>
-                            </div>
-                            <button onclick="window.closeModal()" class="p-2 bg-gray-100 rounded-full hover:bg-gray-200"><i data-lucide="x" size="20"></i></button>
-                        </div>
-                        
-                        <div class="flex-1 flex flex-col justify-center items-center text-center">
-                            <div class="mb-2 text-sm text-jodo-textSecondary font-medium">Group Price / ${p.unit}</div>
-                            <div class="text-6xl font-black text-jodo-priceFinal tracking-tighter mb-3">₹${p.price5}</div>
-                            <div class="text-lg text-jodo-priceOld line-through mb-8">Market Price ₹${p.price1}</div>
-                            
-                            <div class="bg-red-50 text-jodo-ctaPrimary px-6 py-3 rounded-xl font-bold text-lg border border-red-100">
-                                Save ₹${savings} per pack
-                            </div>
-                        </div>
-
-                        <button id="btn-step-1" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-xl font-bold text-xl shadow-lg active:scale-[0.98] transition-transform">
-                            Continue
-                        </button>
-                    </div>
-                `;
-                if(window.lucide) window.lucide.createIcons();
-                node.querySelector('#btn-step-1').onclick = renderStep2;
-            };
-
-            // Step 2 Render
-            const renderStep2 = () => {
-                const initialProductCost = Math.round(p.price5 * qty);
-                const initialTotal = initialProductCost + FULFILLMENT_FEE;
-                const initialSoloCost = Math.round(p.price1 * qty);
-                const initialSavings = initialSoloCost - initialProductCost;
-
-                node.innerHTML = `
-                    <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between shadow-sm shrink-0 z-20">
-                        <div class="flex items-center gap-2"><h3 class="font-bold text-xl text-jodo-textPrimary uppercase">Enter Details</h3></div>
-                        <button onclick="window.closeModal()" class="p-2 bg-white rounded-full text-jodo-textSecondary hover:bg-gray-100 transition-colors border border-gray-200"><i data-lucide="x" size="20"></i></button>
-                    </div>
-                    <div class="p-5 overflow-y-auto flex-1 relative">
-                        <div class="bg-white p-3 rounded-xl border border-jodo-border shadow-sm mb-6 flex items-center justify-between">
-                            <div class="pl-2"><div class="text-[10px] font-bold text-jodo-textSecondary uppercase tracking-wider">Quantity</div><div class="text-[10px] text-jodo-urgency font-bold">Min 1kg per person</div></div>
-                            <div class="flex items-center gap-3 bg-gray-50 p-1.5 rounded-lg border border-gray-200"><button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-300 text-gray-500 flex items-center justify-center active:scale-90 transition-all shadow-sm"><i data-lucide="minus" size="18"></i></button><div class="text-xl font-bold text-jodo-textPrimary w-20 text-center leading-none" id="qty-display">${(qty * p.baseWeight).toFixed(2)} ${p.weightUnit}</div><button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-md flex items-center justify-center active:scale-90 transition-all"><i data-lucide="plus" size="18"></i></button></div>
-                        </div>
-                        <div class="space-y-4 mb-8">
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all placeholder-gray-400" placeholder="Your Name"></div>
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all" placeholder="WhatsApp Number"></div>
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="map-pin" size="18"></i></div><input id="inp-ward" value="${user.ward || ''}" type="number" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all" placeholder="Ward Number (e.g. 12)"></div>
-                        </div>
-                    </div>
-                    <div class="bg-white border-t border-jodo-border p-4 shrink-0 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
-                        <div class="flex justify-between items-end mb-4 px-1"><div><div class="text-[10px] text-jodo-textSecondary font-bold uppercase">Total to Pay (incl. ₹${FULFILLMENT_FEE} fee)</div><div class="text-3xl price-anchor text-jodo-textPrimary leading-none" id="footer-total">₹${initialTotal}</div></div><div class="text-right"><div class="text-[10px] text-jodo-ctaPrimary font-bold bg-red-50 px-2 py-1 rounded border border-red-100 uppercase" id="footer-savings">Savings: ₹${initialSavings}</div></div></div>
-                        <button id="action-btn" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-xl font-black text-xl shadow-lg flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] transition-all btn-press">
-                            <i data-lucide="zap" size="24"></i> 
-                            <span id="btn-text-action">Start Group Buy</span>
-                        </button>
-                    </div>
-                `;
-                if(window.lucide) window.lucide.createIcons();
-                
-                // Re-bind listeners for step 2
-                const btnMinus = node.querySelector('#btn-minus'); if (btnMinus) btnMinus.onclick = () => { if (qty > 2) { qty--; updateDisplay(); } else { toast("Min 1kg", 'alert-triangle'); triggerVibration(); } };
-                const btnPlus = node.querySelector('#btn-plus'); if (btnPlus) btnPlus.onclick = () => { if (qty < 20) { qty++; updateDisplay(); } };
-                
-                const updateDisplay = () => {
-                    node.querySelector('#qty-display').innerText = `${(qty * p.baseWeight).toFixed(2)} ${p.weightUnit}`;
-                    const productCost = Math.round(p.price5 * qty);
-                    const total = productCost + FULFILLMENT_FEE;
-                    const soloCost = Math.round(p.price1 * qty);
-                    const savings = soloCost - productCost;
-                    
-                    node.querySelector('#footer-total').innerText = `₹${total}`;
-                    node.querySelector('#footer-savings').innerText = `Savings: ₹${savings}`;
-                }
-
-                const actionBtn = node.querySelector('#action-btn');
-                actionBtn.onclick = triggerAction;
-            };
-
-            const triggerAction = async () => {
-                const actionBtn = document.querySelector('#action-btn');
-                if (actionBtn.disabled) return; actionBtn.disabled = true;
-                const originalText = actionBtn.innerHTML; actionBtn.innerHTML = `<div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Processing...`; actionBtn.classList.add('opacity-75', 'cursor-not-allowed');
-                const name = safeVal(document.querySelector('#inp-name')); const phone = safeVal(document.querySelector('#inp-phone')); const ward = safeVal(document.querySelector('#inp-ward'));
-                if (!name || !/^[6-9]\d{9}$/.test(phone) || !ward) { actionBtn.disabled = false; actionBtn.innerHTML = originalText; actionBtn.classList.remove('opacity-75', 'cursor-not-allowed'); toast('Enter Name, Phone & Ward', 'alert-circle'); return; }
-                triggerVibration(); saveUser(name, phone, ward);
-                const gid = 'g' + Date.now();
-                const group = { id: gid, productId: pid, ownerName: name, ownerWard: ward, expiresAt: deliveryTime.getTime(), deliveryDay: deliveryTime.getTime(), createdAt: Date.now(), status: isGroupMode ? 'open' : 'closed', type: isGroupMode ? 'group' : 'solo' };
-                // REMOVED LOCAL MEMBER WRITE
-                // POST group metadata to sheet
-                try {
-                    await fetch(SHEET_API, {
-                        method: "POST",
-                        mode: "no-cors", // FIX: Bypass CORS for Google Apps Script
-                        headers: { "Content-Type": "text/plain" }, // FIX: Avoid preflight
-                        body: JSON.stringify({
-                            type: "create_group",
-                            group: {
-                                id: gid,
-                                productId: pid,
-                                ownerName: name,
-                                expiresAt: deliveryTime.getTime(),
-                                createdAt: Date.now()
-                            }
-                        })
-                    });
-                } catch (e) { console.error("Group sync failed", e); }
-                
-                state.groups[gid] = group; 
-                saveData(); 
-                markOrderHabit();
-                
-                // CHANGE: Redirect creator to form to join as first member
-                window.closeModal(); 
-                toast("Group Created! Please join now.", "check-circle");
-                redirectToJoinForm(gid, qty);
-            };
-
-            renderStep1();
-        };
-
-        function renderHome(el) {
-            const user = state.user; const userActiveGroupIds = {}; const activeUserGroups = []; 
-            if (user.name && user.phone) { Object.values(state.groups).forEach(g => { const members = state.members[g.id] || []; if (members.some(m => m.name === user.name && m.phone === user.phone)) { userActiveGroupIds[g.productId] = g.id; activeUserGroups.push(g); } }); }
-            activeUserGroups.sort((a, b) => b.createdAt - a.createdAt);
-            
-            // Logic: First product is HERO, rest are SECONDARY
-            const heroProduct = PRODUCTS[0];
-            const secondaryProducts = PRODUCTS.slice(1);
-            const displayPhone = COMPANY_PHONE.replace(/^91/, '').replace(/(\d{5})(\d{5})/, '$1 $2');
-
-            // --- SECTION 1: ACTIVE ORDERS (Only if exists) ---
-            let activeOrdersHtml = '';
-            if (activeUserGroups.length > 0) {
-                const cards = activeUserGroups.map(g => {
-                    const p = PRODUCTS.find(x => x.id === g.productId); if (!p) return '';
-                    const members = state.members[g.id] || []; const count = members.length;
-                    const needed = Math.max(0, 3 - count);
-                    const statusLabel = count >= 3 ? 'Confirmed' : `${needed} more needed`;
-                    const statusColor = count >= 3 ? 'text-green-700 bg-green-50' : 'text-orange-700 bg-orange-50';
-                    return `
-                    <div onclick="openGroup('${g.id}')" class="bg-white border border-jodo-border rounded-lg p-3 flex items-center gap-3 shadow-sm mb-2 active:scale-[0.98] transition-transform">
-                        <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-gray-500"><i data-lucide="${p.icon}" size="20"></i></div>
-                        <div class="flex-1">
-                            <div class="text-sm font-bold text-jodo-textPrimary">${p.name} Group</div>
-                            <div class="text-xs ${statusColor} font-medium px-1.5 rounded inline-block mt-0.5">${statusLabel}</div>
-                        </div>
-                        <i data-lucide="chevron-right" size="20" class="text-gray-300"></i>
-                    </div>`;
-                }).join('');
-                activeOrdersHtml = `<div class="px-4 mt-4 mb-2"><h3 class="text-xs font-bold text-jodo-textSecondary uppercase tracking-wider mb-2">Your Active Orders</h3>${cards}</div>`;
-            }
-
-            // --- SECTION 2: HERO DEAL (Today's Best) ---
-            const heroSavings = heroProduct.price1 - heroProduct.price5;
-            const heroActiveGid = userActiveGroupIds[heroProduct.id];
-            const heroAction = heroActiveGid ? `onclick="openGroup('${heroActiveGid}')"` : `onclick="openStartModal('${heroProduct.id}')"`;
-            
-            const heroHtml = `
-            <div class="px-4 mt-6 mb-8">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-lg font-black text-jodo-textPrimary tracking-tight">Today's Best Deal</h2>
-                    <div class="text-[10px] font-bold text-jodo-textSecondary bg-gray-100 px-2 py-1 rounded-full">Ends 8 PM</div>
-                </div>
-                
-                <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden" ${heroAction}>
-                    <!-- Hero Image -->
-                    <div class="relative h-48 w-full bg-gray-100">
-                        <!-- Play Intent (No Autoplay) -->
-                        <div onclick="event.stopPropagation(); openProductVideo('${heroProduct.videoSrc}')" class="absolute inset-0 flex items-center justify-center cursor-pointer z-10">
-                            <div class="bg-white/90 w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
-                                <i data-lucide="play" class="text-jodo-textPrimary ml-1" size="20"></i>
-                            </div>
-                        </div>
-                        <!-- Poster Image Placeholder (using gradient for now as no image) -->
-                        <div class="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                            <i data-lucide="${heroProduct.icon}" size="64" class="text-gray-300"></i>
-                        </div>
-                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent p-4 pt-12">
-                            <div class="text-white font-bold text-xl leading-none">${heroProduct.name}</div>
-                            <div class="text-white/90 text-sm">${heroProduct.nameTe}</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Hero Content -->
-                    <div class="p-4">
-                        <div class="flex items-end justify-between">
-                            <div>
-                                <div class="text-xs text-jodo-textSecondary font-medium mb-0.5">Group Price / ${heroProduct.unit}</div>
-                                <div class="flex items-baseline gap-2">
-                                    <span class="text-4xl font-black text-jodo-priceFinal tracking-tighter">₹${heroProduct.price5}</span>
-                                    <span class="text-lg text-jodo-priceOld line-through decoration-2">₹${heroProduct.price1}</span>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <!-- CHANGED: Red savings badge (High Energy) -->
-                                <div class="text-xs font-bold text-jodo-ctaPrimary bg-red-50 px-2 py-1 rounded border border-red-100 mb-2 inline-block">
-                                    Save ₹${heroSavings}
-                                </div>
-                                <button class="bg-jodo-ctaPrimary text-white h-10 px-6 rounded-lg shadow-md font-bold text-sm active:scale-95 transition-transform flex items-center gap-2">
-                                    Grab <i data-lucide="arrow-right" size="16"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-
-            // --- SECTION 3: SECONDARY LIST ---
-            const listHtml = secondaryProducts.map(p => {
-                const savings = p.price1 - p.price5;
-                const activeGid = userActiveGroupIds[p.id];
-                const action = activeGid ? `onclick="openGroup('${activeGid}')"` : `onclick="openStartModal('${p.id}')"`;
-                return `
-                <div class="bg-white p-3 rounded-xl border border-gray-200 flex gap-4 mb-3 active:bg-gray-50 transition-colors" ${action}>
-                    <!-- Simple Thumbnail -->
-                    <div onclick="event.stopPropagation(); openProductVideo('${p.videoSrc}')" class="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 relative">
-                        <i data-lucide="${p.icon}" size="24" class="text-gray-400"></i>
-                        <div class="absolute bottom-1 right-1 bg-white/80 p-1 rounded-full shadow-sm"><i data-lucide="play" size="10" class="text-black"></i></div>
-                    </div>
-                    
-                    <!-- Info -->
-                    <div class="flex-1 flex flex-col justify-center">
-                        <div class="flex justify-between items-start mb-1">
-                            <div>
-                                <div class="font-bold text-jodo-textPrimary text-base">${p.name}</div>
-                                <div class="text-xs text-jodo-textSecondary">${p.nameTe} • ${p.unit}</div>
-                            </div>
-                            <div class="text-[10px] font-bold text-jodo-ctaPrimary bg-red-50 px-1.5 py-0.5 rounded">Save ₹${savings}</div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between mt-1">
-                            <div class="flex items-baseline gap-1.5">
-                                <span class="text-xl font-black text-jodo-priceFinal">₹${p.price5}</span>
-                                <span class="text-xs text-jodo-priceOld line-through">₹${p.price1}</span>
-                            </div>
-                            <button class="text-xs font-bold text-white bg-jodo-ctaPrimary px-4 py-2 rounded-lg shadow-sm">Add</button>
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('');
-
-            el.innerHTML = `
-                <div class="pb-safe fade-in bg-white">
-                    <!-- HEADER (Red Theme with White Text) -->
-                    <div class="glass-header sticky top-0 z-40 shadow-xl bg-jodo-ctaPrimary border-b-0">
-                        <div class="pt-safe px-4 pb-3 flex justify-between items-end min-h-[88px]">
-                            <div class="flex flex-col justify-end pb-0.5">
-                                <h1 class="font-black text-3xl tracking-tighter text-white leading-none mb-1.5 drop-shadow-md">JODO</h1>
-                            </div>
-                            <div class="flex flex-col items-end justify-end h-full">
-                                <button onclick="openSupportOptions()" class="group flex items-center gap-2 bg-white/10 border border-white/20 px-3 py-1.5 rounded-xl active:bg-white/20 transition-all backdrop-blur-md shadow-sm">
-                                    <i data-lucide="headset" size="14" class="text-white group-active:scale-90 transition-transform"></i>
-                                    <span class="text-sm font-bold text-white tracking-wide">Help</span>
-                                </button>
-                                <span class="text-[9px] text-white font-medium mt-1.5 tracking-wide drop-shadow-sm">Support: 9 AM – 7 PM</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="px-4 mt-4"><div class="bg-blue-50 border border-blue-100 rounded-lg p-2 flex items-center gap-2 text-[10px] font-bold text-blue-800 animate-pulse"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> 58 squads completed in Duvva today.</div></div>
-                    
-                    ${activeOrdersHtml}
-                    ${heroHtml}
-                    
-                    <div class="px-4 pb-24">
-                        <h3 class="text-sm font-bold text-jodo-textSecondary uppercase tracking-widest ml-1 mb-2">Daily Deals</h3>
-                        ${listHtml}
-                    </div>
-                </div>
-            `;
             initCardTilt();
         }
 
-        function init() {
-            if (JODO_INITIALIZED) return; JODO_INITIALIZED = true;
-            loadData(); cleanOldCycles(); loadHabit(); startMandiEngine(); startLocalHeatEngine();
-            // --- UPDATED ROUTE HANDLER FOR JOIN LINKS ---
-            const handleRoute = () => {
-                const params = new URLSearchParams(location.search);
-                const gid = params.get("group");
-                const join = params.get("join");
+        // --- 9. INIT ---
+        loadLocalData();
+        initAuth();
+        initCardTilt();
+        
+        window.addEventListener('popstate', () => {
+            const params = new URLSearchParams(location.search);
+            const gid = params.get('group');
+            if(gid) window.openGroup(gid); else window.goHome();
+        });
+        
+        render();
 
-                if (gid) {
-                    // Try to fetch group details immediately if join link
-                    fetchGroupDetails(gid).then(group => {
-                        if(group) {
-                            state.groups[gid] = group;
-                            // Ensure render happens after fetch
-                            state.currentGroupId = gid;
-                            state.view = 'group';
-                            render();
-                        } else {
-                           // If no group found remotely, maybe try local or go home
-                           // For now, if no local group exists, go home
-                           if (!state.groups[gid]) {
-                               goHome();
-                               return;
-                           }
-                        }
-                    });
-                }
-                
-                if (gid && join === "1") {
-                    redirectToJoinForm(gid);
-                    return;
-                }
-
-                state.currentGroupId = gid;
-                state.view = gid ? 'group' : 'home';
-                render();
-
-                if (!gid) startTicker();
-            };
-
-            window.addEventListener('popstate', handleRoute);
-            window.addEventListener('storage', () => { loadData(); render(); });
-            handleRoute();
-        }
-        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
-    </html>
+</html>
