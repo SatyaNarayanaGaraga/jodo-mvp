@@ -7,24 +7,42 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        psycho: {
-                            action: '#E53935', actionLight: '#FF5252', actionBg: '#FFF5F5',
-                            urgency: '#B71C1C', urgencyBg: '#FFEBEE',
-                            reward: '#FFD600', rewardText: '#374151', rewardBg: '#FFFDE7',
-                            trust: '#F57C00', trustBg: '#FFF3E0',
-                            alert: '#FF6D00', alertBg: '#FFF8E1',
-                            neutral: '#6B7280', base: '#FFFFFF'
-                        },
-                        slate: { 50: '#F9FAFB', 100: '#F3F4F6', 800: '#1F2937', 900: '#111827' }
+                        jodo: {
+                            // 1. BASE
+                            base: '#FFFFFF',
+                            textPrimary: '#111827',
+                            textSecondary: '#6B7280',
+
+                            // 2. PRICE SYSTEM
+                            priceFinal: '#166534',    // Green is standard for final price
+                            priceCut: '#E53935',      // Red for savings
+                            priceOld: '#9CA3AF',
+
+                            // 3. CTA BUTTONS & BRANDING (RESTORED TO RED)
+                            ctaPrimary: '#E53935',    // JODO Red (Action/Header)
+                            ctaSuccess: '#16A34A',    // Green (Success)
+
+                            // 4. GROUP / PROGRESS (RESTORED TO YELLOW)
+                            progress: '#FFD600',      // Vibrant Yellow
+                            progressBg: '#F3F4F6',
+                            bonus: '#FFD600',         // Vibrant Yellow
+
+                            // 5. URGENCY
+                            urgency: '#E53935',       // Red
+
+                            // 6. UTILS
+                            border: '#E5E7EB',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
                     },
                     animation: {
-                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                         'fade-in-up': 'fadeInUp 0.5s ease-out'
                     },
@@ -38,66 +56,64 @@
         }
     </script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #111827; color: #111827; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; }
-        #app { width: 100%; max-width: 448px; background: #F9FAFB; min-height: 100dvh; position: relative; overflow-y: auto; display: flex; flex-direction: column; }
+        body { background: #FFFFFF; color: #111827; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; }
+        #app { width: 100%; max-width: 448px; background: #FFFFFF; min-height: 100dvh; position: relative; overflow-y: auto; display: flex; flex-direction: column; }
         .btn-press { transition: transform 0.1s; cursor: pointer; user-select: none; }
         .btn-press:active:not(:disabled) { transform: scale(0.96); }
-        .card-modern { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #F3F4F6; }
-        .glass-header { background: #E53935; box-shadow: 0 2px 10px rgba(229, 57, 53, 0.3); }
+        .card-modern { background: #FFFFFF; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #E5E7EB; }
+        .glass-header { background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border-bottom: 1px solid #E5E7EB; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .fade-in { animation: fadeInUp 0.5s ease-out forwards; }
         .tilt-card { transition: transform 0.15s ease-out; transform-style: preserve-3d; }
         .animate-explode { animation: explode 0.4s ease-out forwards; }
+        
+        /* Price Anchor */
+        .price-anchor { color: #166534; font-weight: 900; letter-spacing: -0.025em; }
     </style>
 </head>
-<body class="antialiased selection:bg-psycho-action/20">
+<body class="antialiased">
 
     <div id="app"></div>
 
-    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/80 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300">
-        <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[2rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden"></div>
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300">
+        <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[2rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[70vh] flex flex-col overflow-hidden"></div>
     </div>
 
-    <div id="full-feed-container"></div>
-
-    <div id="live-ticker" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-full text-xs font-medium shadow-2xl z-[55] flex items-center gap-2 pointer-events-none border border-white/10 whitespace-nowrap hidden max-w-[90%] overflow-hidden transition-all duration-500 pb-safe">
-        <div id="ticker-dot" class="w-2 h-2 rounded-full animate-pulse shrink-0"></div>
-        <span id="ticker-text" class="truncate font-bold tracking-wide">...</span>
-    </div>
-
-    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe"></div>
+    <div id="live-ticker" class="hidden"></div>
+    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe"></div>
 
     <script>
-        const COMPANY_PHONE = "919999999999"; 
+        const COMPANY_PHONE = "918500742671"; 
         const GUIDE_VIDEO_SRC = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
         
+        // ================= GOOGLE SHEET BACKEND =================
+        const SHEET_API = "https://script.google.com/macros/s/AKfycbxDsU-xD2k_RWHgkGFj0sU7iuDr0FgqZ5QsH6jaHw0oRUGWFlHXCi6CzdxxlPEyZAux/exec";
+        // ⚠️ REPLACE THIS WITH YOUR REAL GOOGLE FORM LINK
+        const JOIN_FORM_BASE = "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform";
+        // Poll interval (ms)
+        const GROUP_POLL_INTERVAL = 8000;
+
         const PRODUCTS = [
             { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price5: 18, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-red-50 text-red-600', location: 'Duvva Fields', videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
             { id: 'oil', name: 'Sunflower Oil', nameTe: 'పొద్దుతిరుగుడు నూనె', unit: '500ml', baseWeight: 0.5, weightUnit: 'L', price1: 60, price5: 50, mandiPrice: 65, remainingStock: 8, icon: 'droplet', imageColor: 'bg-yellow-50 text-yellow-600', location: 'Factory Direct', videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' },
             { id: 'sugar', name: 'Sugar', nameTe: 'చక్కెర', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 24, price5: 20, mandiPrice: 38, remainingStock: 42, icon: 'package', imageColor: 'bg-blue-50 text-blue-600', location: 'Local Stock', videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' }
         ];
 
-        const DB_KEY = 'jodo_local_db_v54';
+        const DB_KEY = 'jodo_local_db_v64'; 
         const HABIT_KEY = 'jodo_habit_v1';
-        // Note: EXPIRY_MS is no longer used for group duration, replaced by Fixed Cycle Logic
-        const TICKER_MESSAGES = [{ msg: "🔥 58 squads completed in Duvva.", type: 'good' }, { msg: "🛡️ Pay on delivery available.", type: 'neutral' }];
-
-        // --- DELIVERY SYSTEM CONFIG ---
+        
         const DELIVERY_DAYS = [3, 6]; 
-        // 3 = Wednesday, 6 = Saturday (0=Sun, 1=Mon,...)
-        const CUTOFF_HOUR = 20; // 8 PM cutoff
+        const CUTOFF_HOUR = 20; 
+        const FULFILLMENT_FEE = 6; 
 
         function getNextDeliveryDate() {
             const now = new Date();
-            
             for (let i = 0; i < 7; i++) {
                 const d = new Date();
                 d.setDate(now.getDate() + i);
-
                 if (DELIVERY_DAYS.includes(d.getDay())) {
-                    // if today is delivery day but cutoff passed → skip to next
                     if (i === 0 && now.getHours() >= CUTOFF_HOUR) continue;
                     return d;
                 }
@@ -108,12 +124,9 @@
         function cleanOldCycles() {
             const now = Date.now();
             let changed = false;
-
             for (const gid in state.groups) {
                 const g = state.groups[gid];
                 if (!g) continue;
-
-                // Check strict expiry timestamp
                 if (g.expiresAt && g.expiresAt < now) {
                     delete state.groups[gid];
                     delete state.members[gid];
@@ -123,61 +136,51 @@
             if (changed) saveData();
         }
 
-        // --- HARDENED STATE ---
         const state = { 
             view: 'home', 
             currentGroupId: null, 
             groups: {}, 
             members: {}, 
-            user: { name: '', phone: '' }, 
+            user: { name: '', phone: '', ward: '' }, 
             timerInterval: null, 
-            scrollObserver: null, 
-            tickerInterval: null, 
-            oneHourAlerted: false,
-            hesitationInterval: null,
-            dependencyInterval: null,
-            painLoopInterval: null,
-            mandiModalInterval: null, 
-            mandiGroupInterval: null,
-            lastMandiUpdate: { id: null, dir: null },
-            lastMemberCount: 0 // Track for live price drop effect
+            lastMemberCount: 0,
+            groupPoller: null
         };
 
-        const habitState = {
-            totalOrders: 0,
-            streakDays: 0,
-            lastOrderDate: null
-        };
-
-        // prevent double-init
+        const habitState = { totalOrders: 0, streakDays: 0, lastOrderDate: null };
         let JODO_INITIALIZED = false;
         
-        // --- STORAGE HELPERS (Restored) ---
         function loadData() {
             try {
                 state.user.name = localStorage.getItem('jodo_user_name') || '';
                 state.user.phone = localStorage.getItem('jodo_user_phone') || '';
+                state.user.ward = localStorage.getItem('jodo_user_ward') || '';
                 const raw = localStorage.getItem(DB_KEY);
                 if (raw) {
                     const data = JSON.parse(raw);
                     state.groups = data.groups || {};
-                    state.members = data.members || {};
+                    // We don't load members from local anymore, we fetch them
+                    // state.members = data.members || {}; 
                 }
             } catch(e) { console.error("Load Error", e); }
         }
 
         function saveData() {
             try {
-                localStorage.setItem(DB_KEY, JSON.stringify({ groups: state.groups, members: state.members }));
+                localStorage.setItem(DB_KEY, JSON.stringify({ groups: state.groups, members: {} })); // Don't save members locally
                 window.dispatchEvent(new Event('storage')); 
             } catch(e) { console.error("Save Error", e); }
         }
 
-        function saveUser(name, phone) {
+        function saveUser(name, phone, ward) {
             state.user.name = name;
             state.user.phone = phone;
             localStorage.setItem('jodo_user_name', name);
             localStorage.setItem('jodo_user_phone', phone);
+            if (ward) {
+                state.user.ward = ward;
+                localStorage.setItem('jodo_user_ward', ward);
+            }
         }
 
         function loadHabit() {
@@ -214,9 +217,7 @@
 
         function startMandiEngine() { render(); }
 
-        // --- UTILS ---
         function toast(msg, icon) { const t = document.getElementById('toast'); t.innerHTML = `<i data-lucide="${icon}" size="16"></i> ${msg}`; t.classList.remove('hidden'); if(window.lucide) window.lucide.createIcons(); setTimeout(() => t.classList.add('hidden'), 3000); }
-        function triggerConfetti() { if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#E53935', '#FDD835', '#ffffff'] }); }
         function triggerVibration() { if (navigator.vibrate) navigator.vibrate(20); }
         function createNodeFromHTML(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
         
@@ -237,61 +238,13 @@
             setTimeout(() => { overlay.classList.add('hidden'); content.innerHTML = ''; }, 200);
         };
 
-        function showFieldError(c, m) { c.innerHTML = `<div class="field-error text-xs text-psycho-urgency font-bold bg-psycho-urgency/10 p-3 rounded-xl flex items-center gap-2 border border-psycho-urgency/20"><i data-lucide="alert-circle" size="16"></i> ${m}</div>`; if(window.lucide) window.lucide.createIcons(); }
+        function showFieldError(c, m) { c.innerHTML = `<div class="field-error text-xs text-jodo-urgency font-bold bg-red-50 p-3 rounded-lg flex items-center gap-2 border border-red-100"><i data-lucide="alert-circle" size="16"></i> ${m}</div>`; if(window.lucide) window.lucide.createIcons(); }
         function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
 
-        function startTicker() {
-            if (state.tickerInterval) clearInterval(state.tickerInterval);
-            const update = () => {
-                const el = document.getElementById('live-ticker');
-                const txt = document.getElementById('ticker-text');
-                if(!el || !txt) return;
-                const item = TICKER_MESSAGES[Math.floor(Math.random() * TICKER_MESSAGES.length)];
-                txt.innerText = item.msg;
-                el.classList.remove('hidden', 'translate-y-10', 'opacity-0');
-                el.classList.add('translate-y-0', 'opacity-100');
-                setTimeout(() => { el.classList.add('translate-y-10', 'opacity-0'); setTimeout(() => el.classList.add('hidden'), 500); }, 5000);
-            };
-            update();
-            state.tickerInterval = setInterval(update, 12000); 
-        }
+        function startTicker() { /* DISABLED */ }
+        function startLocalHeatEngine() { /* DISABLED */ }
+        function initCardTilt() { /* DISABLED */ }
 
-        // --- NEW: HEATMAP ENGINE ---
-        function startLocalHeatEngine() {
-            const streets = ["Duvva", "Ward 12", "Main Bazaar", "Market Road", "RTC Colony"];
-            setInterval(() => {
-                const street = streets[Math.floor(Math.random() * streets.length)];
-                const msg = `🔥 ${1 + Math.floor(Math.random()*4)} orders placed in ${street}`;
-                TICKER_MESSAGES.push({msg, type:"good"});
-                if(Math.random() > 0.8) {
-                     // Occasional toast for high impact
-                     const t = document.getElementById('live-ticker');
-                     if(t) t.classList.add('animate-shake');
-                     setTimeout(() => t?.classList.remove('animate-shake'), 500);
-                }
-            }, 6000);
-        }
-
-        function initCardTilt() {
-            const cards = document.querySelectorAll('.tilt-card');
-            cards.forEach(card => {
-                card.addEventListener('mousemove', (e) => {
-                    const rect = card.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    const centerX = rect.width / 2;
-                    const centerY = rect.height / 2;
-                    const rotateX = ((y - centerY) / centerY) * -3; 
-                    const rotateY = ((x - centerX) / centerX) * 3;
-                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-                });
-                card.addEventListener('mouseleave', () => {
-                    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-                });
-            });
-        }
-
-        // --- NAVIGATION HELPERS ---
         window.openGroup = function(gid) { 
             try { if (window.location.protocol !== 'blob:') history.pushState({}, '', `?group=${gid}`); } catch(e) {} 
             state.currentGroupId = gid; state.view = 'group'; render(); 
@@ -301,7 +254,6 @@
             if (state.timerInterval) clearInterval(state.timerInterval);
             try { if (window.location.protocol !== 'blob:') history.pushState({}, '', location.pathname); } catch(e) {} 
             state.view = 'home'; state.currentGroupId = null; render(); 
-            startTicker(); 
         };
 
         window.closeTvFeed = () => {
@@ -310,886 +262,253 @@
             if (container) container.innerHTML = '';
         };
 
-        window.openFullFeed = function(startPid) {
-            const container = document.getElementById('full-feed-container');
-            if (!container) return; 
-            document.body.style.overflow = 'hidden';
-            let activeIndex = PRODUCTS.findIndex(p => p.id === startPid);
-            if(activeIndex === -1) activeIndex = 0;
-
+        window.openProductVideo = function(videoSrc) {
             const html = `
-                <div id="full-feed-overlay" class="fixed inset-0 bg-black z-[70] animate-in fade-in duration-300 overflow-hidden touch-none select-none">
-                    <div class="absolute top-0 left-0 right-0 z-[80] flex justify-between items-start p-4 pt-safe pointer-events-none">
-                        <button onclick="closeTvFeed()" class="pointer-events-auto text-white p-2 rounded-full bg-black/20 backdrop-blur-md active:scale-90 transition-transform top-safe"><i data-lucide="x" size="28"></i></button>
-                    </div>
-                    <div id="feed-track" class="h-full w-full relative will-change-transform" style="transform: translateX(-${activeIndex * 100}%)">
-                        ${PRODUCTS.map((product, index) => `
-                            <div class="h-full w-full absolute top-0 left-0 flex items-center justify-center bg-black product-slide transition-transform duration-300 ease-out" style="transform: translateX(${index * 100}%) scale(1); opacity: 1;" data-index="${index}">
-                                <div class="relative w-full h-full overflow-hidden">
-                                     <video class="feed-video w-full h-full object-cover" src="${product.videoSrc}" loop playsinline preload="${index === activeIndex ? 'auto' : 'none'}" poster=""></video>
-                                     <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90"></div>
-                                </div>
-                                <div class="absolute bottom-0 left-0 right-0 p-6 pb-24 z-[75] flex flex-col items-center text-center pb-safe">
-                                    <div class="mb-6 w-full max-w-sm transition-all duration-500 opacity-0 translate-y-4 product-info">
-                                        <div class="flex items-center justify-center gap-2 mb-2 opacity-90">
-                                            <div class="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase border border-white/10 shadow-sm">Farm Direct</div>
-                                            <div class="flex items-center gap-1 text-white text-xs font-medium shadow-black drop-shadow-md"><i data-lucide="map-pin" size="12"></i> ${product.location}</div>
-                                        </div>
-                                        <h2 class="text-white text-4xl font-black leading-none mb-2 drop-shadow-xl tracking-tight">${product.name}</h2>
-                                        <p class="text-white/90 text-sm font-medium drop-shadow-md leading-relaxed line-clamp-2">${product.nameTe} • Only ${product.remainingStock}kg left</p>
-                                    </div>
-                                    <div class="flex gap-2 w-full max-w-sm">
-                                        <button onclick="window.openPriceJourneyModal('${product.id}')" class="flex-1 bg-white/20 backdrop-blur-md text-white py-3 rounded-2xl font-bold text-sm shadow-lg btn-press flex items-center justify-center gap-2 border border-white/20">📉 Breakdown</button>
-                                        <button onclick="closeTvFeed(); openStartModal('${product.id}')" class="flex-[2] bg-psycho-action text-white py-3 rounded-2xl font-black text-lg shadow-2xl shadow-red-900/40 btn-press flex items-center justify-center gap-2 border-t border-white/20"><span>Start Group Buy</span><i data-lucide="arrow-right" size="20"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-            const feedContainer = createNodeFromHTML(html);
-            container.innerHTML = ''; container.appendChild(feedContainer); if(window.lucide) window.lucide.createIcons();
-
-            const track = document.getElementById('feed-track');
-            const slides = document.querySelectorAll('.product-slide');
-            const total = slides.length;
-            let startX = 0, currentX = 0, isDragging = false, startTime = 0;
-
-            const manageVideos = (idx) => {
-                slides.forEach((slide, i) => {
-                    const video = slide.querySelector('video');
-                    if (i === idx) { video.muted = false; video.play().catch(e => {}); video.style.opacity = '1'; } 
-                    else { video.pause(); video.currentTime = 0; }
-                });
-            };
-            manageVideos(activeIndex);
-
-            const overlay = document.getElementById('full-feed-overlay');
-            overlay.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; currentX = startX; isDragging = true; startTime = Date.now(); track.style.transition = 'none'; }, { passive: true });
-            overlay.addEventListener('touchmove', (e) => { if (!isDragging) return; currentX = e.touches[0].clientX; const diff = currentX - startX; const translateVal = -(activeIndex * 100) + (diff / window.innerWidth * 100); track.style.transform = `translateX(${translateVal}%)`; }, { passive: true });
-            overlay.addEventListener('touchend', (e) => { isDragging = false; const diff = currentX - startX; if (Math.abs(diff) > window.innerWidth * 0.15) { if (diff > 0 && activeIndex > 0) activeIndex--; else if (diff < 0 && activeIndex < total - 1) activeIndex++; } track.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)'; track.style.transform = `translateX(-${activeIndex * 100}%)`; manageVideos(activeIndex); });
-        };
-
-        window.openLiveGuide = function() {
-            const html = `
-                <div class="flex flex-col h-[70vh]">
-                     <div class="flex-1 bg-black relative rounded-t-[2rem] overflow-hidden">
-                        <video src="${GUIDE_VIDEO_SRC}" autoplay loop muted playsinline class="w-full h-full object-cover opacity-80"></video>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-                            <h3 class="text-white text-2xl font-black mb-2 drop-shadow-lg">How JODO Works</h3>
-                            <p class="text-white/90 text-sm mb-6 max-w-xs drop-shadow-md">1. Pick a Product<br>2. Form a Squad of 5<br>3. Everyone gets wholesale price!</p>
-                            <button onclick="window.closeModal()" class="bg-white text-black px-8 py-3 rounded-full font-bold shadow-xl btn-press">Got it!</button>
-                        </div>
-                        <button onclick="window.closeModal()" class="absolute top-4 right-4 bg-white/20 p-2 rounded-full text-white backdrop-blur-md"><i data-lucide="x" size="20"></i></button>
+                <div class="flex flex-col bg-black rounded-t-[2rem] overflow-hidden max-h-[60vh]">
+                     <div class="flex-1 relative flex items-center justify-center bg-black">
+                        <video src="${videoSrc}" autoplay controls playsinline class="w-full max-h-full object-contain"></video>
+                        <button onclick="window.closeModal()" class="absolute top-4 right-4 bg-white/20 p-2 rounded-full text-white backdrop-blur-md hover:bg-white/30 transition-colors"><i data-lucide="x" size="24"></i></button>
                      </div>
                 </div>
             `;
             showModalNode(createNodeFromHTML(html));
         };
 
-        // --- CRAZY EMOTIONAL PRICE BREAKDOWN ---
-        window.openPriceJourneyModal = function(pid) {
-            const product = PRODUCTS.find(p => p.id === pid);
-            if (!product) return;
-
-            // Default Qty
-            const defaultQty = 2;
-            
-            // Calculate Correct Default Market Total (Adjusting for Unit Size)
-            const baseWeight = product.baseWeight || 1;
-            const defaultUnits = defaultQty / baseWeight;
-            const defaultTotalMarket = product.price1 * defaultUnits;
-
-            const node = createNodeFromHTML(`
-                <div class="flex flex-col h-[90vh] bg-slate-50 relative rounded-t-[2rem] overflow-hidden">
-                    <!-- HEADER -->
-                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-slate-100 shrink-0 z-20">
-                        <h3 class="font-black text-xl text-slate-800 uppercase tracking-tight">The Money Truth</h3>
-                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors"><i data-lucide="x" size="20"></i></button>
-                    </div>
-                    
-                    <div class="p-5 overflow-y-auto flex-1 overscroll-contain relative space-y-6">
-                        
-                        <!-- 1. INPUT -->
-                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-3xl">🥦</div>
-                                <div>
-                                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Product</div>
-                                    <div class="font-black text-lg text-slate-900">${product.name}</div>
-                                    <div class="text-[10px] text-slate-400">Pack Size: ${product.unit}</div>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4 pt-2">
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Your Buy (kg)</label>
-                                    <input id="quantity" type="number" value="${defaultQty}" class="w-full bg-slate-50 border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-900 text-center text-lg focus:border-psycho-action outline-none">
-                                </div>
-                                <div>
-                                    <!-- RESTORED LABEL: UNIT PRICE -->
-                                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Total Market Cost (₹)</label>
-                                    <input id="marketPrice" type="number" value="${defaultTotalMarket}" class="w-full bg-slate-50 border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-900 text-center text-lg focus:border-psycho-action outline-none">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 2. CHAIN OF EXPLOITATION (Animation Container) -->
-                        <div id="chain-container" class="bg-white p-5 rounded-2xl border-2 border-red-100 shadow-lg relative overflow-hidden">
-                            <div class="absolute top-0 left-0 right-0 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest text-center py-1">Traditional Chain</div>
-                            
-                            <div class="flex items-center justify-between mt-4 relative z-10" id="chain-visuals">
-                                <!-- Farmer -->
-                                <div class="flex flex-col items-center gap-1">
-                                    <div class="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center border-2 border-green-200"><i data-lucide="sprout" size="20"></i></div>
-                                    <span class="text-[10px] font-bold text-slate-600">Farmer</span>
-                                </div>
-                                <!-- Link 1 -->
-                                <div class="h-1 flex-1 bg-slate-200 mx-1 rounded-full relative"><div class="absolute -top-3 left-1/2 -translate-x-1/2 text-slate-300"><i data-lucide="link" size="12"></i></div></div>
-                                
-                                <!-- Wholesaler (Target) -->
-                                <div class="flex flex-col items-center gap-1 target-middleman transition-all duration-300 cursor-pointer">
-                                    <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center border-2 border-red-200 animate-pulse"><i data-lucide="truck" size="20"></i></div>
-                                    <span class="text-[10px] font-bold text-red-500">Agent</span>
-                                </div>
-                                <!-- Link 2 -->
-                                <div class="h-1 flex-1 bg-red-200 mx-1 rounded-full relative target-link"><div class="absolute -top-3 left-1/2 -translate-x-1/2 text-red-300"><i data-lucide="link" size="12"></i></div></div>
-                                
-                                <!-- Retailer (Target) -->
-                                <div class="flex flex-col items-center gap-1 target-middleman transition-all duration-300 cursor-pointer">
-                                    <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center border-2 border-red-200 animate-pulse"><i data-lucide="store" size="20"></i></div>
-                                    <span class="text-[10px] font-bold text-red-500">Shop</span>
-                                </div>
-                                <!-- Link 3 -->
-                                <div class="h-1 flex-1 bg-slate-200 mx-1 rounded-full relative"><div class="absolute -top-3 left-1/2 -translate-x-1/2 text-slate-300"><i data-lucide="link" size="12"></i></div></div>
-                                
-                                <!-- You -->
-                                <div class="flex flex-col items-center gap-1">
-                                    <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center border-2 border-slate-200"><i data-lucide="user" size="20"></i></div>
-                                    <span class="text-[10px] font-bold text-slate-600">You</span>
-                                </div>
-                            </div>
-
-                            <!-- Hammer Button -->
-                            <button id="break-chain-btn" class="mt-6 w-full bg-slate-900 text-white py-3 rounded-xl font-black text-lg shadow-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-transform active:scale-95">
-                                <i data-lucide="hammer" size="20"></i> Break The Chain
-                            </button>
-                        </div>
-
-                        <!-- 3. HIDDEN RESULTS (Reveals after break) -->
-                        <div id="truth-results" class="hidden space-y-6 animate-fade-in-up">
-                            
-                            <!-- JODO CHAIN (Fair) -->
-                            <div class="bg-green-50 p-5 rounded-2xl border-2 border-green-200 shadow-md relative overflow-hidden">
-                                <div class="absolute -right-6 -top-6 w-24 h-24 bg-green-200 rounded-full blur-2xl opacity-50"></div>
-                                <div class="absolute top-0 left-0 right-0 bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest text-center py-1">JODO Chain</div>
-                                
-                                <div class="flex items-center justify-between mt-4 relative z-10">
-                                    <div class="flex flex-col items-center gap-1">
-                                        <div class="w-12 h-12 rounded-full bg-white text-green-700 flex items-center justify-center border-2 border-green-500 shadow-sm"><i data-lucide="sprout" size="24"></i></div>
-                                        <span class="text-xs font-bold text-green-800">Farmer</span>
-                                    </div>
-                                    <div class="h-1 flex-1 bg-green-300 mx-2 rounded-full"></div>
-                                    <div class="flex flex-col items-center gap-1">
-                                        <div class="w-12 h-12 rounded-full bg-psycho-action text-white flex items-center justify-center border-4 border-white shadow-lg transform scale-110 font-black italic">J</div>
-                                        <span class="text-xs font-bold text-slate-800">JODO</span>
-                                    </div>
-                                    <div class="h-1 flex-1 bg-green-300 mx-2 rounded-full"></div>
-                                    <div class="flex flex-col items-center gap-1">
-                                        <div class="w-12 h-12 rounded-full bg-white text-slate-700 flex items-center justify-center border-2 border-slate-200 shadow-sm"><i data-lucide="smile" size="24"></i></div>
-                                        <span class="text-xs font-bold text-slate-600">You</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- "WHO EATS YOUR MONEY" & TOTAL COST -->
-                            <div class="bg-slate-900 rounded-2xl p-5 text-white shadow-xl">
-                                <h4 class="font-bold text-center text-slate-300 text-xs uppercase tracking-widest mb-4">Total for <span id="res-qty">2</span> kg</h4>
-                                
-                                <div class="grid grid-cols-2 gap-4">
-                                    <!-- Market Column -->
-                                    <div class="bg-white/5 rounded-xl p-3 text-center border border-white/10 flex flex-col gap-2">
-                                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Market Cost</div>
-                                        <div class="text-2xl font-bold text-white line-through decoration-red-500 decoration-2" id="total-market-cost">₹0</div>
-                                        <div class="h-[1px] bg-white/10 w-full"></div>
-                                        <div>
-                                            <div class="text-[9px] text-red-400 font-bold uppercase mb-0.5">Middlemen Eat</div>
-                                            <div class="text-lg font-black text-red-500" id="money-lost">₹0</div>
-                                        </div>
-                                    </div>
-
-                                    <!-- JODO Column -->
-                                    <div class="bg-white/10 rounded-xl p-3 text-center border border-green-500/30 relative overflow-hidden flex flex-col gap-2">
-                                        <div class="absolute inset-0 bg-green-500/10"></div>
-                                        <div class="text-[10px] text-green-200 uppercase font-bold tracking-wider relative">JODO Cost</div>
-                                        <div class="text-3xl font-black text-white relative" id="total-jodo-cost">₹0</div>
-                                        <div class="h-[1px] bg-white/20 w-full relative"></div>
-                                        <div class="relative">
-                                            <div class="text-[9px] text-green-400 font-bold uppercase mb-0.5">You Save</div>
-                                            <div class="text-lg font-black text-green-400" id="money-saved">₹0</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="mt-4 pt-4 border-t border-white/10 text-center">
-                                    <div class="text-slate-400 text-xs mb-1">Farmer Earnings Increase</div>
-                                    <div class="text-xl font-bold text-green-400 flex items-center justify-center gap-2"><i data-lucide="trending-up" size="20"></i> <span id="farmer-gain">+₹0</span></div>
-                                </div>
-                            </div>
-
-                            <!-- GUILT / PRIDE CARDS -->
-                            <div class="grid grid-cols-1 gap-3">
-                                <div class="bg-red-50 p-3 rounded-xl border border-red-100 flex items-start gap-3">
-                                    <div class="text-2xl">❌</div>
-                                    <div>
-                                        <div class="text-xs font-bold text-red-800 uppercase">Buying from Market</div>
-                                        <div class="text-xs text-red-600 leading-tight mt-0.5">Farmer struggles. Middlemen celebrate. You lose money.</div>
-                                    </div>
-                                </div>
-                                <div class="bg-green-50 p-3 rounded-xl border border-green-100 flex items-start gap-3">
-                                    <div class="text-2xl">✅</div>
-                                    <div>
-                                        <div class="text-xs font-bold text-green-800 uppercase">Buying from JODO</div>
-                                        <div class="text-xs text-green-600 leading-tight mt-0.5">Farmer wins. You save. Parasites removed.</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button onclick="window.closeModal(); openStartModal('${pid}')" class="w-full bg-psycho-action text-white py-4 rounded-xl font-black text-xl shadow-2xl shadow-red-900/30 btn-press flex items-center justify-center gap-2 animate-pulse">
-                                Start Squad Now <i data-lucide="arrow-right" size="24"></i>
-                            </button>
-                            <div class="h-6"></div>
-                        </div>
-                    </div>
+        window.openLiveGuide = function() {
+            const html = `
+                <div class="flex flex-col h-[70vh] bg-black rounded-t-[2rem] overflow-hidden">
+                     <div class="flex-1 relative flex items-center justify-center bg-black">
+                        <video src="${GUIDE_VIDEO_SRC}" autoplay controls playsinline class="w-full max-h-full object-contain"></video>
+                        <button onclick="window.closeModal()" class="absolute top-4 right-4 bg-white/20 p-2 rounded-full text-white backdrop-blur-md hover:bg-white/30 transition-colors"><i data-lucide="x" size="24"></i></button>
+                     </div>
+                     <div class="bg-white p-5 shrink-0">
+                        <h3 class="font-black text-xl text-jodo-textPrimary mb-1">How JODO Works</h3>
+                        <p class="text-sm text-jodo-textSecondary font-medium">1. Pick a Deal • 2. Join Neighbors • 3. Unlock Wholesale Price</p>
+                     </div>
                 </div>
-            `);
-            showModalNode(node);
-
-            // Logic Variables
-            const qInput = node.querySelector('#quantity');
-            const mInput = node.querySelector('#marketPrice');
-            const btnBreak = node.querySelector('#break-chain-btn');
-            
-            // Logic Functions (CORRECTED MATH ENGINE)
-            const calculateValues = () => {
-                const qty = parseFloat(qInput.value) || 0;
-                
-                // UPDATED: Treat input as TOTAL MARKET COST
-                const totalMarket = parseFloat(mInput.value) || 0; 
-                
-                // CORRECTED: Calculate Total JODO Cost based on UNITS not just KG
-                const unitWeightKg = product.baseWeight || 0.5; // Default 0.5kg if missing
-                const totalUnits = qty / unitWeightKg;
-                const totalJodo = parseFloat(product.price5) * totalUnits;
-
-                // 1. REALISTIC MARKET BREAKDOWN (Farmer gets squeezed)
-                // Farmer: ~20% | Wholesaler: ~30% | Retailer: ~50%
-                const farmer_M = totalMarket * 0.20; 
-                const whole_M = totalMarket * 0.30;
-                const retail_M = totalMarket * 0.50;
-                const middlemenCut = whole_M + retail_M;
-
-                // 2. JODO BREAKDOWN (Farmer gets majority)
-                // Farmer: ~65% | Ops: ~20% | Margin: ~15%
-                const farmer_J = totalJodo * 0.65;
-                const ops_J = totalJodo * 0.20;
-                const margin_J = totalJodo * 0.15;
-                const Jodo_Costs_J = ops_J + margin_J;
-
-                // 3. SAVINGS & IMPACT
-                const savings = Math.max(0, totalMarket - totalJodo);
-                
-                // Ensure visual logic doesn't show negative if user inputs weird data
-                let farmerGain = farmer_J - farmer_M;
-                
-                // Update DOM
-                const resQty = node.querySelector('#res-qty');
-                if (resQty) resQty.innerText = qty;
-
-                const totalMarketCostEl = node.querySelector('#total-market-cost');
-                if (totalMarketCostEl) totalMarketCostEl.innerText = '₹' + Math.round(totalMarket);
-
-                const totalJodoCostEl = node.querySelector('#total-jodo-cost');
-                if (totalJodoCostEl) totalJodoCostEl.innerText = '₹' + Math.round(totalJodo);
-
-                const moneyLostEl = node.querySelector('#money-lost');
-                if (moneyLostEl) moneyLostEl.innerText = '₹' + Math.round(middlemenCut);
-
-                const moneySavedEl = node.querySelector('#money-saved');
-                if (moneySavedEl) moneySavedEl.innerText = '₹' + Math.round(savings);
-                
-                const gainText = farmerGain >= 0 ? '+' : '';
-                const farmerGainEl = node.querySelector('#farmer-gain');
-                if (farmerGainEl) farmerGainEl.innerText = gainText + '₹' + Math.round(farmerGain);
-                
-                // Color logic for negative gain (rare edge case)
-                const gainEl = node.querySelector('#farmer-gain');
-                if (gainEl) {
-                    if (farmerGain < 0) {
-                        gainEl.classList.remove('text-green-400');
-                        gainEl.classList.add('text-slate-400');
-                    } else {
-                        gainEl.classList.add('text-green-400');
-                        gainEl.classList.remove('text-slate-400');
-                    }
-                }
-            };
-
-            // Event Listeners
-            qInput.addEventListener('input', calculateValues);
-            mInput.addEventListener('input', calculateValues);
-            
-            // Initial Calc
-            calculateValues();
-
-            // CHAIN BREAKING ANIMATION
-            btnBreak.onclick = () => {
-                const middlemen = node.querySelectorAll('.target-middleman');
-                const links = node.querySelectorAll('.target-link');
-                
-                // 1. Vibrate (UPDATED: Longer duration for maximum impact)
-                if(navigator.vibrate) navigator.vibrate(1000); // Vibrate for 1 full second
-
-                // 2. Animate Explosion
-                middlemen.forEach(el => el.classList.add('animate-explode'));
-                links.forEach(el => el.classList.add('opacity-0')); // Hide links
-
-                // 3. Button Feedback
-                btnBreak.innerHTML = '<i data-lucide="check" size="20"></i> Chain Broken!';
-                btnBreak.classList.remove('bg-slate-900');
-                btnBreak.classList.add('bg-green-600');
-
-                // 4. Reveal Truth after delay
-                setTimeout(() => {
-                    node.querySelector('#chain-container').style.display = 'none'; // Hide old chain
-                    node.querySelector('#truth-results').classList.remove('hidden'); // Show results
-                    triggerConfetti(); // Celebration
-                    if(window.lucide) window.lucide.createIcons();
-                }, 600);
-            };
-
-            // 5. SLAP THE MIDDLEMEN LOGIC (Interactive Rage)
-            node.querySelectorAll('.target-middleman').forEach(el => {
-                el.addEventListener('click', (e) => {
-                     e.stopPropagation(); // Prevent bubbling if needed
-                     el.classList.add('animate-explode');
-                     if(navigator.vibrate) navigator.vibrate([30, 30, 60]);
-                     toast("Middleman Crushed! Savings Unlocked!", "trending-down");
-                     // Hide after explode animation
-                     setTimeout(() => el.style.opacity = '0', 400); 
-                });
-            });
-            
-            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
+            `;
+            showModalNode(createNodeFromHTML(html));
         };
 
-        // --- HARDENED LOGIC START ---
+        window.openSupportOptions = function() {
+            const html = `
+                <div class="bg-white rounded-t-[2rem] p-6 pb-12">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-black text-xl text-jodo-textPrimary">Contact Support</h3>
+                        <button onclick="window.closeModal()" class="p-2 bg-gray-100 rounded-full text-jodo-textSecondary hover:bg-gray-200 transition-colors"><i data-lucide="x" size="20"></i></button>
+                    </div>
+                    <div class="grid gap-3">
+                        <a href="tel:${COMPANY_PHONE}" class="flex items-center gap-4 p-4 rounded-xl bg-blue-50 border border-blue-100 active:scale-[0.98] transition-all">
+                            <div class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-md"><i data-lucide="phone" size="24"></i></div>
+                            <div>
+                                <div class="font-bold text-jodo-textPrimary text-lg">Direct Call</div>
+                                <div class="text-xs font-semibold text-blue-600">Speak to us now</div>
+                            </div>
+                            <div class="ml-auto text-gray-300"><i data-lucide="chevron-right" size="24"></i></div>
+                        </a>
+                        <a href="https://wa.me/${COMPANY_PHONE}" target="_blank" class="flex items-center gap-4 p-4 rounded-xl bg-green-50 border border-green-100 active:scale-[0.98] transition-all">
+                            <div class="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center shadow-md"><i data-lucide="message-circle" size="24"></i></div>
+                            <div>
+                                <div class="font-bold text-jodo-textPrimary text-lg">WhatsApp Message</div>
+                                <div class="text-xs font-semibold text-green-600">Chat with support</div>
+                            </div>
+                            <div class="ml-auto text-gray-300"><i data-lucide="chevron-right" size="24"></i></div>
+                        </a>
+                    </div>
+                </div>
+            `;
+            showModalNode(createNodeFromHTML(html));
+        };
 
-        // 2. Safer render()
+        // --- NEW GOOGLE BACKEND FUNCTIONS ---
+
+        function shareJoinLink(gid) {
+            const link = `${location.origin}${location.pathname}?group=${gid}&join=1`;
+            const msg = `🛒 Join my JODO group & unlock wholesale price:\n${link}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+        }
+
+        function redirectToJoinForm(gid) {
+            // ⚠️ CRITICAL: Replace 'entry.xxxxxx' with your actual Google Form Entry IDs
+            // 1. Open your Google Form
+            // 2. Click 3 dots > "Get pre-filled link"
+            // 3. Fill dummy data, click "Get Link", copy it
+            // 4. Look at the URL to find entry.123456=... for each field
+            
+            const url = `${JOIN_FORM_BASE}` +
+                `?entry.111111=${gid}` +   // Replace 111111 with Group ID field ID
+                `&entry.222222=${encodeURIComponent(state.user.name || "")}` + // Replace 222222 with Name field ID
+                `&entry.333333=${encodeURIComponent(state.user.phone || "")}` + // Replace 333333 with Phone field ID
+                `&entry.444444=${encodeURIComponent(state.user.ward || "")}`;  // Replace 444444 with Ward field ID
+            
+            console.log("Redirecting to:", url);
+
+            // Safety check removed so you can test immediately with correct IDs
+            window.location.href = url;
+        }
+
+        async function fetchGroupMembers(gid) {
+          try {
+            const res = await fetch(`${SHEET_API}?group=${gid}`);
+            const data = await res.json();
+
+            if (!Array.isArray(data.members)) return;
+
+            // FIX: Only render if count changed (Prevent aggressive re-rendering)
+            if (data.members.length !== state.lastMemberCount) {
+                state.members[gid] = data.members;
+                state.lastMemberCount = data.members.length;
+                render();
+            }
+
+          } catch (e) {
+            console.error("Sheet fetch failed", e);
+          }
+        }
+
         function render() {
             const app = document.getElementById('app');
-            if (!app) {
-                console.error('JODO: #app root not found');
-                return;
-            }
-
-            // stop previous countdown timers
-            if (state.timerInterval) {
-                clearInterval(state.timerInterval);
-                state.timerInterval = null;
-            }
-
-            if (state.view === 'home') {
-                renderHome(app);
-            } else {
-                renderGroup(app);
-            }
-
+            if (!app) { console.error('JODO: #app root not found'); return; }
+            if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+            if (state.view === 'home') renderHome(app);
+            else renderGroup(app);
             if (window.lucide) window.lucide.createIcons();
         }
 
-        // 3. Harder openAddMemberModal
-        window.openAddMemberModal = function(gid) {
-            const group = state.groups[gid]; 
-            if (!group) {
-                toast("Group not found", "alert-circle");
-                return;
-            }
+        // Disabled local modals
+        window.openAddMemberModal = function(gid) { };
+        window.openEditMemberModal = function(gid, memberIndex) { };
 
-            const members = state.members[gid] || []; 
-            if (group.expiresAt < Date.now()) {
-                return toast("Group has expired!", "alert-circle");
-            }
-
-            const p = PRODUCTS.find(x => x.id === group.productId);
-            if (!p) {
-                toast("Product not found", "alert-circle");
-                return;
-            }
-            
-            const node = createNodeFromHTML(`
-                <div class="flex flex-col h-[85vh] bg-slate-50 transition-all duration-300 relative rounded-t-[2rem] overflow-hidden" id="modal-container-inner">
-                    <!-- Header -->
-                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-slate-100 shrink-0 z-20">
-                        <h3 class="font-black text-xl text-slate-800 tracking-tight uppercase">Add Neighbor</h3>
-                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors"><i data-lucide="x" size="20"></i></button>
-                    </div>
-                    
-                    <!-- Content -->
-                    <div class="p-5 overflow-y-auto flex-1 overscroll-contain relative">
-                        <!-- Quantity Selector -->
-                        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm mb-6 flex items-center justify-between">
-                            <div class="pl-2">
-                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quantity</div>
-                                <div class="text-[10px] text-psycho-urgency font-bold">Min 1kg required</div>
-                            </div>
-                            
-                            <div class="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-                                <button id="btn-minus" class="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center active:scale-90 transition-all shadow-sm">
-                                    <i data-lucide="minus" size="18"></i>
-                                </button>
-                                <div class="text-xl font-black text-slate-900 w-20 text-center leading-none" id="qty-display">1.0 kg</div>
-                                <button id="btn-plus" class="w-10 h-10 rounded-lg bg-psycho-action text-white shadow-md shadow-red-200 flex items-center justify-center active:scale-90 transition-all">
-                                    <i data-lucide="plus" size="18"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Inputs -->
-                        <div class="space-y-4 mb-8">
-                            <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-psycho-action transition-colors"><i data-lucide="user" size="18"></i></div>
-                                <input id="m-name" class="w-full bg-white border-2 border-slate-100 py-4 pl-12 pr-4 rounded-xl font-bold text-slate-900 text-base outline-none focus:border-psycho-action transition-all placeholder-slate-300" placeholder="Neighbor Name">
-                            </div>
-                            <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-psycho-action transition-colors"><i data-lucide="phone" size="18"></i></div>
-                                <input id="m-phone" type="tel" class="w-full bg-white border-2 border-slate-100 py-4 pl-12 pr-4 rounded-xl font-bold text-slate-900 text-base outline-none focus:border-psycho-action transition-all placeholder-slate-300" placeholder="Neighbor Phone">
-                            </div>
-                        </div>
-                        
-                        <div class="h-6"></div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="bg-white border-t border-slate-100 p-4 shrink-0 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
-                        <button id="add-btn" class="w-full bg-psycho-action text-white h-[64px] rounded-2xl font-black text-xl shadow-lg shadow-psycho-action/30 flex items-center justify-center gap-2 cursor-pointer btn-press transition-all active:scale-[0.98]">
-                            <!-- Text will be set dynamically -->
-                        </button>
-                        <div class="error-container mt-2"></div>
-                    </div>
-                </div>
-            `);
-            
-            showModalNode(node);
-            
-            // quantity + button text logic
-            let qty = 2; // Min 2 units (1kg)
-            const minQty = 2;
-
-            const updateAddButton = () => {
-                const totalWeight = qty * p.baseWeight;
-                const formattedWeight = parseFloat(totalWeight.toFixed(2)); 
-                
-                const qtyDisplay = node.querySelector('#qty-display');
-                if (qtyDisplay) qtyDisplay.innerText = `${formattedWeight} ${p.weightUnit}`;
-
-                const total = Math.round(p.price5 * qty);
-                
-                const btn = node.querySelector('#add-btn');
-                if (btn) {
-                    btn.innerHTML = `
-                        <i data-lucide="user-plus" size="24"></i>
-                        <span>Add Neighbor • ₹${total}</span>
-                    `;
-                    if (window.lucide) window.lucide.createIcons();
-                }
-            };
-
-            const btnMinus = node.querySelector('#btn-minus');
-            if (btnMinus) btnMinus.onclick = () => { 
-                if (qty > minQty) { 
-                    qty--; 
-                    updateAddButton(); 
-                } else {
-                    toast(`Min ${minQty * p.baseWeight}${p.weightUnit} required`, 'alert-triangle');
-                    triggerVibration();
-                }
-            };
-            
-            const btnPlus = node.querySelector('#btn-plus');
-            if (btnPlus) btnPlus.onclick = () => { 
-                if (qty < 20) { 
-                    qty++; 
-                    updateAddButton(); 
-                } 
-            };
-
-            updateAddButton();
-
-            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
-            
-            const addBtn = node.querySelector('#add-btn');
-            addBtn.onclick = async function() { 
-                this.disabled = true;
-                const name = safeVal(node.querySelector('#m-name')); 
-                const phone = safeVal(node.querySelector('#m-phone')); 
-                const errCont = node.querySelector('.error-container'); 
-                
-                if (!name || !/^[6-9]\d{9}$/.test(phone)) { 
-                    this.disabled = false; 
-                    showFieldError(errCont, 'Valid Name & 10-digit Phone Required'); 
-                    return; 
-                } 
-
-                // SAFE: handle undefined members array
-                const existingList = state.members[gid] || [];
-                const existing = existingList.find(m => m.phone === phone);
-                if (existing) {
-                    this.disabled = false;
-                    showFieldError(errCont, 'Phone number already in this group');
-                    return;
-                }
-                
-                const originalContent = this.innerHTML;
-                this.innerHTML = '<div class="flex items-center gap-2"><div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Adding...</div>';
-                
-                try { 
-                    const memberData = { groupId: gid, name, phone, isLeader: false, quantity: qty }; 
-                    if (!state.members[gid]) state.members[gid] = []; 
-                    state.members[gid].push(memberData); 
-                    saveData(); 
-                    setTimeout(() => { 
-                        window.closeModal(); 
-                        toast('Neighbor Added!', 'check-circle'); 
-                        render(); 
-                        triggerConfetti(); 
-                    }, 500); 
-                } catch (err) { 
-                    toast('Error Saving', 'alert-circle'); 
-                    this.disabled = false;
-                    this.innerHTML = originalContent;
-                    if (window.lucide) window.lucide.createIcons();
-                } 
-            }; 
-        };
-
-        // 4. Safer openEditMemberModal
-        window.openEditMemberModal = function(gid, memberIndex) {
-            const group = state.groups[gid];
-            if (!group) {
-                toast('Group not found', 'alert-circle');
-                return;
-            }
-
-            const members = state.members[gid];
-            if (!Array.isArray(members) || !members[memberIndex]) {
-                toast('Member not found', 'alert-circle');
-                return;
-            }
-
-            const member = members[memberIndex];
-            const p = PRODUCTS.find(x => x.id === group.productId);
-            if (!p) {
-                toast('Product not found', 'alert-circle');
-                return;
-            }
-            
-            const isExpired = group.expiresAt < Date.now();
-
-            const node = createNodeFromHTML(`
-                <div>
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="font-bold text-xl text-slate-800">Edit Order</h3>
-                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 cursor-pointer">
-                            <i data-lucide="x" size="20"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4 mt-2">
-                        <div class="ml-1">
-                            <div class="text-xs font-bold text-slate-500 uppercase">Total Weight</div>
-                            <div class="text-[10px] text-slate-400 font-medium">Increments of ${p.unit}</div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button id="btn-minus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer" ${isExpired ? 'disabled' : ''}>
-                                <i data-lucide="minus" size="20"></i>
-                            </button>
-                            <span id="qty-display" class="font-black text-xl w-20 text-center text-slate-800 tabular-nums">...</span>
-                            <button id="btn-plus" class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer" ${isExpired ? 'disabled' : ''}>
-                                <i data-lucide="plus" size="20"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-4 mb-6">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Name</label>
-                            <input id="m-name" value="${member.name}" class="w-full bg-white border border-slate-300 p-3.5 rounded-xl font-bold text-slate-900 text-base outline-none focus:border-psycho-action transition-all" ${isExpired ? 'disabled' : ''}>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Phone</label>
-                            <input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-white border border-slate-300 p-3.5 rounded-xl font-bold text-slate-900 text-base outline-none focus:border-psycho-action transition-all" ${isExpired ? 'disabled' : ''}>
-                        </div>
-                    </div>
-                    ${isExpired 
-                        ? '<div class="text-center text-psycho-urgency font-bold mb-4">Deal Expired - Cannot Edit</div>' 
-                        : '<button id="save-btn" class="w-full bg-psycho-action text-white h-[56px] rounded-2xl font-bold text-lg shadow-lg btn-press flex items-center justify-center gap-2 cursor-pointer">Save Changes</button>'
-                    }
-                </div>
-            `);
-            
-            showModalNode(node);
-            
-            // Reuse setupQuantityLogic logic manually to support the node structure
-            // (Simpler than full port of setupQuantityLogic for this specific hardened version)
-            let qty = member.quantity || 2;
-            if (qty < 2) qty = 2;
-            const minQty = 2;
-
-            const updateEditDisplay = () => {
-                const totalWeight = qty * p.baseWeight;
-                node.querySelector('#qty-display').innerText = `${totalWeight.toFixed(2)} ${p.weightUnit}`;
-            };
-            
-            const btnMinus = node.querySelector('#btn-minus');
-            if(btnMinus) btnMinus.onclick = () => { if(qty > minQty) { qty--; updateEditDisplay(); } else toast("Min 1kg", "alert-triangle"); };
-            const btnPlus = node.querySelector('#btn-plus');
-            if(btnPlus) btnPlus.onclick = () => { if(qty < 20) { qty++; updateEditDisplay(); } };
-            
-            updateEditDisplay(); // init
-            
-            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
-            
-            const saveBtn = node.querySelector('#save-btn');
-            if (saveBtn && !isExpired) {
-                saveBtn.onclick = () => { 
-                    const name = safeVal(node.querySelector('#m-name')); 
-                    const phone = safeVal(node.querySelector('#m-phone')); 
-
-                    if (!name || !/^[6-9]\d{9}$/.test(phone)) {
-                        return toast('Valid Name & Phone required', 'alert-circle'); 
-                    }
-
-                    state.members[gid][memberIndex] = { ...member, name, phone, quantity: qty }; 
-                    saveData(); 
-                    saveUser(name, phone); 
-                    window.closeModal(); 
-                    toast('Order Updated!', 'check-circle'); 
-                    render(); 
-                };
-            }
-        };
-
-        // 5. Robust renderGroup
         function renderGroup(el) {
-            if (!el) {
-                console.error('JODO: renderGroup called without container');
-                return;
-            }
-
-            if (state.timerInterval) {
-                clearInterval(state.timerInterval);
-                state.timerInterval = null;
-            }
-
+            if (!el) return console.error('JODO: renderGroup error');
+            if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+            
             const g = state.groups[state.currentGroupId]; 
             if (!g) return goHome();
+            
+            // Poll for updates
+            if (state.groupPoller) clearInterval(state.groupPoller);
+            state.groupPoller = setInterval(() => {
+                fetchGroupMembers(g.id);
+            }, GROUP_POLL_INTERVAL);
 
             const p = PRODUCTS.find(x => x.id === g.productId); 
-            if (!p) {
-                toast('Product not found', 'alert-circle');
-                return goHome();
-            }
-
+            if (!p) { toast('Product not found', 'alert-circle'); return goHome(); }
+            
             const members = state.members[g.id] || []; 
             const count = members.length;
-            const needed = Math.max(0, 2 - count);
-            
+            const needed = Math.max(0, 3 - count);
             let currentPrice = p.price1;
-            if (count >= 2) currentPrice = p.price5;
-
-            const loss = currentPrice - p.price5; 
-
+            if (count >= 3) currentPrice = p.price5;
+            
             const currentUserMember = members.find(m => m.name === state.user.name && m.phone === state.user.phone);
             let waOrderLink = "#";
-            if (currentUserMember) {
-                const totalWeight = currentUserMember.quantity * p.baseWeight;
-                const formattedWeight = parseFloat(totalWeight.toFixed(2));
-                const msg = `Hi JODO, Confirming my order!\n\nProduct: ${p.name}\nQuantity: ${formattedWeight} ${p.weightUnit}\nName: ${currentUserMember.name}\nPhone: ${currentUserMember.phone}\n\nPlease confirm my slot.`;
+            if (members.length > 0) {
+                const pricePerUnit = (count >= 3) ? p.price5 : p.price1;
+                let membersDetails = "";
+                let grandTotal = 0;
+                let grandWeight = 0;
+                members.forEach((m, i) => {
+                    const w = parseFloat((m.quantity * p.baseWeight).toFixed(2));
+                    const productCost = Math.round(m.quantity * pricePerUnit);
+                    const totalMemberCost = productCost + FULFILLMENT_FEE;
+                    grandTotal += totalMemberCost;
+                    grandWeight += w;
+                    membersDetails += `\n${i+1}. *${m.name}* ${m.isLeader ? '👑' : ''}\n   📞 ${m.phone}\n   📍 Ward: ${m.ward || 'N/A'}\n   📦 ${w} ${p.weightUnit} (₹${totalMemberCost} incl. ₹${FULFILLMENT_FEE} fee)`;
+                });
+                const formattedGrandWeight = parseFloat(grandWeight.toFixed(2));
+                const msg = `*New Order Request* 🛒\n` + `---------------------------\n` + `*Product:* ${p.name} (${p.nameTe})\n` + `*Total Qty:* ${formattedGrandWeight} ${p.weightUnit}\n` + `*Total Value:* ₹${grandTotal}\n` + `---------------------------\n` + `*Customer Details:*` + `${membersDetails}\n` + `---------------------------\n` + `*Group ID:* ${g.id}\n` + `Please confirm delivery! ✅`;
                 waOrderLink = `https://wa.me/${COMPANY_PHONE}?text=${encodeURIComponent(msg)}`;
             }
 
             const expiryDate = new Date(g.expiresAt);
             const now = new Date();
             const isExpired = g.expiresAt < now.getTime();
-            
             let hours = expiryDate.getHours();
             const minutes = expiryDate.getMinutes();
             const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12;
-            hours = hours ? hours : 12; 
+            hours = hours % 12; hours = hours ? hours : 12; 
             const minutesStr = minutes < 10 ? '0'+minutes : minutes;
             const timeStr = hours + ':' + minutesStr + ' ' + ampm;
-
             let dateLabel = "Today";
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+            if (expiryDate.toDateString() === now.toDateString()) dateLabel = "Today";
+            else if (expiryDate.toDateString() === tomorrow.toDateString()) dateLabel = "Tomorrow";
+            else { const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; dateLabel = `${monthNames[expiryDate.getMonth()]} ${expiryDate.getDate()}`; }
 
-            if (expiryDate.toDateString() === now.toDateString()) {
-                dateLabel = "Today";
-            } else if (expiryDate.toDateString() === tomorrow.toDateString()) {
-                dateLabel = "Tomorrow";
-            } else {
-                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                dateLabel = `${monthNames[expiryDate.getMonth()]} ${expiryDate.getDate()}`;
-            }
-
-            // Price Drop Logic
-            if (state.lastMemberCount !== null && count > state.lastMemberCount) {
-                toast("New member! Price Dropped!", "trending-down");
-                if(navigator.vibrate) navigator.vibrate(200);
-            }
-            state.lastMemberCount = count;
-
-            // Rush Mode Check
-            let rushBanner = '';
-            let isRushMode = false;
-            if (g.rushEndsAt && g.rushEndsAt > Date.now()) {
-                isRushMode = true;
-                // Countdown text handled in tick
-                rushBanner = `<div id="rush-banner" class="bg-red-600 text-white text-center text-xs font-black py-2 uppercase tracking-widest animate-pulse shadow-md mb-4 rounded-lg">🔥 RUSH MODE: Ends in --:--</div>`;
-            }
+            // Simplified Group Status Logic
+            const statusText = count >= 3 
+                ? `You're paying the lowest price: ₹${p.price5}` 
+                : `Join ${needed} more neighbors to pay ₹${p.price5} instead of ₹${p.price1}`;
 
             el.innerHTML = `
-                <div class="fade-in bg-slate-50 min-h-screen pb-40 font-sans">
-                    <!-- HEADER -->
-                    <div class="bg-psycho-action text-white h-[68px] sticky top-0 z-50 px-4 flex justify-between items-center shadow-none">
+                <div class="fade-in bg-white min-h-screen pb-40 font-sans">
+                    <div class="glass-header h-[64px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white shadow-sm">
                         <div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="goHome()">
-                            <i data-lucide="arrow-left" size="24" class="text-white"></i>
-                            <span class="font-black text-lg tracking-wide text-white">Our Gang</span>
+                            <i data-lucide="arrow-left" size="24" class="text-jodo-textPrimary"></i>
+                            <span class="font-bold text-lg tracking-wide text-jodo-textPrimary">Group #${g.id.slice(-4)}</span>
                         </div>
-                        <div class="font-mono font-bold text-lg tracking-widest text-white tabular-nums pt-safe" id="header-timer">Loading...</div>
+                        <div class="font-mono font-bold text-lg tracking-widest text-jodo-textPrimary tabular-nums pt-safe" id="header-timer">Loading...</div>
                     </div>
 
                     <div class="p-4">
-                        ${rushBanner}
-                        <!-- PRODUCT IDENTITY -->
-                        <div class="flex flex-col items-center mb-6 mt-2 animate-in fade-in-up duration-300">
-                            <h1 class="text-2xl font-black text-slate-900 leading-none mb-1 tracking-tight">${p.name}</h1>
-                            <p class="text-sm font-bold text-slate-400">${p.nameTe} • ${p.unit} Bundle</p>
+                        <div class="flex flex-col items-center mb-6 mt-6 animate-in fade-in-up duration-300">
+                            <h1 class="text-3xl font-black text-jodo-textPrimary leading-none mb-1 tracking-tight">${p.name}</h1>
+                            <p class="text-sm font-bold text-jodo-textSecondary">${p.nameTe} • ${p.unit} Bundle</p>
                         </div>
-
-                        <!-- FEAR CARD -->
-                        ${loss > 0 && !isExpired ? `
-                        <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-2xl shadow-sm animate-in fade-in-up">
-                            <div class="flex items-start gap-3">
-                                <i data-lucide="alert-triangle" class="text-red-600 mt-1 shrink-0" size="20"></i>
-                                <div>
-                                    <div class="text-red-900 font-black text-lg leading-tight uppercase">You are throwing away ₹${loss}/kg</div>
-                                    <div class="text-red-700 text-sm mt-1 font-medium leading-snug">Don't be the one to break the squad.</div>
-                                </div>
-                            </div>
-                        </div>` : ''}
 
                         ${isExpired ? `
-                        <div class="bg-slate-800 text-white p-4 mb-6 rounded-2xl shadow-sm text-center">
-                            <div class="font-black text-xl uppercase mb-1">Squad Expired</div>
-                            <div class="text-sm text-slate-400">This deal has ended.</div>
+                        <div class="bg-gray-100 text-jodo-textSecondary p-4 mb-6 rounded-xl shadow-sm text-center border border-gray-200">
+                            <div class="font-bold text-xl uppercase mb-1">Squad Expired</div>
+                            <div class="text-sm">This deal has ended.</div>
                         </div>` : ''}
 
-                        <!-- COUNTDOWN HERO -->
                         <div class="text-center mb-8 relative">
                             <div class="inline-block relative">
-                                <div class="text-6xl font-mono font-black text-slate-900 tracking-tighter tabular-nums relative z-10 leading-none" id="hero-timer">
-                                    --:--:--
-                                </div>
-                                <div class="absolute inset-0 bg-red-500/10 blur-2xl rounded-full opacity-50 animate-pulse"></div>
+                                <div class="text-6xl font-mono font-black text-jodo-textPrimary tracking-tighter tabular-nums relative z-10 leading-none" id="hero-timer">--:--:--</div>
                             </div>
-                            <div class="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mt-3">Expires ${dateLabel} ${timeStr}</div>
+                            <div class="text-jodo-textSecondary text-xs font-bold uppercase tracking-[0.2em] mt-3">Expires ${dateLabel} ${timeStr}</div>
                         </div>
 
-                        <!-- PROGRESS -->
-                        <div class="card-modern p-4 mb-6">
-                            <div class="space-y-4 mb-6">
-                                <div class="flex justify-between items-center ${count < 2 ? 'opacity-100' : 'opacity-40 grayscale'} transition-all">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold">1</div>
-                                        <span class="text-sm font-bold text-slate-600">Solo Price</span>
-                                    </div>
-                                    <span class="text-base font-bold text-slate-900">₹${p.price1}</span>
-                                </div>
-                                
-                                <div class="flex justify-between items-center ${count >= 2 ? 'scale-105' : ''} transition-all p-3 -mx-3 rounded-xl ${count >= 2 ? 'bg-psycho-rewardBg border border-psycho-reward shadow-sm' : ''}">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-6 h-6 rounded-full ${count >= 2 ? 'bg-psycho-reward text-black' : 'bg-slate-200 text-slate-600'} flex items-center justify-center text-xs font-bold">2+</div>
-                                        <span class="text-sm font-black ${count >= 2 ? 'text-psycho-rewardText' : 'text-slate-400'}">Group Price</span>
-                                    </div>
-                                    <span class="text-2xl font-black ${count >= 2 ? 'text-psycho-rewardText' : 'text-slate-300'}">₹${p.price5}</span>
-                                </div>
-                            </div>
-
-                            <div class="text-center">
-                                <div class="text-3xl font-black text-slate-900 mb-1">${count} <span class="text-slate-300 text-2xl">/</span> 2+</div>
-                                <div class="text-sm font-bold ${count < 2 ? 'text-psycho-action' : 'text-psycho-rewardText'}">
-                                    ${count < 2 ? `Need ${needed} more to unlock ₹${p.price5}` : '🎉 LOWEST PRICE UNLOCKED!'}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- MEMBERS LIST -->
-                        <div class="space-y-3 mb-8">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Our Gang (${count} Joined)</h3>
+                        <!-- SIMPLIFIED GROUP STATUS -->
+                        <div class="bg-white border border-jodo-border rounded-xl p-6 mb-6 shadow-sm text-center">
+                            <div class="text-lg font-bold text-jodo-textPrimary mb-1">${statusText}</div>
+                            ${count >= 3 ? '<div class="text-sm text-green-600 font-medium">Best price applied</div>' : ''}
                             
+                            <!-- FIX: User Join Status -->
+                            ${currentUserMember ? 
+                                '<div class="text-xs text-green-700 font-bold mt-2 bg-green-50 inline-block px-2 py-1 rounded border border-green-100">You are in this group</div>' :
+                                '<div class="text-xs text-red-600 font-bold mt-2 bg-red-50 inline-block px-2 py-1 rounded border border-red-100">You have not joined yet</div>'
+                            }
+                        </div>
+
+                        <div class="space-y-3 mb-8">
+                            <h3 class="text-xs font-bold text-jodo-textSecondary uppercase tracking-widest mb-4">Our Gang (${count} Joined)</h3>
                             ${(() => {
-                                const totalSlots = Math.max(members.length + 1, 2); 
-                                
+                                const totalSlots = Math.max(members.length + 1, 3); 
                                 return Array(totalSlots).fill(0).map((_, i) => {
                                     const member = members[i];
                                     if (member) {
                                         const isMe = (state.user.name && member.name === state.user.name && member.phone === state.user.phone);
-                                        const t1 = Math.round(member.quantity * p.price1);
-                                        const t5 = Math.round(member.quantity * p.price5);
-                                        
-                                        return `
-                                        <div class="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm mb-3 transition-all" onclick="openEditMemberModal('${g.id}', ${i})">
+                                        const productCost = Math.round(member.quantity * p.price5); // Use current lowest
+                                        const t5 = productCost + FULFILLMENT_FEE;
+                                        return `<div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mb-3 transition-all" onclick="openEditMemberModal('${g.id}', ${i})">
                                             <div class="flex items-center justify-between mb-3">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="w-10 h-10 rounded-full ${isMe ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'} flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm">
-                                                        ${member.name[0]}
-                                                    </div>
-                                                    <div>
-                                                        <div class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                                            ${isMe ? 'YOU' : member.name}
-                                                            ${member.isLeader ? '<span class="text-[9px] bg-yellow-100 text-yellow-800 px-1 rounded border border-yellow-200 font-bold uppercase">Squad Leader</span>' : ''}
-                                                        </div>
-                                                        <div class="text-xs text-slate-400 font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit} confirmed</div>
-                                                    </div>
+                                                    <div class="w-10 h-10 rounded-full ${isMe ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm">${member.name[0]}</div>
+                                                    <div><div class="text-sm font-bold text-jodo-textPrimary flex items-center gap-2">${isMe ? 'YOU' : member.name} ${member.isLeader ? '<span class="text-[9px] bg-green-100 text-green-800 px-1 rounded border border-green-200 font-bold uppercase">Squad Leader</span>' : ''}</div><div class="text-xs text-jodo-textSecondary font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit} confirmed</div></div>
                                                 </div>
-                                                <div class="text-green-600"><i data-lucide="edit-2" size="16" class="text-slate-300"></i></div>
+                                                <!-- Edit button removed since local writes disabled -->
                                             </div>
-                                            
-                                            <div class="grid grid-cols-2 gap-2 text-center bg-slate-50 rounded-lg p-2 border border-slate-100">
-                                                <div class="flex flex-col">
-                                                    <span class="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Solo</span>
-                                                    <span class="text-xs font-medium text-slate-500">₹${t1}</span>
-                                                </div>
-                                                <div class="flex flex-col relative">
-                                                    ${count >= 2 ? '<div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] bg-amber-100 text-amber-700 px-1 rounded font-bold">Unlocked</div>' : ''}
-                                                    <span class="text-[9px] font-bold ${count >= 2 ? 'text-amber-600' : 'text-slate-400'} uppercase mb-0.5">Group</span>
-                                                    <span class="text-xs font-black ${count >= 2 ? 'text-amber-600' : 'text-slate-900'}">₹${t5}</span>
-                                                </div>
+                                            <div class="grid grid-cols-2 gap-2 text-center bg-gray-50 rounded-lg p-2 border border-gray-100">
+                                                <div class="flex flex-col"><span class="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Status</span><span class="text-xs font-medium text-gray-500">Confirmed</span></div>
+                                                <div class="flex flex-col relative">${count >= 3 ? '<div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] bg-jodo-bonus text-black px-1 rounded font-bold border border-white shadow-sm">Unlocked</div>' : ''}<span class="text-[9px] font-bold ${count >= 3 ? 'text-yellow-700' : 'text-gray-400'} uppercase mb-0.5">To Pay</span><span class="text-xs font-black ${count >= 3 ? 'text-yellow-700' : 'text-jodo-textPrimary'}">₹${t5}</span></div>
                                             </div>
                                         </div>`;
                                     } else {
-                                        return `
-                                        <div onclick="openAddMemberModal('${g.id}')" class="flex items-center justify-between bg-slate-50 border-2 border-dashed border-slate-200 p-4 rounded-2xl cursor-pointer hover:bg-white hover:border-psycho-action/50 transition-all group mb-3 ${isExpired ? 'opacity-50 pointer-events-none' : ''}">
-                                            <div class="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400">
-                                                    <i data-lucide="user" size="18"></i>
-                                                </div>
-                                                <span class="text-sm font-bold text-slate-500">Open Spot</span>
-                                            </div>
-                                            <div class="text-xs font-bold text-psycho-action bg-green-50 px-2 py-1 rounded border border-green-100">+ Add Neighbor</div>
+                                        return `<div onclick="shareJoinLink('${g.id}')" class="flex items-center justify-between bg-white border-2 border-dashed border-gray-200 p-4 rounded-xl cursor-pointer hover:border-jodo-ctaPrimary/50 transition-all group mb-3 ${isExpired ? 'opacity-50 pointer-events-none' : ''}">
+                                            <div class="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity"><div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><i data-lucide="user" size="18"></i></div><span class="text-sm font-bold text-gray-500">Open Spot</span></div>
+                                            <div class="text-xs font-bold text-jodo-ctaPrimary bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">+ Add Neighbor</div>
                                         </div>`;
                                     }
                                 }).join('');
@@ -1197,30 +516,18 @@
                         </div>
                     </div>
 
-                    <!-- ACTION BAR -->
-                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 pb-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-jodo-border p-4 pb-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                         <div class="max-w-md mx-auto">
-                            ${count < 2 ? `
-                            <div class="mb-3 text-center bg-psycho-urgencyBg text-psycho-urgency text-xs font-black uppercase py-1 rounded-lg border border-psycho-urgency/20 animate-pulse ${count === 1 ? 'block' : 'hidden'}">
-                                ⚠ DO NOT WASTE THIS SQUAD — 1 Person Away
-                            </div>
-                            <a href="${isExpired ? '#' : waOrderLink}" target="_blank" class="block w-full bg-psycho-action text-white h-[56px] flex items-center justify-center rounded-2xl font-black text-lg text-center shadow-lg shadow-green-600/30 btn-press gap-2 relative overflow-hidden group ${isExpired ? 'grayscale opacity-50 pointer-events-none' : ''}">
+                            ${count < 3 ? `
+                            <a href="${isExpired ? '#' : waOrderLink}" target="_blank" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2 relative overflow-hidden group ${isExpired ? 'grayscale opacity-50 pointer-events-none' : ''}">
                                 <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                                 <span>Send Order to Company</span>
                                 <i data-lucide="message-circle" size="24"></i>
                             </a>
-                            <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs font-medium text-slate-500">
-                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                <span>${needed} spots left • ${isExpired ? 'Expired' : 'Typical squads finish in 6 mins'}</span>
-                            </div>
+                            <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs font-medium text-jodo-textSecondary"><span class="w-2 h-2 bg-jodo-progress rounded-full animate-pulse"></span><span>${needed} spots left • ${isExpired ? 'Expired' : 'Typical squads finish in 6 mins'}</span></div>
                             ` : `
-                            <a href="${waOrderLink}" target="_blank" class="block w-full bg-slate-900 text-white h-[56px] flex items-center justify-center rounded-2xl font-black text-lg text-center shadow-xl btn-press gap-2">
-                                <i data-lucide="message-circle" size="24"></i>
-                                <span>Get Best Price Slip</span>
-                            </a>
-                            <div class="text-center mt-3 text-xs font-medium text-green-600 bg-green-50 py-1 rounded inline-block w-full border border-green-100">
-                                🏆 Lowest Price Unlocked!
-                            </div>
+                            <a href="${waOrderLink}" target="_blank" class="block w-full bg-jodo-ctaSuccess text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2"><i data-lucide="message-circle" size="24"></i><span>Get Best Price Slip</span></a>
+                            <div class="text-center mt-3 text-xs font-medium text-green-700 bg-green-50 py-1 rounded inline-block w-full border border-green-100">Best price applied</div>
                             `}
                         </div>
                     </div>
@@ -1229,319 +536,318 @@
 
             const timerEl = el.querySelector('#hero-timer');
             const headerTimerEl = el.querySelector('#header-timer');
-            const rushEl = el.querySelector('#rush-banner');
-
             if (timerEl) {
                 const tick = () => {
                     const now = Date.now();
                     const diff = Math.max(0, g.expiresAt - now);
-                            
                     const h = Math.floor(diff / 3600000);
                     const m = Math.floor((diff % 3600000) / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
-                            
                     const fmt = (n) => n < 10 ? '0'+n : n;
-                    const mainStr = `${fmt(h)} : ${fmt(m)} : ${fmt(s)}`;
-                            
+                    const mainStr = `${fmt(h)}:${fmt(m)}:${fmt(s)}`;
                     timerEl.innerText = mainStr;
                     if (headerTimerEl) headerTimerEl.innerText = mainStr;
-
-                    // Rush Timer Update
-                    if (isRushMode && rushEl) {
-                         if (g.rushEndsAt > now) {
-                             const rushDiff = Math.ceil((g.rushEndsAt - now) / 1000);
-                             const rm = Math.floor(rushDiff / 60);
-                             const rs = rushDiff % 60;
-                             rushEl.innerText = `🔥 RUSH MODE: Ends in ${rm}:${rs<10?'0':''}${rs}`;
-                         } else {
-                             rushEl.style.display = 'none';
-                         }
-                    }
-                            
-                    if (diff < 7200000 && diff > 0) { 
-                        timerEl.classList.add('text-red-600');
-                        if (headerTimerEl) headerTimerEl.classList.add('text-red-400');
-                    }
-                    if (diff <= 0) {
-                        timerEl.innerText = "00 : 00 : 00";
-                        timerEl.classList.add('text-slate-400');
-                        if (headerTimerEl) headerTimerEl.classList.add('text-slate-400');
-                        clearInterval(state.timerInterval);
-                        state.timerInterval = null;
-                    }
+                    if (diff < 7200000 && diff > 0) { timerEl.classList.add('text-jodo-urgency'); if (headerTimerEl) headerTimerEl.classList.add('text-jodo-urgency'); }
+                    if (diff <= 0) { timerEl.innerText = "00:00:00"; timerEl.classList.add('text-gray-400'); if (headerTimerEl) headerTimerEl.classList.add('text-gray-400'); clearInterval(state.timerInterval); state.timerInterval = null; }
                 };
-                state.timerInterval = setInterval(tick, 1000); 
-                tick();
+                state.timerInterval = setInterval(tick, 1000); tick();
             }
         }
 
-        // --- START MODAL (Robust) ---
+        // 2-STEP START MODAL
         window.openStartModal = function(pid) {
             const p = PRODUCTS.find(x => x.id === pid);
             const user = state.user;
-            let qty = 2;
-            let isGroupMode = true; 
-
-            // Get Strict Delivery Date
+            let qty = 2; let isGroupMode = true; 
             const nextDelivery = getNextDeliveryDate();
             const deliveryTime = new Date(nextDelivery);
-            deliveryTime.setHours(CUTOFF_HOUR, 0, 0, 0); // Strict 8 PM Cutoff on Delivery Day
+            deliveryTime.setHours(CUTOFF_HOUR, 0, 0, 0); 
 
+            // Create container
             const node = createNodeFromHTML(`
-                <div class="flex flex-col h-[90vh] bg-slate-50 relative rounded-t-[2rem] overflow-hidden">
-                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-slate-100 shrink-0 z-20">
-                        <div class="flex items-center gap-2"><h3 class="font-black text-xl text-slate-800 uppercase">Select Buying Option</h3></div>
-                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors"><i data-lucide="x" size="20"></i></button>
-                    </div>
-                    <div class="p-5 overflow-y-auto flex-1 relative">
-                        <div class="flex gap-4 mb-6">
-                            <div class="w-20 h-20 rounded-2xl shadow-md border border-slate-100 relative overflow-hidden shrink-0"><div class="absolute inset-0 ${p.imageColor} flex items-center justify-center"><i data-lucide="${p.icon}" size="32" class="text-white/80"></i></div></div>
-                            <div class="flex-1 flex flex-col justify-center"><h4 class="font-black text-xl text-slate-900 leading-none mb-1">${p.name}</h4><div class="text-sm font-semibold text-slate-400 mb-2">${p.nameTe}</div><div class="inline-block bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase w-fit">${p.remainingStock}kg In Stock</div></div>
-                        </div>
-                        <div class="bg-amber-50 border border-amber-100 p-3 rounded-xl mb-6 text-xs text-amber-800 font-medium">
-                            <i data-lucide="clock" class="inline-block w-3 h-3 mr-1"></i> Order for <strong>${nextDelivery.toLocaleDateString('en-US', { weekday: 'long' })} Delivery</strong>. Cutoff is 8 PM.
-                        </div>
-                        <div class="grid grid-cols-2 gap-3 mb-6">
-                            <div id="mode-solo" class="relative p-4 rounded-2xl border-2 border-slate-200 bg-white cursor-pointer active:scale-95 transition-all"><div class="font-bold text-slate-400 text-xs uppercase tracking-wider mb-0.5">Solo Buy</div><div class="font-black text-xl text-slate-900">₹${p.price1}</div></div>
-                            <div id="mode-group" class="relative p-4 rounded-2xl border-2 border-psycho-reward bg-psycho-rewardBg cursor-pointer active:scale-95 transition-all shadow-md"><div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-psycho-reward text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm border border-white">Best Value</div><div class="font-bold text-yellow-800 text-xs uppercase tracking-wider mb-0.5">Group Buy</div><div class="font-black text-xl text-slate-900">₹${p.price5}</div></div>
-                        </div>
-                        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm mb-6 flex items-center justify-between">
-                            <div class="pl-2"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quantity</div><div class="text-[10px] text-psycho-urgency font-bold">Min 1kg per person</div></div>
-                            <div class="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-100"><button id="btn-minus" class="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center active:scale-90 transition-all shadow-sm"><i data-lucide="minus" size="18"></i></button><div class="text-xl font-black text-slate-900 w-20 text-center leading-none" id="qty-display">1.0 kg</div><button id="btn-plus" class="w-10 h-10 rounded-lg bg-psycho-action text-white shadow-md shadow-red-200 flex items-center justify-center active:scale-90 transition-all"><i data-lucide="plus" size="18"></i></button></div>
-                        </div>
-                        <div class="space-y-4 mb-8">
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border-2 border-slate-100 py-4 pl-12 pr-4 rounded-xl font-bold text-slate-900 outline-none focus:border-psycho-action transition-all" placeholder="Your Name"></div>
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border-2 border-slate-100 py-4 pl-12 pr-4 rounded-xl font-bold text-slate-900 outline-none focus:border-psycho-action transition-all" placeholder="Mobile Number"></div>
-                        </div>
-                    </div>
-                    <div class="bg-white border-t border-slate-100 p-4 shrink-0 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
-                        <div class="flex justify-between items-end mb-4 px-1"><div><div class="text-[10px] text-slate-400 font-bold uppercase">Total to Pay</div><div class="text-3xl font-black text-slate-900 leading-none" id="footer-total">₹${p.price5 * 2}</div></div><div class="text-right"><div class="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-1 rounded uppercase" id="footer-savings">Savings: ₹${(p.price1 - p.price5) * 2}</div></div></div>
-                        <button id="hold-btn" class="hold-btn w-full bg-psycho-action text-white h-[64px] rounded-2xl font-black text-xl shadow-lg flex items-center justify-center gap-3 cursor-pointer overflow-hidden relative active:scale-[0.98] transition-transform"><div class="hold-btn-fill absolute left-0 top-0 bottom-0 bg-black/20 w-0 transition-none"></div><span class="relative z-10 flex items-center gap-2"><i data-lucide="zap" size="24"></i> <span id="btn-text-action">Start Group Buy</span></span></button>
-                    </div>
+                <div class="flex flex-col h-[70vh] bg-white relative rounded-t-[2rem] overflow-hidden" id="start-modal-content">
+                    <!-- Dynamic content injected here -->
                 </div>
             `);
             showModalNode(node);
 
-            const modeSoloEl = node.querySelector('#mode-solo');
-            const modeGroupEl = node.querySelector('#mode-group');
-            const footerTotalEl = node.querySelector('#footer-total');
-            const footerSavingsEl = node.querySelector('#footer-savings');
-            const btnTextEl = node.querySelector('#btn-text-action');
-
-            const renderMode = () => {
-                const t1 = Math.round(p.price1 * qty);
-                const t5 = Math.round(p.price5 * qty);
-                
-                modeSoloEl.className = `relative p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-95 ${!isGroupMode ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900/10' : 'border-slate-200 bg-white'}`;
-                modeGroupEl.className = `relative p-4 rounded-2xl border-2 cursor-pointer transition-all shadow-md active:scale-95 ${isGroupMode ? 'border-psycho-reward bg-psycho-rewardBg ring-1 ring-psycho-reward/50' : 'border-slate-200 bg-white'}`;
-                
-                node.querySelector('#qty-display').innerText = `${(qty * p.baseWeight).toFixed(2)} ${p.weightUnit}`;
-                const total = Math.round((isGroupMode ? p.price5 : p.price1) * qty);
-                footerTotalEl.innerText = `₹${total}`;
-                
-                if (isGroupMode) {
-                    const savings = Math.round((p.price1 * qty) - total);
-                    footerSavingsEl.innerHTML = `Savings: ₹${savings}`;
-                    btnTextEl.innerText = "Start Group Buy";
-                } else {
-                    footerSavingsEl.innerText = "No Savings";
-                    btnTextEl.innerText = `Buy Solo (₹${total})`;
-                }
-            };
-
-            modeSoloEl.onclick = () => { isGroupMode = false; renderMode(); };
-            modeGroupEl.onclick = () => { isGroupMode = true; renderMode(); };
-            
-            const btnMinus = node.querySelector('#btn-minus');
-            if (btnMinus) btnMinus.onclick = () => { if (qty > 2) { qty--; renderMode(); } else { toast("Min 1kg", 'alert-triangle'); triggerVibration(); } };
-            const btnPlus = node.querySelector('#btn-plus');
-            if (btnPlus) btnPlus.onclick = () => { if (qty < 20) { qty++; renderMode(); } };
-            
-            renderMode();
-            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
-            
-            // Hold Logic
-            const holdBtn = node.querySelector('#hold-btn');
-            const holdFill = holdBtn.querySelector('.hold-btn-fill');
-            let holdTimer, isHolding = false;
-
-            const startHold = (e) => { if (e.type === 'touchstart') e.preventDefault(); if (holdBtn.disabled) return; isHolding = true; holdBtn.classList.add('scale-95'); holdFill.style.transition = 'width 1.2s linear'; holdFill.style.width = '100%'; holdTimer = setTimeout(completeHold, 1200); };
-            const endHold = () => { if (!isHolding) return; isHolding = false; clearTimeout(holdTimer); holdBtn.classList.remove('scale-95'); holdFill.style.transition = 'width 0.2s ease-out'; holdFill.style.width = '0%'; };
-            const completeHold = () => { isHolding = false; holdBtn.classList.remove('scale-95'); triggerAction(); };
-
-            holdBtn.addEventListener('mousedown', startHold);
-            holdBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(e); });
-            holdBtn.addEventListener('mouseup', endHold);
-            holdBtn.addEventListener('mouseleave', endHold);
-            holdBtn.addEventListener('touchend', endHold);
-
-            const triggerAction = async () => {
-                holdBtn.disabled = true;
-                const name = safeVal(node.querySelector('#inp-name'));
-                const phone = safeVal(node.querySelector('#inp-phone'));
-                if (!name || !/^[6-9]\d{9}$/.test(phone)) { holdBtn.disabled = false; toast('Enter Valid Name & Phone', 'alert-circle'); return; }
-                
-                triggerVibration(); 
-                saveUser(name, phone);
-                const gid = 'g' + Date.now();
-                const group = { 
-                    id: gid, 
-                    productId: pid, 
-                    ownerName: name, 
-                    // KEY CHANGE: Use deliveryTime instead of random expiry
-                    expiresAt: deliveryTime.getTime(), 
-                    deliveryDay: deliveryTime.getTime(),
-                    createdAt: Date.now(), 
-                    status: isGroupMode ? 'open' : 'closed', 
-                    type: isGroupMode ? 'group' : 'solo',
-                    // NEW: Rush Mode End Time
-                    rushEndsAt: Date.now() + 180000 
-                };
-                const member = { groupId: gid, name, phone, isLeader: true, quantity: Math.max(2, qty) };
-                state.groups[gid] = group;
-                state.members[gid] = [member];
-                saveData();
-                markOrderHabit(); 
-                setTimeout(() => { window.closeModal(); if (isGroupMode) window.openGroup(gid); else { toast("Solo Order Confirmed!", "check-circle"); render(); } triggerConfetti(); }, 800); 
-            };
-        };
-
-        // --- RENDER HOME (Restored) ---
-        function renderHome(el) {
-            const user = state.user;
-            const userActiveGroupIds = {}; 
-            const activeUserGroups = []; 
-
-            if (user.name && user.phone) { 
-                Object.values(state.groups).forEach(g => { 
-                    const members = state.members[g.id] || []; 
-                    if (members.some(m => m.name === user.name && m.phone === user.phone)) { 
-                        userActiveGroupIds[g.productId] = g.id;
-                        activeUserGroups.push(g); 
-                    } 
-                }); 
-            }
-            activeUserGroups.sort((a, b) => b.createdAt - a.createdAt);
-
-            const sortedProducts = [...PRODUCTS].sort((a, b) => {
-                const aActive = !!userActiveGroupIds[a.id];
-                const bActive = !!userActiveGroupIds[b.id];
-                if (aActive && !bActive) return 1;
-                if (!aActive && bActive) return -1;
-                return 0;
-            });
-
-            let heroContent = '';
-            
-            if (activeUserGroups.length > 0) {
-                const cardsHtml = activeUserGroups.map(g => {
-                    const p = PRODUCTS.find(x => x.id === g.productId);
-                    if (!p) return '';
-                    const members = state.members[g.id] || [];
-                    const count = members.length;
-                    const progress = (count / 2) * 100;
-                    
-                    return `
-                    <div onclick="openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
-                        <div class="bg-slate-900 rounded-2xl p-4 shadow-md border border-slate-800 relative overflow-hidden h-full flex flex-col justify-between">
-                            <div class="absolute -right-10 -top-10 w-40 h-40 bg-psycho-action/10 rounded-full blur-3xl"></div>
-                            <div class="flex items-center gap-3 mb-3 relative z-10 mt-2">
-                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-900 shadow-sm shrink-0"><i data-lucide="${p.icon}" size="24"></i></div>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="font-black text-white text-base leading-none mb-1 truncate">${p.name}</h3>
-                                    <div class="flex items-center gap-1.5 text-[10px]">
-                                        <span class="text-white font-bold">${count}/2</span>
-                                        <span class="text-slate-500">•</span>
-                                        <span class="text-psycho-rewardLight font-bold">In Progress</span>
-                                    </div>
-                                </div>
+            // Step 1 Render
+            const renderStep1 = () => {
+                const savings = p.price1 - p.price5;
+                node.innerHTML = `
+                    <div class="p-6 flex flex-col h-full">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <h3 class="font-black text-2xl text-jodo-textPrimary mb-1">${p.name}</h3>
+                                <p class="text-sm text-jodo-textSecondary">${p.nameTe}</p>
                             </div>
-                            <div class="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                <div class="absolute inset-y-0 left-0 bg-psycho-action transition-all duration-1000" style="width: ${progress}%"></div>
+                            <button onclick="window.closeModal()" class="p-2 bg-gray-100 rounded-full hover:bg-gray-200"><i data-lucide="x" size="20"></i></button>
+                        </div>
+                        
+                        <div class="flex-1 flex flex-col justify-center items-center text-center">
+                            <div class="mb-2 text-sm text-jodo-textSecondary font-medium">Group Price / ${p.unit}</div>
+                            <div class="text-6xl font-black text-jodo-priceFinal tracking-tighter mb-3">₹${p.price5}</div>
+                            <div class="text-lg text-jodo-priceOld line-through mb-8">Market Price ₹${p.price1}</div>
+                            
+                            <div class="bg-red-50 text-jodo-ctaPrimary px-6 py-3 rounded-xl font-bold text-lg border border-red-100">
+                                Save ₹${savings} per pack
                             </div>
                         </div>
-                    </div>`;
-                }).join('');
 
-                heroContent = `<div class="mt-6 mb-4"><div class="px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">${cardsHtml}</div></div>`;
-            } else {
-                heroContent = `
-                <div onclick="openLiveGuide()" class="px-4 mt-6 mb-4 cursor-pointer tilt-card">
-                    <div class="relative w-full h-48 bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-100 group">
-                        <video src="${GUIDE_VIDEO_SRC}" autoplay loop muted playsinline class="w-full h-full object-cover opacity-90"></video>
-                        <div class="absolute bottom-4 left-4 right-4 text-center">
-                            <div class="text-white font-bold text-sm mb-0.5">Watch 30s Guide</div>
-                            <div class="text-slate-200 text-[10px] font-medium uppercase tracking-widest">Learn to Save 60%</div>
-                        </div>
-                    </div>
-                </div>`;
-            }
-
-            el.innerHTML = `
-                <div class="pb-safe fade-in">
-                    <div class="glass-header h-[68px] flex items-center justify-between px-4 sticky top-0 z-40 shadow-md">
-                        <div class="pt-safe"><h1 class="font-black text-2xl tracking-tight text-white">JODO</h1><div class="text-[10px] text-white/80 font-medium">Group Up. Price Down.</div></div>
-                        <button onclick="openFullFeed('${PRODUCTS[0].id}', true)" class="group bg-white text-psycho-action px-3 py-1.5 rounded-lg border-b-4 border-red-900 shadow-xl active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2 mt-safe">
-                            <div class="relative"><i data-lucide="tv" size="16"></i><span class="absolute -top-1.5 -right-1.5 flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-psycho-reward opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-psycho-reward border border-white"></span></span></div><span class="text-xs font-black tracking-tight">JODO TV</span>
+                        <button id="btn-step-1" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-xl font-bold text-xl shadow-lg active:scale-[0.98] transition-transform">
+                            Continue
                         </button>
                     </div>
+                `;
+                if(window.lucide) window.lucide.createIcons();
+                node.querySelector('#btn-step-1').onclick = renderStep2;
+            };
+
+            // Step 2 Render
+            const renderStep2 = () => {
+                const initialProductCost = Math.round(p.price5 * qty);
+                const initialTotal = initialProductCost + FULFILLMENT_FEE;
+                const initialSoloCost = Math.round(p.price1 * qty);
+                const initialSavings = initialSoloCost - initialProductCost;
+
+                node.innerHTML = `
+                    <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between shadow-sm shrink-0 z-20">
+                        <div class="flex items-center gap-2"><h3 class="font-bold text-xl text-jodo-textPrimary uppercase">Enter Details</h3></div>
+                        <button onclick="window.closeModal()" class="p-2 bg-white rounded-full text-jodo-textSecondary hover:bg-gray-100 transition-colors border border-gray-200"><i data-lucide="x" size="20"></i></button>
+                    </div>
+                    <div class="p-5 overflow-y-auto flex-1 relative">
+                        <div class="bg-white p-3 rounded-xl border border-jodo-border shadow-sm mb-6 flex items-center justify-between">
+                            <div class="pl-2"><div class="text-[10px] font-bold text-jodo-textSecondary uppercase tracking-wider">Quantity</div><div class="text-[10px] text-jodo-urgency font-bold">Min 1kg per person</div></div>
+                            <div class="flex items-center gap-3 bg-gray-50 p-1.5 rounded-lg border border-gray-200"><button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-300 text-gray-500 flex items-center justify-center active:scale-90 transition-all shadow-sm"><i data-lucide="minus" size="18"></i></button><div class="text-xl font-bold text-jodo-textPrimary w-20 text-center leading-none" id="qty-display">${(qty * p.baseWeight).toFixed(2)} ${p.weightUnit}</div><button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-md flex items-center justify-center active:scale-90 transition-all"><i data-lucide="plus" size="18"></i></button></div>
+                        </div>
+                        <div class="space-y-4 mb-8">
+                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all placeholder-gray-400" placeholder="Your Name"></div>
+                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all" placeholder="WhatsApp Number"></div>
+                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="map-pin" size="18"></i></div><input id="inp-ward" value="${user.ward || ''}" type="number" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all" placeholder="Ward Number (e.g. 12)"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white border-t border-jodo-border p-4 shrink-0 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
+                        <div class="flex justify-between items-end mb-4 px-1"><div><div class="text-[10px] text-jodo-textSecondary font-bold uppercase">Total to Pay (incl. ₹${FULFILLMENT_FEE} fee)</div><div class="text-3xl price-anchor text-jodo-textPrimary leading-none" id="footer-total">₹${initialTotal}</div></div><div class="text-right"><div class="text-[10px] text-jodo-ctaPrimary font-bold bg-red-50 px-2 py-1 rounded border border-red-100 uppercase" id="footer-savings">Savings: ₹${initialSavings}</div></div></div>
+                        <button id="action-btn" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-xl font-black text-xl shadow-lg flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] transition-all btn-press">
+                            <i data-lucide="zap" size="24"></i> 
+                            <span id="btn-text-action">Start Group Buy</span>
+                        </button>
+                    </div>
+                `;
+                if(window.lucide) window.lucide.createIcons();
+                
+                // Re-bind listeners for step 2
+                const btnMinus = node.querySelector('#btn-minus'); if (btnMinus) btnMinus.onclick = () => { if (qty > 2) { qty--; updateDisplay(); } else { toast("Min 1kg", 'alert-triangle'); triggerVibration(); } };
+                const btnPlus = node.querySelector('#btn-plus'); if (btnPlus) btnPlus.onclick = () => { if (qty < 20) { qty++; updateDisplay(); } };
+                
+                const updateDisplay = () => {
+                    node.querySelector('#qty-display').innerText = `${(qty * p.baseWeight).toFixed(2)} ${p.weightUnit}`;
+                    const productCost = Math.round(p.price5 * qty);
+                    const total = productCost + FULFILLMENT_FEE;
+                    const soloCost = Math.round(p.price1 * qty);
+                    const savings = soloCost - productCost;
+                    
+                    node.querySelector('#footer-total').innerText = `₹${total}`;
+                    node.querySelector('#footer-savings').innerText = `Savings: ₹${savings}`;
+                }
+
+                const actionBtn = node.querySelector('#action-btn');
+                actionBtn.onclick = triggerAction;
+            };
+
+            const triggerAction = async () => {
+                const actionBtn = document.querySelector('#action-btn');
+                if (actionBtn.disabled) return; actionBtn.disabled = true;
+                const originalText = actionBtn.innerHTML; actionBtn.innerHTML = `<div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Processing...`; actionBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                const name = safeVal(document.querySelector('#inp-name')); const phone = safeVal(document.querySelector('#inp-phone')); const ward = safeVal(document.querySelector('#inp-ward'));
+                if (!name || !/^[6-9]\d{9}$/.test(phone) || !ward) { actionBtn.disabled = false; actionBtn.innerHTML = originalText; actionBtn.classList.remove('opacity-75', 'cursor-not-allowed'); toast('Enter Name, Phone & Ward', 'alert-circle'); return; }
+                triggerVibration(); saveUser(name, phone, ward);
+                const gid = 'g' + Date.now();
+                const group = { id: gid, productId: pid, ownerName: name, ownerWard: ward, expiresAt: deliveryTime.getTime(), deliveryDay: deliveryTime.getTime(), createdAt: Date.now(), status: isGroupMode ? 'open' : 'closed', type: isGroupMode ? 'group' : 'solo' };
+                // REMOVED LOCAL MEMBER WRITE
+                state.groups[gid] = group; 
+                saveData(); 
+                markOrderHabit();
+                // REDIRECT TO FORM (Self-join flow)
+                redirectToJoinForm(gid);
+            };
+
+            renderStep1();
+        };
+
+        function renderHome(el) {
+            const user = state.user; const userActiveGroupIds = {}; const activeUserGroups = []; 
+            if (user.name && user.phone) { Object.values(state.groups).forEach(g => { const members = state.members[g.id] || []; if (members.some(m => m.name === user.name && m.phone === user.phone)) { userActiveGroupIds[g.productId] = g.id; activeUserGroups.push(g); } }); }
+            activeUserGroups.sort((a, b) => b.createdAt - a.createdAt);
+            
+            // Logic: First product is HERO, rest are SECONDARY
+            const heroProduct = PRODUCTS[0];
+            const secondaryProducts = PRODUCTS.slice(1);
+            const displayPhone = COMPANY_PHONE.replace(/^91/, '').replace(/(\d{5})(\d{5})/, '$1 $2');
+
+            // --- SECTION 1: ACTIVE ORDERS (Only if exists) ---
+            let activeOrdersHtml = '';
+            if (activeUserGroups.length > 0) {
+                const cards = activeUserGroups.map(g => {
+                    const p = PRODUCTS.find(x => x.id === g.productId); if (!p) return '';
+                    const members = state.members[g.id] || []; const count = members.length;
+                    const needed = Math.max(0, 3 - count);
+                    const statusLabel = count >= 3 ? 'Confirmed' : `${needed} more needed`;
+                    const statusColor = count >= 3 ? 'text-green-700 bg-green-50' : 'text-orange-700 bg-orange-50';
+                    return `
+                    <div onclick="openGroup('${g.id}')" class="bg-white border border-jodo-border rounded-lg p-3 flex items-center gap-3 shadow-sm mb-2 active:scale-[0.98] transition-transform">
+                        <div class="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-gray-500"><i data-lucide="${p.icon}" size="20"></i></div>
+                        <div class="flex-1">
+                            <div class="text-sm font-bold text-jodo-textPrimary">${p.name} Group</div>
+                            <div class="text-xs ${statusColor} font-medium px-1.5 rounded inline-block mt-0.5">${statusLabel}</div>
+                        </div>
+                        <i data-lucide="chevron-right" size="20" class="text-gray-300"></i>
+                    </div>`;
+                }).join('');
+                activeOrdersHtml = `<div class="px-4 mt-4 mb-2"><h3 class="text-xs font-bold text-jodo-textSecondary uppercase tracking-wider mb-2">Your Active Orders</h3>${cards}</div>`;
+            }
+
+            // --- SECTION 2: HERO DEAL (Today's Best) ---
+            const heroSavings = heroProduct.price1 - heroProduct.price5;
+            const heroActiveGid = userActiveGroupIds[heroProduct.id];
+            const heroAction = heroActiveGid ? `onclick="openGroup('${heroActiveGid}')"` : `onclick="openStartModal('${heroProduct.id}')"`;
+            
+            const heroHtml = `
+            <div class="px-4 mt-6 mb-8">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-lg font-black text-jodo-textPrimary tracking-tight">Today's Best Deal</h2>
+                    <div class="text-[10px] font-bold text-jodo-textSecondary bg-gray-100 px-2 py-1 rounded-full">Ends 8 PM</div>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden" ${heroAction}>
+                    <!-- Hero Image -->
+                    <div class="relative h-48 w-full bg-gray-100">
+                        <!-- Play Intent (No Autoplay) -->
+                        <div onclick="event.stopPropagation(); openProductVideo('${heroProduct.videoSrc}')" class="absolute inset-0 flex items-center justify-center cursor-pointer z-10">
+                            <div class="bg-white/90 w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+                                <i data-lucide="play" class="text-jodo-textPrimary ml-1" size="20"></i>
+                            </div>
+                        </div>
+                        <!-- Poster Image Placeholder (using gradient for now as no image) -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                            <i data-lucide="${heroProduct.icon}" size="64" class="text-gray-300"></i>
+                        </div>
+                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent p-4 pt-12">
+                            <div class="text-white font-bold text-xl leading-none">${heroProduct.name}</div>
+                            <div class="text-white/90 text-sm">${heroProduct.nameTe}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hero Content -->
+                    <div class="p-4">
+                        <div class="flex items-end justify-between">
+                            <div>
+                                <div class="text-xs text-jodo-textSecondary font-medium mb-0.5">Group Price / ${heroProduct.unit}</div>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-4xl font-black text-jodo-priceFinal tracking-tighter">₹${heroProduct.price5}</span>
+                                    <span class="text-lg text-jodo-priceOld line-through decoration-2">₹${heroProduct.price1}</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <!-- CHANGED: Red savings badge (High Energy) -->
+                                <div class="text-xs font-bold text-jodo-ctaPrimary bg-red-50 px-2 py-1 rounded border border-red-100 mb-2 inline-block">
+                                    Save ₹${heroSavings}
+                                </div>
+                                <button class="bg-jodo-ctaPrimary text-white h-10 px-6 rounded-lg shadow-md font-bold text-sm active:scale-95 transition-transform flex items-center gap-2">
+                                    Grab <i data-lucide="arrow-right" size="16"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+
+            // --- SECTION 3: SECONDARY LIST ---
+            const listHtml = secondaryProducts.map(p => {
+                const savings = p.price1 - p.price5;
+                const activeGid = userActiveGroupIds[p.id];
+                const action = activeGid ? `onclick="openGroup('${activeGid}')"` : `onclick="openStartModal('${p.id}')"`;
+                return `
+                <div class="bg-white p-3 rounded-xl border border-gray-200 flex gap-4 mb-3 active:bg-gray-50 transition-colors" ${action}>
+                    <!-- Simple Thumbnail -->
+                    <div onclick="event.stopPropagation(); openProductVideo('${p.videoSrc}')" class="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 relative">
+                        <i data-lucide="${p.icon}" size="24" class="text-gray-400"></i>
+                        <div class="absolute bottom-1 right-1 bg-white/80 p-1 rounded-full shadow-sm"><i data-lucide="play" size="10" class="text-black"></i></div>
+                    </div>
+                    
+                    <!-- Info -->
+                    <div class="flex-1 flex flex-col justify-center">
+                        <div class="flex justify-between items-start mb-1">
+                            <div>
+                                <div class="font-bold text-jodo-textPrimary text-base">${p.name}</div>
+                                <div class="text-xs text-jodo-textSecondary">${p.nameTe} • ${p.unit}</div>
+                            </div>
+                            <div class="text-[10px] font-bold text-jodo-ctaPrimary bg-red-50 px-1.5 py-0.5 rounded">Save ₹${savings}</div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between mt-1">
+                            <div class="flex items-baseline gap-1.5">
+                                <span class="text-xl font-black text-jodo-priceFinal">₹${p.price5}</span>
+                                <span class="text-xs text-jodo-priceOld line-through">₹${p.price1}</span>
+                            </div>
+                            <button class="text-xs font-bold text-white bg-jodo-ctaPrimary px-4 py-2 rounded-lg shadow-sm">Add</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            el.innerHTML = `
+                <div class="pb-safe fade-in bg-white">
+                    <!-- HEADER (Red Theme with White Text) -->
+                    <div class="glass-header sticky top-0 z-40 shadow-xl bg-jodo-ctaPrimary border-b-0">
+                        <div class="pt-safe px-4 pb-3 flex justify-between items-end min-h-[88px]">
+                            <div class="flex flex-col justify-end pb-0.5">
+                                <h1 class="font-black text-3xl tracking-tighter text-white leading-none mb-1.5 drop-shadow-md">JODO</h1>
+                            </div>
+                            <div class="flex flex-col items-end justify-end h-full">
+                                <button onclick="openSupportOptions()" class="group flex items-center gap-2 bg-white/10 border border-white/20 px-3 py-1.5 rounded-xl active:bg-white/20 transition-all backdrop-blur-md shadow-sm">
+                                    <i data-lucide="headset" size="14" class="text-white group-active:scale-90 transition-transform"></i>
+                                    <span class="text-sm font-bold text-white tracking-wide">Help</span>
+                                </button>
+                                <span class="text-[9px] text-white font-medium mt-1.5 tracking-wide drop-shadow-sm">Support: 9 AM – 7 PM</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="px-4 mt-4"><div class="bg-blue-50 border border-blue-100 rounded-lg p-2 flex items-center gap-2 text-[10px] font-bold text-blue-800 animate-pulse"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> 58 squads completed in Duvva today.</div></div>
                     
-                    ${heroContent}
-                    <div class="px-3 space-y-3 mt-2 pb-24">
-                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2">Daily Deals</h2>
-                        ${sortedProducts.map(p => {
-                        const activeGid = userActiveGroupIds[p.id];
-                        const savings = p.price1 - p.price5;
-                        const actionAttr = activeGid ? `onclick="openGroup('${activeGid}')"` : `onclick="openStartModal('${p.id}')"`;
-                        return `
-                        <div class="bg-white p-3 rounded-xl flex gap-3 shadow-sm border border-slate-100 relative overflow-hidden active:scale-[0.99] transition-transform duration-100" ${actionAttr}>
-                            <div onclick="event.stopPropagation(); openFullFeed('${p.id}')" class="w-32 h-32 bg-slate-100 rounded-lg relative overflow-hidden shrink-0 border border-slate-100 cursor-pointer group">
-                                ${p.videoSrc ? `<video src="${p.videoSrc}" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover"></video>` : ''}
-                                <div class="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-md text-white text-[8px] font-black px-1.5 py-0.5 rounded flex items-center gap-1 z-10 border border-white/10"><div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div> LIVE</div>
-                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10"><div class="bg-black/40 p-2 rounded-full backdrop-blur-sm border border-white/20"><i data-lucide="play" class="text-white fill-white" size="16"></i></div></div>
-                                <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] font-medium text-center py-0.5 backdrop-blur-sm">Only ${p.remainingStock}kg left</div>
-                            </div>
-                            <div class="flex-1 flex flex-col justify-between py-0.5 min-w-0">
-                                <div>
-                                    <div class="flex items-center gap-1.5 mb-1.5 flex-wrap"><span class="bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] leading-tight tracking-wide">Brand</span><span class="border border-psycho-action text-psycho-action text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] leading-tight flex items-center gap-0.5"><i data-lucide="zap" size="8"></i> Best Price</span></div>
-                                    <h3 class="font-bold text-base text-slate-900 leading-tight line-clamp-2 mb-1">${p.name} <span class="font-normal text-slate-500 text-xs">/ ${p.nameTe}</span></h3>
-                                    <div class="inline-flex items-center gap-1 bg-red-50 text-psycho-action text-[10px] px-1.5 py-0.5 rounded border border-red-100 mb-1"><span>Save ₹${savings} with Squad</span></div>
-                                    <!-- COMPARE BUTTON -->
-                                    <button onclick="event.stopPropagation(); window.openPriceJourneyModal('${p.id}')" class="mt-1 flex items-center gap-1 text-[10px] text-slate-500 font-bold bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded hover:bg-slate-100 transition-colors">
-                                        <i data-lucide="bar-chart-2" size="10"></i> 📉 Breakdown
-                                    </button>
-                                </div>
-                                <div class="flex items-end justify-between mt-1">
-                                    <div class="relative top-1"><div class="text-[10px] text-slate-400 font-medium mb-[-2px]">Group Price</div><div class="flex items-baseline gap-0.5 text-psycho-action"><span class="text-xs font-bold">₹</span><span class="text-2xl font-black tracking-tighter">${p.price5}</span></div></div>
-                                    <div class="bg-gradient-to-r from-red-500 to-psycho-action text-white px-3 py-1.5 rounded-lg shadow-md shadow-red-200 flex flex-col items-center justify-center min-w-[70px]"><span class="text-[10px] font-medium opacity-90 leading-none mb-0.5">Limited</span><span class="text-xs font-black leading-none uppercase">Grab</span></div>
-                                </div>
-                            </div>
-                        </div>`;
-                    }).join('')}</div>
+                    ${activeOrdersHtml}
+                    ${heroHtml}
+                    
+                    <div class="px-4 pb-24">
+                        <h3 class="text-sm font-bold text-jodo-textSecondary uppercase tracking-widest ml-1 mb-2">Daily Deals</h3>
+                        ${listHtml}
+                    </div>
                 </div>
             `;
             initCardTilt();
         }
 
-        // 6. Safer init
         function init() {
-            if (JODO_INITIALIZED) return;
-            JODO_INITIALIZED = true;
-
-            loadData();
-            cleanOldCycles(); // Remove expired groups on load
-            loadHabit(); 
-            startMandiEngine();
-            startLocalHeatEngine(); // START HEATMAP ENGINE
-
+            if (JODO_INITIALIZED) return; JODO_INITIALIZED = true;
+            loadData(); cleanOldCycles(); loadHabit(); startMandiEngine(); startLocalHeatEngine();
+            // --- UPDATED ROUTE HANDLER FOR JOIN LINKS ---
             const handleRoute = () => {
                 const params = new URLSearchParams(location.search);
-                const gid = params.get('group');
+                const gid = params.get("group");
+                const join = params.get("join");
+
+                if (gid && join === "1") {
+                    redirectToJoinForm(gid);
+                    return;
+                }
+
                 state.currentGroupId = gid;
                 state.view = gid ? 'group' : 'home';
                 render();
-                if (!gid) startTicker();   
+
+                if (!gid) startTicker();
             };
 
             window.addEventListener('popstate', handleRoute);
