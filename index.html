@@ -636,6 +636,13 @@
                     
                     if (!name || !ward) return toast('Name & Ward required', 'alert-circle'); 
                     
+                    // 2️⃣ SAFETY RULE: RE-CHECK EXPIRY BEFORE WRITE
+                    if (group.expiresAt < Date.now()) {
+                        toast("Group has expired", "clock");
+                        window.closeModal();
+                        return;
+                    }
+
                     const updatedMember = { ...member, name, ward, quantity: qty, updatedAt: Date.now() };
                     
                     try {
@@ -924,13 +931,17 @@
                                         const isMe = (state.user.phone && member.phone === state.user.phone);
                                         const t1 = Math.round(member.quantity * p.price1);
                                         const t5 = Math.round(member.quantity * p.price5);
-                                        return `<div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mb-3 transition-all active:scale-[0.99]" onclick="openEditMemberModal('${g.id}', ${i})">
+                                        
+                                        const clickAttr = isMe ? `onclick="openEditMemberModal('${g.id}', ${i})"` : '';
+                                        const cursorClass = isMe ? 'active:scale-[0.99] cursor-pointer' : 'cursor-default';
+
+                                        return `<div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mb-3 transition-all ${cursorClass}" ${clickAttr}>
                                             <div class="flex items-center justify-between mb-3">
                                                 <div class="flex items-center gap-3">
                                                     <div class="w-10 h-10 rounded-full ${isMe ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm shrink-0">${member.name[0]}</div>
                                                     <div><div class="text-sm font-bold text-jodo-textPrimary flex items-center gap-2">${isMe ? 'YOU' : member.name} ${member.isLeader ? '<span class="text-[9px] bg-yellow-100 text-yellow-800 px-1 rounded border border-yellow-200 font-bold uppercase">Leader</span>' : ''}</div><div class="text-xs text-jodo-textSecondary font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit} confirmed</div></div>
                                                 </div>
-                                                ${isMe ? '<div class="text-green-600 bg-green-50 p-1.5 rounded-full"><i data-lucide="edit-2" size="14"></i></div>' : ''}
+                                                ${isMe ? '<div class="text-green-600 bg-green-50 p-1.5 rounded-full"><i data-lucide="edit-2" size="14"></i></div>' : '<div class="text-gray-400 bg-gray-100 p-1.5 rounded-full"><i data-lucide="lock" size="14"></i></div>'}
                                             </div>
                                             <div class="grid grid-cols-2 gap-2 text-center bg-gray-50 rounded-lg p-2 border border-gray-100">
                                                 <div class="flex flex-col"><span class="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Solo Cost</span><span class="text-xs font-medium text-gray-500">₹${t1}</span></div>
