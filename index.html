@@ -347,6 +347,23 @@
             window.location.href = url;
         }
 
+        // FETCH GROUP META AND MEMBERS FROM SHEET
+        async function fetchGroupDetails(gid) {
+            try {
+                // Use a different query param if your apps script handles metadata specific requests
+                // Or if your script returns everything in one go.
+                // Assuming standard endpoint returns format: { group: { ... }, members: [...] }
+                // or if we use query param ?group_meta=gid to differentiate.
+                // Let's assume standard fetch returns object with group metadata if available.
+                const res = await fetch(`${SHEET_API}?group=${gid}&meta=true`);
+                const data = await res.json();
+                return data; // Expected { group: {...}, members: [...] }
+            } catch(e) {
+                console.error("Meta fetch failed", e);
+                return null;
+            }
+        }
+
         async function fetchGroupMembers(gid) {
           try {
             const res = await fetch(`${SHEET_API}?group=${gid}`);
@@ -686,6 +703,25 @@
                 const gid = 'g' + Date.now();
                 const group = { id: gid, productId: pid, ownerName: name, ownerWard: ward, expiresAt: deliveryTime.getTime(), deliveryDay: deliveryTime.getTime(), createdAt: Date.now(), status: isGroupMode ? 'open' : 'closed', type: isGroupMode ? 'group' : 'solo' };
                 // REMOVED LOCAL MEMBER WRITE
+                // POST group metadata to sheet
+                try {
+                    await fetch(SHEET_API, {
+                        method: "POST",
+                        mode: "no-cors", // FIX: Bypass CORS for Google Apps Script
+                        headers: { "Content-Type": "text/plain" }, // FIX: Avoid preflight
+                        body: JSON.stringify({
+                            type: "create_group",
+                            group: {
+                                id: gid,
+                                productId: pid,
+                                ownerName: name,
+                                expiresAt: deliveryTime.getTime(),
+                                createdAt: Date.now()
+                            }
+                        })
+                    });
+                } catch (e) { console.error("Group sync failed", e); }
+                
                 state.groups[gid] = group; 
                 saveData(); 
                 markOrderHabit();
@@ -862,6 +898,26 @@
                 const gid = params.get("group");
                 const join = params.get("join");
 
+                if (gid) {
+                    // Try to fetch group details immediately if join link
+                    fetchGroupDetails(gid).then(group => {
+                        if(group) {
+                            state.groups[gid] = group;
+                            // Ensure render happens after fetch
+                            state.currentGroupId = gid;
+                            state.view = 'group';
+                            render();
+                        } else {
+                           // If no group found remotely, maybe try local or go home
+                           // For now, if no local group exists, go home
+                           if (!state.groups[gid]) {
+                               goHome();
+                               return;
+                           }
+                        }
+                    });
+                }
+                
                 if (gid && join === "1") {
                     redirectToJoinForm(gid);
                     return;
