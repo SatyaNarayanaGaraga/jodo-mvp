@@ -13,840 +13,1156 @@
             theme: {
                 extend: {
                     colors: {
-                        psycho: {
-                            action: '#E53935', actionLight: '#FF5252', actionBg: '#FFF5F5',
-                            urgency: '#B71C1C', urgencyBg: '#FFEBEE',
-                            reward: '#FFD600', rewardText: '#374151', rewardBg: '#FFFDE7',
-                            trust: '#F57C00', trustBg: '#FFF3E0',
-                            alert: '#FF6D00', alertBg: '#FFF8E1',
-                            neutral: '#6B7280', base: '#FFFFFF'
+                        jodo: {
+                            base: '#FFFFFF',
+                            textPrimary: '#1F2937', 
+                            textSecondary: '#6B7280', 
+                            priceFinal: '#15803D', 
+                            priceCut: '#DC2626',   
+                            priceOld: '#9CA3AF',   
+                            ctaPrimary: '#DC2626', 
+                            ctaSuccess: '#16A34A', 
+                            progress: '#FACC15',   
+                            progressBg: '#F3F4F6', 
+                            bonus: '#EAB308',      
+                            urgency: '#DC2626',    
+                            border: '#E5E7EB',     
                         }
                     },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    },
                     animation: {
-                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                        'fade-in-up': 'fadeInUp 0.5s ease-out',
-                        'zoom-in': 'zoomIn 0.3s ease-out'
+                        'fade-in-up': 'fadeInUp 0.5s ease-out'
                     },
                     keyframes: {
                         pop: { '0%': { transform: 'scale(0.95)' }, '100%': { transform: 'scale(1)' } },
                         fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-                        zoomIn: { '0%': { opacity: '0', transform: 'scale(0.95)' }, '100%': { opacity: '1', transform: 'scale(1)' } }
+                        explode: { '0%': { transform: 'scale(1)', opacity: '1' }, '50%': { transform: 'scale(1.2) rotate(5deg)', opacity: '0.8' }, '100%': { transform: 'scale(0) rotate(20deg)', opacity: '0' } }
                     }
                 }
             }
         }
     </script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #111827; color: #111827; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; align-items: flex-start; margin: 0; overscroll-behavior-y: none; }
-        #app { width: 100%; max-width: 448px; background: #F9FAFB; min-height: 100dvh; position: relative; box-shadow: 0 0 40px rgba(0, 0, 0, 0.3); overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; }
-        .btn-press { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; user-select: none; }
+        body { background: #FFFFFF; color: #1F2937; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; }
+        #app { width: 100%; max-width: 448px; background: #FFFFFF; min-height: 100dvh; position: relative; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        .btn-press { transition: transform 0.1s; cursor: pointer; user-select: none; }
         .btn-press:active:not(:disabled) { transform: scale(0.96); }
-        .card-modern { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #F3F4F6; transform-style: preserve-3d; transition: transform 0.1s ease-out; }
-        .glass-header { background: #E53935; box-shadow: 0 2px 10px rgba(229, 57, 53, 0.3); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .tilt-card { transition: transform 0.15s ease-out; transform-style: preserve-3d; }
-        .hold-btn { position: relative; overflow: hidden; user-select: none; touch-action: none; }
-        .hold-btn-fill { position: absolute; top: 0; left: 0; height: 100%; background: rgba(0,0,0,0.25); width: 0%; transition: width 0s linear; }
-        .hold-btn.holding .hold-btn-fill { width: 100%; transition: width 1.2s linear; }
+        .card-modern { background: #FFFFFF; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #E5E7EB; }
+        .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 2px rgba(0,0,0,0.05); border-bottom: 1px solid #E5E7EB; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
         .fade-in { animation: fadeInUp 0.5s ease-out forwards; }
+        .tilt-card { transition: transform 0.15s ease-out; transform-style: preserve-3d; }
+        .animate-explode { animation: explode 0.4s ease-out forwards; }
+        .price-anchor { color: #15803D; font-weight: 900; letter-spacing: -0.025em; }
+        
+        /* Loading skeleton shimmer */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
-<body class="antialiased selection:bg-psycho-action/20">
+<body class="antialiased">
 
     <div id="app"></div>
 
-    <!-- MODAL OVERLAY -->
-    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/80 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300">
-        <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[2rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden"></div>
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300">
+        <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[2rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden pb-safe"></div>
     </div>
 
-    <!-- PSYCHOLOGY TICKER -->
-    <div id="live-ticker" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-full text-xs font-medium shadow-2xl z-[55] flex items-center gap-2 pointer-events-none border border-white/10 whitespace-nowrap hidden max-w-[90%] overflow-hidden transition-all duration-500 pb-safe">
-        <div id="ticker-dot" class="w-2 h-2 rounded-full animate-pulse shrink-0"></div>
+    <div id="full-feed-container"></div>
+
+    <div id="live-ticker" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur text-white px-4 py-2.5 rounded-full text-xs font-medium shadow-2xl z-[55] flex items-center gap-2 pointer-events-none whitespace-nowrap hidden max-w-[90%] overflow-hidden transition-all duration-500 pb-safe border border-white/10">
+        <div id="ticker-dot" class="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></div>
         <span id="ticker-text" class="truncate font-bold tracking-wide">...</span>
     </div>
 
-    <!-- TOAST -->
-    <div id="toast" aria-live="polite" role="status" class="fixed top-24 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl hidden z-[90] flex items-center gap-2 pointer-events-none border border-white/10 transition-all duration-300 tracking-wide animate-pop pt-safe"></div>
+    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900/95 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe backdrop-blur border border-white/10"></div>
 
+    <!-- 1️⃣ FIREBASE MODULE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, arrayUnion, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- 1. FIREBASE CONFIG ---
-        const firebaseConfig = JSON.parse(__firebase_config);
+        import {
+          getFirestore,
+          doc,
+          setDoc,
+          getDoc,
+          onSnapshot,
+          collection
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      
+        // Using provided config
+        const firebaseConfig = {
+          apiKey: "AIzaSyBPqMkzfPjPzKIFSCYPipocH97TmPn2NLI",
+          authDomain: "jodo-prod-e7788.firebaseapp.com",
+          projectId: "jodo-prod-e7788",
+          storageBucket: "jodo-prod-e7788.firebasestorage.app",
+          messagingSenderId: "535883967600",
+          appId: "1:535883967600:web:aa0b73a70ca506ad4fd8b5"
+        };
+      
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const PUBLIC_GROUPS_COLL = 'groups';
-
-        // --- 2. CONFIG & STATE ---
-        const COMPANY_PHONE = "919999999999"; 
-        const ADMIN_PASSWORD = "JODO2025"; // 🔒 CHANGE THIS PASSWORD
-        const GUIDE_IMG_SRC = 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1000&auto=format&fit=crop';
+      
+        window.db = db;
+        window.fs = { doc, setDoc, getDoc, onSnapshot, collection };
         
+        // Signal ready
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+
+    <script>
+        // --- CONSTANTS & CONFIG ---
+        const COMPANY_PHONE = "918500742671"; 
+        // 🔹 1. CREATE ONE BASE URL (MANDATORY FOR GITHUB PAGES)
+        // Hardcoded to exact repo path to prevent any subdirectory inference issues
+        const BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp';
+        
+        const PRODUCTS = [
+            { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price5: 18, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-red-50 text-red-600', location: 'Duvva Fields', imageSrc: 'https://images.unsplash.com/photo-1620574387735-3624d75b2dbc?auto=format&fit=crop&w=600&q=80' },
+            { id: 'oil', name: 'Sunflower Oil', nameTe: 'పొద్దుతిరుగుడు నూనె', unit: '500ml', baseWeight: 0.5, weightUnit: 'L', price1: 60, price5: 50, mandiPrice: 65, remainingStock: 8, icon: 'droplet', imageColor: 'bg-yellow-50 text-yellow-600', location: 'Factory Direct', imageSrc: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=600&q=80' },
+            { id: 'sugar', name: 'Sugar', nameTe: 'చక్కెర', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 24, price5: 20, mandiPrice: 38, remainingStock: 42, icon: 'package', imageColor: 'bg-blue-50 text-blue-600', location: 'Local Stock', imageSrc: 'https://images.unsplash.com/photo-1581441363689-1f3c3c414635?auto=format&fit=crop&w=600&q=80' }
+        ];
+
+        const HABIT_KEY = 'jodo_habit_v1';
+        const GROUPS_KEY = 'jodo_groups_joined_v1';
+        const TICKER_MESSAGES = [
+            { msg: "✅ 58 squads completed in Duvva.", type: 'good' }, 
+            { msg: "🛡️ Pay on delivery available.", type: 'neutral' },
+            { msg: "🔥 Red Onions lowest price unlocked!", type: 'good' },
+            { msg: "🚚 Next delivery tomorrow 8 AM.", type: 'neutral' }
+        ];
+
+        // --- DELIVERY SYSTEM ---
+        const DELIVERY_DAYS = [3, 6]; // Wed, Sat
+        const CUTOFF_HOUR = 20; // 8 PM
+
+        function getNextDeliveryDate() {
+            const now = new Date();
+            for (let i = 0; i < 7; i++) {
+                const d = new Date();
+                d.setDate(now.getDate() + i);
+                if (DELIVERY_DAYS.includes(d.getDay())) {
+                    if (i === 0 && now.getHours() >= CUTOFF_HOUR) continue;
+                    return d;
+                }
+            }
+            // Fallback
+            const d = new Date(); 
+            d.setDate(d.getDate() + 1);
+            return d;
+        }
+
+        // --- STATE MANAGEMENT ---
         const state = { 
             view: 'home', 
             currentGroupId: null, 
             groups: {}, 
             members: {}, 
-            adminGroups: [],
-            user: { name: '', phone: '', uid: null },
+            user: { name: '', phone: '', ward: '', joinedGroupIds: [] }, 
             timerInterval: null, 
-            tickerInterval: null,
-            firebaseUnsubscribe: null,
-            adminUnsubscribe: null,
-            isAdmin: false // 🔒 Admin State
+            tickerInterval: null, 
+            lastMemberCount: 0,
+            unsubGroup: null,
+            unsubMembers: null,
+            homeListeners: [] // Array of unsubscribe functions for home screen
         };
 
-        const PRODUCTS = [
-            { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price5: 18, remainingStock: 14, icon: 'layers', imageColor: 'bg-red-50 text-red-600', image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=500&q=80' },
-            { id: 'oil', name: 'Sunflower Oil', nameTe: 'పొద్దుతిరుగుడు నూనె', unit: '500ml', baseWeight: 0.5, weightUnit: 'L', price1: 60, price5: 50, remainingStock: 8, icon: 'droplet', imageColor: 'bg-yellow-50 text-yellow-600', image: 'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?w=500&q=80' },
-            { id: 'sugar', name: 'Sugar', nameTe: 'చక్కెర', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 24, price5: 20, remainingStock: 42, icon: 'package', imageColor: 'bg-blue-50 text-blue-600', image: 'https://images.unsplash.com/photo-1612196023694-072b22300b75?w=500&q=80' }
-        ];
+        const habitState = { totalOrders: 0, streakDays: 0, lastOrderDate: null };
+        let JODO_INITIALIZED = false;
+        let renderScheduled = false;
 
-        // --- 3. HELPER FUNCTIONS ---
+        // --- DATA LAYER ---
+        function loadData() {
+            try {
+                state.user.name = localStorage.getItem('jodo_user_name') || '';
+                state.user.phone = localStorage.getItem('jodo_user_phone') || '';
+                state.user.ward = localStorage.getItem('jodo_user_ward') || '';
+                const savedGroups = localStorage.getItem(GROUPS_KEY);
+                state.user.joinedGroupIds = savedGroups ? JSON.parse(savedGroups) : [];
+            } catch(e) { console.error("Load Error", e); }
+        }
+
+        function saveUser(name, phone, ward) {
+            state.user.name = name;
+            state.user.phone = phone;
+            localStorage.setItem('jodo_user_name', name);
+            localStorage.setItem('jodo_user_phone', phone);
+            if (ward) {
+                state.user.ward = ward;
+                localStorage.setItem('jodo_user_ward', ward);
+            }
+        }
+
+        function saveJoinedGroup(gid) {
+            if (!state.user.joinedGroupIds.includes(gid)) {
+                state.user.joinedGroupIds.push(gid);
+                localStorage.setItem(GROUPS_KEY, JSON.stringify(state.user.joinedGroupIds));
+                // Immediately listen to this new group for home screen updates
+                listenToGroupForHome(gid);
+            }
+        }
+
+        function loadHabit() {
+            try {
+                const raw = localStorage.getItem(HABIT_KEY);
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    habitState.totalOrders = data.totalOrders || 0;
+                    habitState.streakDays = data.streakDays || 0;
+                    habitState.lastOrderDate = data.lastOrderDate || null;
+                }
+            } catch (e) {}
+        }
+
+        function saveHabit() {
+            try { localStorage.setItem(HABIT_KEY, JSON.stringify(habitState)); } catch (e) {}
+        }
+
+        function markOrderHabit() {
+            const today = new Date();
+            const todayStr = today.toISOString().slice(0,10);
+            if (!habitState.lastOrderDate) {
+                habitState.streakDays = 1;
+            } else {
+                const last = new Date(habitState.lastOrderDate);
+                const diffDays = Math.round((today - last) / 86400000);
+                if (diffDays === 1) habitState.streakDays += 1;
+                else if (diffDays > 1) habitState.streakDays = 1;
+            }
+            habitState.lastOrderDate = todayStr;
+            habitState.totalOrders += 1;
+            saveHabit();
+        }
+
+        // --- UI UTILS ---
         function toast(msg, icon) { 
             const t = document.getElementById('toast'); 
             t.innerHTML = `<i data-lucide="${icon}" size="16"></i> ${msg}`; 
             t.classList.remove('hidden'); 
             if(window.lucide) window.lucide.createIcons(); 
-            setTimeout(() => t.classList.add('hidden'), 3500); 
+            setTimeout(() => t.classList.add('hidden'), 3000); 
         }
 
-        function triggerConfetti() { if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#E53935', '#FDD835', '#ffffff'] }); }
-        function triggerVibration() { if (navigator.vibrate) navigator.vibrate(20); }
-        function createNodeFromHTML(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
-        function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
-        function showFieldError(c, m) { c.innerHTML = `<div class="text-xs text-red-600 font-bold bg-red-50 p-2 rounded flex gap-2"><i data-lucide="alert-circle" size="14"></i> ${m}</div>`; if(window.lucide) window.lucide.createIcons(); }
+        function triggerConfetti() { 
+            if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#16A34A', '#FACC15', '#FFFFFF'] }); 
+        }
 
-        // --- 4. UTILS & UI ---
-        function initCardTilt() {
-             const cards = document.querySelectorAll('.tilt-card');
-             if(cards.length === 0) return;
-             cards.forEach(card => {
-                 card.addEventListener('mousemove', (e) => {
-                     const rect = card.getBoundingClientRect();
-                     const x = e.clientX - rect.left;
-                     const y = e.clientY - rect.top;
-                     const centerX = rect.width / 2;
-                     const centerY = rect.height / 2;
-                     const rotateX = ((y - centerY) / centerY) * -3; 
-                     const rotateY = ((x - centerX) / centerX) * 3;
-                     card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-                 });
-                 card.addEventListener('mouseleave', () => {
-                     card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-                 });
-             });
+        function triggerVibration() { 
+            if (navigator.vibrate) navigator.vibrate(20); 
+        }
+
+        function createNodeFromHTML(html) { 
+            const t = document.createElement('template'); 
+            t.innerHTML = html.trim(); 
+            return t.content.firstElementChild; 
+        }
+        
+        function showModalNode(node) { 
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            content.innerHTML = ''; content.appendChild(node); 
+            overlay.classList.remove('hidden'); 
+            // Slight delay to allow display:block to apply before opacity transition
+            setTimeout(() => { 
+                overlay.classList.remove('opacity-0'); 
+                content.classList.remove('translate-y-full'); 
+            }, 10);
+            if(node.querySelector('input')) node.querySelector('input').focus(); 
+            if(window.lucide) window.lucide.createIcons(); 
         }
 
         window.closeModal = () => {
-             const overlay = document.getElementById('modal-overlay');
-             const content = document.getElementById('modal-content');
-             content.classList.add('translate-y-full');
-             setTimeout(() => {
-                 overlay.classList.add('hidden');
-                 content.innerHTML = ''; 
-             }, 200); 
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            content.classList.add('translate-y-full');
+            overlay.classList.add('opacity-0');
+            setTimeout(() => { 
+                overlay.classList.add('hidden'); 
+                content.innerHTML = ''; 
+            }, 300);
         };
 
-        function showModalNode(node) {
-             const overlay = document.getElementById('modal-overlay');
-             const content = document.getElementById('modal-content');
-             content.innerHTML = ''; content.appendChild(node);
-             overlay.classList.remove('hidden'); 
-             requestAnimationFrame(() => { overlay.classList.remove('opacity-0'); content.classList.remove('translate-y-full'); });
-             if(node.querySelector('input')) node.querySelector('input').focus();
-             if(window.lucide) window.lucide.createIcons();
+        function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
+
+        function startTicker() {
+            if (state.tickerInterval) clearInterval(state.tickerInterval);
+            const update = () => {
+                const el = document.getElementById('live-ticker');
+                const txt = document.getElementById('ticker-text');
+                if(!el || !txt) return;
+                const item = TICKER_MESSAGES[Math.floor(Math.random() * TICKER_MESSAGES.length)];
+                txt.innerText = item.msg;
+                el.classList.remove('hidden', 'translate-y-10', 'opacity-0');
+                el.classList.add('translate-y-0', 'opacity-100');
+                setTimeout(() => { 
+                    el.classList.add('translate-y-10', 'opacity-0'); 
+                    setTimeout(() => el.classList.add('hidden'), 500); 
+                }, 5000);
+            };
+            update(); // First run
+            state.tickerInterval = setInterval(update, 12000); 
         }
 
-        // --- 5. AUTH & DATA ---
-        async function initAuth() {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                try { await signInWithCustomToken(auth, __initial_auth_token); } catch(e) { await signInAnonymously(auth); }
-            } else {
-                await signInAnonymously(auth);
-            }
+        function initCardTilt() {
+            // Only on desktop/mouse devices to prevent weird scroll blocking on mobile
+            if (window.matchMedia("(pointer: coarse)").matches) return;
 
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    state.user.uid = user.uid;
-                    checkUrlForGroup(); 
-                }
+            const cards = document.querySelectorAll('.tilt-card');
+            cards.forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const rotateX = ((y - centerY) / centerY) * -5; 
+                    const rotateY = ((x - centerX) / centerX) * 5;
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+                });
             });
         }
 
-        function loadLocalData() {
-            try {
-                state.user.name = localStorage.getItem('jodo_user_name') || '';
-                state.user.phone = localStorage.getItem('jodo_user_phone') || '';
-                // Load local DB cache for instant UI
-                const raw = localStorage.getItem('jodo_local_db_v54');
-                if (raw) {
-                    const data = JSON.parse(raw);
-                    state.groups = { ...state.groups, ...data.groups };
-                    state.members = { ...state.members, ...data.members };
+        // --- MODALS & ACTIONS ---
+
+        window.openLiveGuide = function() {
+            toast("Guide video coming soon!", "video");
+        };
+
+        window.openSupportOptions = function() {
+            window.open("https://wa.me/" + COMPANY_PHONE, "_blank");
+        };
+
+        window.openFullFeed = function(productId) {
+            toast("Live farm feed loading...", "signal");
+        };
+
+        window.openStartModal = function(pid, joinGroupId = null) {
+            const p = PRODUCTS.find(x => x.id === pid);
+            const user = state.user;
+            let qty = 2; let isGroupMode = true; 
+            
+            const nextDelivery = getNextDeliveryDate();
+            // Create a consistent delivery/expiry time
+            const deliveryTime = new Date(nextDelivery);
+            deliveryTime.setHours(CUTOFF_HOUR, 0, 0, 0); 
+
+            const title = joinGroupId ? "Join Squad" : "Select Buying Option";
+            const btnText = joinGroupId ? "Join Squad Now" : "Start Group Buy";
+
+            const node = createNodeFromHTML(`
+                <div class="flex flex-col h-[90vh] bg-white relative rounded-t-[2rem] overflow-hidden">
+                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-jodo-border shrink-0 z-20">
+                        <div class="flex items-center gap-2"><h3 class="font-bold text-xl text-jodo-textPrimary uppercase tracking-tight">${title}</h3></div>
+                        <button id="close-modal" class="p-2 bg-gray-100 rounded-full text-jodo-textSecondary hover:bg-gray-200 transition-colors"><i data-lucide="x" size="20"></i></button>
+                    </div>
+                    <div class="p-5 overflow-y-auto flex-1 relative">
+                        <div class="flex gap-4 mb-6">
+                            <div class="w-20 h-20 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden shrink-0"><div class="absolute inset-0 ${p.imageColor} flex items-center justify-center"><i data-lucide="${p.icon}" size="32" class="text-white/80"></i></div></div>
+                            <div class="flex-1 flex flex-col justify-center"><h4 class="font-black text-xl text-jodo-textPrimary leading-none mb-1">${p.name}</h4><div class="text-sm font-semibold text-jodo-textSecondary mb-2">${p.nameTe}</div><div class="inline-block bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase w-fit">${p.remainingStock}kg In Stock</div></div>
+                        </div>
+                        <div class="bg-yellow-50 border border-yellow-100 p-3 rounded-xl mb-6 text-xs text-yellow-800 font-medium">
+                            <i data-lucide="clock" class="inline-block w-3 h-3 mr-1"></i> Order for <strong>${nextDelivery.toLocaleDateString('en-US', { weekday: 'long' })} Delivery</strong>. Cutoff is 8 PM.
+                        </div>
+                        
+                        ${!joinGroupId ? `
+                        <div class="grid grid-cols-2 gap-3 mb-6">
+                            <div id="mode-solo" class="relative p-4 rounded-xl border-2 border-gray-200 bg-white cursor-pointer active:scale-95 transition-all"><div class="font-bold text-jodo-textSecondary text-xs uppercase tracking-wider mb-0.5">Solo Buy</div><div class="price-anchor text-xl text-jodo-textPrimary price-text">₹${p.price1}</div></div>
+                            <div id="mode-group" class="relative p-4 rounded-xl border-2 border-jodo-progress bg-yellow-50 cursor-pointer active:scale-95 transition-all shadow-md"><div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-jodo-bonus text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm border border-white">Best Value</div><div class="font-bold text-yellow-800 text-xs uppercase tracking-wider mb-0.5">Group Buy</div><div class="price-anchor text-xl text-jodo-priceFinal price-text">₹${p.price5}</div></div>
+                        </div>` : ''}
+
+                        <div class="bg-white p-3 rounded-xl border border-jodo-border shadow-sm mb-6 flex items-center justify-between">
+                            <div class="pl-2"><div class="text-[10px] font-bold text-jodo-textSecondary uppercase tracking-wider">Quantity</div><div class="text-[10px] text-jodo-urgency font-bold">Min 2 ${p.weightUnit}</div></div>
+                            <div class="flex items-center gap-3 bg-gray-50 p-1.5 rounded-lg border border-gray-200"><button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-300 text-gray-500 flex items-center justify-center active:scale-90 transition-all shadow-sm"><i data-lucide="minus" size="18"></i></button><div class="text-xl font-bold text-jodo-textPrimary w-20 text-center leading-none tabular-nums" id="qty-display">1.0 kg</div><button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-md flex items-center justify-center active:scale-90 transition-all"><i data-lucide="plus" size="18"></i></button></div>
+                        </div>
+                        <div class="space-y-4 mb-8">
+                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all placeholder-gray-400" placeholder="Your Name"></div>
+                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all placeholder-gray-400" placeholder="WhatsApp Number"></div>
+                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="map-pin" size="18"></i></div><input id="inp-ward" value="${user.ward || ''}" type="number" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all placeholder-gray-400" placeholder="Ward Number (e.g. 12)"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white border-t border-jodo-border p-4 shrink-0 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
+                        <div class="flex justify-between items-end mb-4 px-1"><div><div class="text-[10px] text-jodo-textSecondary font-bold uppercase">Total to Pay</div><div class="text-3xl price-anchor text-jodo-textPrimary leading-none" id="footer-total">₹${p.price5 * 2}</div></div><div class="text-right"><div class="text-[10px] text-green-700 font-bold bg-green-50 px-2 py-1 rounded border border-green-100 uppercase" id="footer-savings">Savings: ₹${(p.price1 - p.price5) * 2}</div></div></div>
+                        <button id="action-btn" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-xl font-black text-xl shadow-lg flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] transition-all btn-press">
+                            <i data-lucide="zap" size="24"></i> 
+                            <span id="btn-text-action">${btnText}</span>
+                        </button>
+                    </div>
+                </div>
+            `);
+            showModalNode(node);
+
+            // DOM Elements
+            const modeSoloEl = node.querySelector('#mode-solo');
+            const modeGroupEl = node.querySelector('#mode-group');
+            const footerTotalEl = node.querySelector('#footer-total');
+            const footerSavingsEl = node.querySelector('#footer-savings');
+            const btnTextEl = node.querySelector('#btn-text-action');
+            const actionBtn = node.querySelector('#action-btn');
+
+            const renderMode = () => {
+                const t1 = Math.round(p.price1 * qty);
+                const t5 = Math.round(p.price5 * qty);
+                
+                if (!joinGroupId) {
+                    modeSoloEl.className = `relative p-4 rounded-xl border-2 cursor-pointer transition-all active:scale-95 ${!isGroupMode ? 'border-gray-900 bg-white ring-1 ring-gray-900/10' : 'border-gray-200 bg-white'}`;
+                    modeGroupEl.className = `relative p-4 rounded-xl border-2 cursor-pointer transition-all shadow-md active:scale-95 ${isGroupMode ? 'border-jodo-progress bg-yellow-50 ring-1 ring-jodo-progress/50' : 'border-gray-200 bg-white'}`;
+                    modeSoloEl.querySelector('.price-text').innerText = `₹${t1}`;
+                    modeGroupEl.querySelector('.price-text').innerText = `₹${t5}`;
                 }
-            } catch(e) {}
-        }
 
-        function saveLocalData() {
-            try {
-                localStorage.setItem('jodo_local_db_v54', JSON.stringify({ groups: state.groups, members: state.members }));
-            } catch(e) {}
-        }
-        
-        function saveUserLocally(name, phone) {
-            state.user.name = name;
-            state.user.phone = phone;
-            localStorage.setItem('jodo_user_name', name);
-            localStorage.setItem('jodo_user_phone', phone);
-        }
-
-        // --- 6. CORE LOGIC (FIRESTORE) ---
-        
-        async function createGroup(pid, name, phone, qty, isSolo) {
-            const gid = 'g' + Date.now();
-            const expires = Date.now() + (2 * 24 * 60 * 60 * 1000); // 48h
-            
-            const member = { 
-                name, phone, quantity: qty, isLeader: true, joinedAt: Date.now(),
-                uid: state.user.uid 
+                node.querySelector('#qty-display').innerText = `${(qty * p.baseWeight).toFixed(2)} ${p.weightUnit}`;
+                
+                const total = Math.round((isGroupMode ? p.price5 : p.price1) * qty);
+                footerTotalEl.innerText = `₹${total}`;
+                
+                if (isGroupMode) { 
+                    const savings = Math.round((p.price1 * qty) - total); 
+                    footerSavingsEl.innerHTML = `Savings: ₹${savings}`; 
+                    btnTextEl.innerText = joinGroupId ? "Join Squad Now" : "Start Group Buy"; 
+                } else { 
+                    footerSavingsEl.innerText = "No Savings"; 
+                    btnTextEl.innerText = `Buy Solo (₹${total})`; 
+                }
             };
 
-            const groupData = {
-                id: gid,
-                productId: pid,
-                ownerName: name,
-                expiresAt: expires,
-                createdAt: Date.now(),
-                status: 'open',
-                type: isSolo ? 'solo' : 'group',
-                members: [member] 
-            };
-
-            // Optimistic update
-            state.groups[gid] = groupData;
-            state.members[gid] = [member];
-            saveLocalData();
-            saveUserLocally(name, phone);
-
-            try {
-                // Real-time Cloud Save
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', PUBLIC_GROUPS_COLL, gid);
-                await setDoc(docRef, groupData);
-            } catch(e) {
-                console.error("Firestore create error", e);
-                toast("Network Error: Using Local Storage", "wifi-off");
+            if (!joinGroupId) {
+                modeSoloEl.onclick = () => { isGroupMode = false; renderMode(); };
+                modeGroupEl.onclick = () => { isGroupMode = true; renderMode(); };
             }
-
-            return gid;
-        }
-
-        async function addMemberToGroup(gid, name, phone, qty) {
-            const groupRef = doc(db, 'artifacts', appId, 'public', 'data', PUBLIC_GROUPS_COLL, gid);
             
-            const newMember = {
-                name, phone, quantity: qty, isLeader: false, joinedAt: Date.now(),
-                uid: state.user.uid || 'anon'
-            };
-
-            // Optimistic update
-            if (!state.members[gid]) state.members[gid] = [];
-            state.members[gid].push(newMember);
-            saveLocalData();
-            saveUserLocally(name, phone); 
-
-            try {
-                // Real-time Cloud Update
-                await updateDoc(groupRef, {
-                    members: arrayUnion(newMember)
-                });
-            } catch(e) {
-                console.error("Firestore join error", e);
-                toast("Offline mode: Saved locally", "wifi-off");
-            }
-        }
-
-        function listenToGroup(gid) {
-            if (state.firebaseUnsubscribe) state.firebaseUnsubscribe(); 
+            const btnMinus = node.querySelector('#btn-minus'); if (btnMinus) btnMinus.onclick = () => { if (qty > 2) { qty--; renderMode(); } else { toast("Min quantity reached", 'alert-triangle'); triggerVibration(); } };
+            const btnPlus = node.querySelector('#btn-plus'); if (btnPlus) btnPlus.onclick = () => { if (qty < 20) { qty++; renderMode(); } };
+            renderMode(); 
+            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
             
-            const groupRef = doc(db, 'artifacts', appId, 'public', 'data', PUBLIC_GROUPS_COLL, gid);
-            
-            state.firebaseUnsubscribe = onSnapshot(groupRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    state.groups[gid] = data;
-                    state.members[gid] = data.members || [];
-                    saveLocalData(); 
+            // --- SUBMIT ACTION ---
+            const triggerAction = async () => {
+                if (actionBtn.disabled) return; 
+                actionBtn.disabled = true;
+                const originalText = actionBtn.innerHTML; 
+                actionBtn.innerHTML = `<div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Processing...`; 
+                actionBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                
+                const name = safeVal(node.querySelector('#inp-name')); 
+                const phone = safeVal(node.querySelector('#inp-phone')); 
+                const ward = safeVal(node.querySelector('#inp-ward'));
+                
+                if (!name || !/^[6-9]\d{9}$/.test(phone) || !ward) { 
+                    actionBtn.disabled = false; 
+                    actionBtn.innerHTML = originalText; 
+                    actionBtn.classList.remove('opacity-75', 'cursor-not-allowed'); 
+                    toast('Please check details', 'alert-circle'); 
+                    return; 
+                }
+                
+                triggerVibration(); 
+                saveUser(name, phone, ward);
+                
+                // 5️⃣ SAFE GROUP ID GENERATION
+                const gid = joinGroupId || ('g-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+
+                // Wait for Firebase to be ready if it's the very first interaction
+                if (!window.fs || !window.db) {
+                     toast("Connecting to server...", "wifi");
+                     await new Promise(r => setTimeout(r, 1000));
+                }
+
+                // 1. EXPIRY CHECK
+                let groupExpiryTime = deliveryTime.getTime(); 
+                if (joinGroupId && state.groups[joinGroupId]) {
+                    groupExpiryTime = state.groups[joinGroupId].expiresAt;
+                }
+                if (Date.now() > groupExpiryTime) {
+                    toast("This group has expired", "clock");
+                    actionBtn.disabled = false; actionBtn.innerHTML = originalText;
+                    return;
+                }
+
+                // 2. CHECK IF MEMBER ALREADY EXISTS
+                try {
+                    const memberRef = window.fs.doc(window.db, "groups", gid, "members", phone);
+                    const existing = await window.fs.getDoc(memberRef);
+                    if (existing.exists()) {
+                        toast("Already joined this squad", "user-check");
+                        saveJoinedGroup(gid); // Ensure local cache is in sync
+                        window.closeModal();
+                        window.openGroup(gid);
+                        return;
+                    }
+                } catch(e) { console.error("Validation error", e); }
+
+                const group = { 
+                    id: gid, 
+                    productId: pid, 
+                    ownerName: name, 
+                    ownerWard: ward, 
+                    expiresAt: groupExpiryTime, 
+                    deliveryDay: groupExpiryTime, 
+                    createdAt: Date.now(), 
+                    status: isGroupMode ? 'open' : 'closed', 
+                    type: isGroupMode ? 'group' : 'solo' 
+                };
+
+                const member = { 
+                    groupId: gid, 
+                    name, 
+                    phone, 
+                    ward, 
+                    isLeader: !joinGroupId, 
+                    quantity: Math.max(2, qty), 
+                    joinedAt: Date.now() 
+                };
+                
+                try {
+                    if (!joinGroupId) {
+                        await window.fs.setDoc(window.fs.doc(window.db, "groups", gid), group);
+                    }
+                    await window.fs.setDoc(window.fs.doc(window.db, "groups", gid, "members", phone), member);
                     
-                    if (state.view === 'group' && state.currentGroupId === gid) {
-                        render(); 
-                    }
-                } else {
-                    if (state.view === 'group' && state.currentGroupId === gid) {
-                        toast("Squad Ended or Expired", "clock");
-                        setTimeout(() => window.goHome(), 2000);
-                    }
+                    saveJoinedGroup(gid);
+                    markOrderHabit(); 
+
+                    setTimeout(() => { 
+                        window.closeModal(); 
+                        if (isGroupMode) window.openGroup(gid); 
+                        else { 
+                            toast("Solo Order Confirmed!", "check-circle"); 
+                            render(); 
+                        } 
+                        triggerConfetti(); 
+                    }, 800); 
+                } catch (e) {
+                    console.error(e);
+                    actionBtn.disabled = false; actionBtn.innerHTML = originalText; actionBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                    toast('Network error. Try again.', 'wifi-off');
                 }
-            }, (err) => {
-                console.log("Snapshot error", err);
-            });
-        }
-
-        function listenToAllGroupsForAdmin() {
-            if (state.adminUnsubscribe) return;
-            
-            // Real-time listener for ALL groups
-            const groupsRef = collection(db, 'artifacts', appId, 'public', 'data', PUBLIC_GROUPS_COLL);
-            
-            state.adminUnsubscribe = onSnapshot(groupsRef, (snapshot) => {
-                const groups = [];
-                snapshot.forEach((doc) => {
-                    groups.push(doc.data());
-                });
-                state.adminGroups = groups.sort((a, b) => b.createdAt - a.createdAt);
-                if (state.view === 'admin') render();
-            }, (err) => {
-                console.error("Admin sync error", err);
-                toast("Admin Sync Failed", "wifi-off");
-            });
-        }
-
-        function checkUrlForGroup() {
-            const params = new URLSearchParams(location.search);
-            const view = params.get('view');
-            const gid = params.get('group');
-            
-            if (view === 'admin') {
-                // Intercept Admin Load for Password
-                if(state.isAdmin) {
-                    state.view = 'admin';
-                    listenToAllGroupsForAdmin();
-                    render();
-                } else {
-                    window.goToAdmin(); // Triggers modal
-                }
-            } else if (gid) {
-                window.openGroup(gid);
-            } else {
-                window.goHome();
-            }
-        }
-
-        // --- 7. GLOBAL WINDOW FUNCTIONS ---
-
-        window.goHome = () => {
-            if (state.timerInterval) clearInterval(state.timerInterval);
-            if (state.firebaseUnsubscribe) { state.firebaseUnsubscribe(); state.firebaseUnsubscribe = null; }
-            try { history.pushState({}, '', location.pathname); } catch(e) {}
-            state.view = 'home';
-            state.currentGroupId = null;
-            render();
+            };
+            actionBtn.onclick = triggerAction;
         };
 
-        window.openGroup = (gid) => {
-            try { history.pushState({}, '', `?group=${gid}`); } catch(e) {}
-            state.currentGroupId = gid;
-            state.view = 'group';
-            listenToGroup(gid);
-            render();
-        };
-
-        window.goToAdmin = () => {
-            // PASSWORD PROTECTION LOGIC
-            if(state.isAdmin) {
-                try { history.pushState({}, '', `?view=admin`); } catch(e) {}
-                state.view = 'admin';
-                listenToAllGroupsForAdmin();
-                render();
+        window.openEditMemberModal = function(gid, memberIndex) {
+            const group = state.groups[gid];
+            if (!group) return toast('Group data missing', 'alert-circle');
+            const members = state.members[gid];
+            if (!Array.isArray(members) || !members[memberIndex]) return;
+            const member = members[memberIndex];
+            
+            if (member.phone !== state.user.phone) {
+                toast("You can only edit your own order", "lock");
                 return;
             }
 
-            const node = createNodeFromHTML(`
-                <div class="bg-white p-6 rounded-2xl w-[90%] max-w-sm m-auto relative top-[20vh] shadow-2xl">
-                    <h3 class="font-black text-xl text-slate-900 mb-4">Partner Login</h3>
-                    <input id="admin-pass" type="password" class="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-center mb-4" placeholder="Enter Password">
-                    <button id="admin-login-btn" class="w-full bg-slate-900 text-white p-3 rounded-xl font-bold">Access Dashboard</button>
-                    <button onclick="window.closeModal()" class="w-full text-slate-400 p-2 mt-2 font-bold text-sm">Cancel</button>
-                </div>
-            `);
-            showModalNode(node);
-            
-            node.querySelector('#admin-login-btn').onclick = () => {
-                const val = node.querySelector('#admin-pass').value;
-                if(val === ADMIN_PASSWORD) {
-                    state.isAdmin = true;
-                    window.closeModal();
-                    window.goToAdmin();
-                    toast("Welcome Partner", "shield-check");
-                } else {
-                    toast("Wrong Password", "lock");
-                    triggerVibration();
-                }
-            };
-        }
-
-        window.shareToWhatsApp = () => {
-            const group = state.groups[state.currentGroupId];
             const p = PRODUCTS.find(x => x.id === group.productId);
-            const url = encodeURIComponent(window.location.href);
-            const text = encodeURIComponent(`Join my ${p.name} squad on JODO! Buy together to unlock wholesale prices. 👇\n\n`);
-            window.open(`https://wa.me/?text=${text}${url}`, '_blank');
-        };
+            const isExpired = group.expiresAt < Date.now();
 
-        window.shareGroupLink = () => {
-             const url = window.location.href;
-             navigator.clipboard.writeText(url).then(() => {
-                 toast("Link Copied!", "copy");
-                 triggerVibration();
-             }).catch(err => {
-                 const input = document.createElement('input');
-                 input.value = url;
-                 document.body.appendChild(input);
-                 input.select();
-                 document.execCommand('copy');
-                 document.body.removeChild(input);
-                 toast("Link Copied!", "copy");
-             });
-        }
-
-        window.confirmOrderWhatsApp = () => {
-            const group = state.groups[state.currentGroupId];
-            const p = PRODUCTS.find(x => x.id === group.productId);
-            const me = (state.members[group.id] || []).find(m => m.name === state.user.name && m.phone === state.user.phone);
-            
-            if(!me) return toast("Identity not found", "alert-circle");
-
-            const text = `*New JODO Order*\n\n` +
-                         `📦 Product: ${p.name}\n` +
-                         `⚖️ Qty: ${(me.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit}\n` +
-                         `💰 Price: ₹${Math.round(me.quantity * p.price5)} (Unbeatable!)\n` +
-                         `------------------\n` +
-                         `👤 Name: ${me.name}\n` +
-                         `📱 Phone: ${me.phone}\n` +
-                         `🆔 Squad: ${group.id}`;
-            
-            const encoded = encodeURIComponent(text);
-            window.open(`https://wa.me/${COMPANY_PHONE}?text=${encoded}`, '_blank');
-        }
-
-        window.openStartModal = (pid) => {
-            const p = PRODUCTS.find(x => x.id === pid);
-            const user = state.user;
             const node = createNodeFromHTML(`
-                <div class="flex flex-col h-[90vh] bg-slate-50 rounded-t-[2rem] overflow-hidden">
-                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-slate-100 shrink-0">
-                        <h3 class="font-black text-xl text-slate-800 uppercase">Start Buying</h3>
-                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500"><i data-lucide="x" size="20"></i></button>
+                <div class="flex flex-col h-[85vh] bg-white transition-all duration-300 relative rounded-t-[2rem] overflow-hidden">
+                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-jodo-border shrink-0 z-20">
+                        <h3 class="font-bold text-xl text-jodo-textPrimary">Edit Order</h3>
+                        <button id="close-modal" class="p-2 bg-gray-100 rounded-full text-jodo-textSecondary hover:bg-gray-200 cursor-pointer"><i data-lucide="x" size="20"></i></button>
                     </div>
-                    <div class="p-5 overflow-y-auto flex-1">
-                        <div class="flex gap-4 mb-6"><div class="w-20 h-20 rounded-2xl shadow-md border border-slate-100 relative overflow-hidden shrink-0"><div class="absolute inset-0 ${p.imageColor} flex items-center justify-center"><i data-lucide="${p.icon}" size="32" class="text-white/80"></i></div></div><div class="flex-1 flex flex-col justify-center"><h4 class="font-black text-xl text-slate-900 leading-none mb-1">${p.name}</h4><div class="text-sm font-semibold text-slate-400 mb-2">${p.nameTe}</div></div></div>
-                        <div class="bg-white p-4 rounded-2xl border-2 border-psycho-reward bg-psycho-rewardBg mb-6 shadow-sm">
-                            <div class="font-bold text-yellow-800 text-xs uppercase tracking-wider mb-0.5">Group Price</div>
-                            <div class="font-black text-3xl text-slate-900">₹${p.price5} <span class="text-base text-slate-400 font-medium line-through">₹${p.price1}</span></div>
+                    <div class="p-5 overflow-y-auto flex-1 overscroll-contain relative">
+                        <div class="bg-white border border-jodo-border rounded-xl p-4 mb-6 text-center shadow-sm relative overflow-hidden">
+                             <div class="text-[10px] text-jodo-textSecondary font-bold uppercase tracking-wider mb-1">Est. Total Cost</div>
+                             <div class="text-4xl price-anchor tracking-tighter" id="live-total">₹0</div>
+                             <div class="flex items-center justify-center gap-2 mt-2">
+                                <div class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100 flex items-center gap-1"><i data-lucide="trending-down" size="10"></i> <span id="live-savings">Saves ₹0</span></div>
+                                <div class="text-[10px] font-bold text-jodo-textSecondary bg-gray-50 px-2 py-1 rounded border border-gray-100" id="live-rate">@ ₹0/${p.unit}</div>
+                             </div>
                         </div>
-                        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm mb-6 flex items-center justify-between">
-                            <div class="pl-2"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quantity</div><div class="text-[10px] text-psycho-urgency font-bold">Min 1kg</div></div>
-                            <div class="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-                                <button id="btn-minus" class="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center"><i data-lucide="minus" size="18"></i></button>
-                                <div class="text-xl font-black text-slate-900 w-20 text-center leading-none" id="qty-display">1.0 kg</div>
-                                <button id="btn-plus" class="w-10 h-10 rounded-lg bg-psycho-action text-white shadow-md flex items-center justify-center"><i data-lucide="plus" size="18"></i></button>
+                        <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-jodo-border mb-6 shadow-sm">
+                            <div class="ml-1">
+                                <div class="text-xs font-bold text-jodo-textSecondary uppercase">Total Weight</div>
+                                <div class="text-[10px] text-gray-400 font-medium">Increments of ${p.unit}</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-300 text-gray-500 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer" ${isExpired ? 'disabled' : ''}><i data-lucide="minus" size="18"></i></button>
+                                <span id="qty-display" class="font-bold text-xl w-20 text-center text-jodo-textPrimary tabular-nums">...</span>
+                                <button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-md flex items-center justify-center active:scale-95 transition-transform cursor-pointer" ${isExpired ? 'disabled' : ''}><i data-lucide="plus" size="18"></i></button>
                             </div>
                         </div>
-                        <div class="space-y-4 mb-8">
-                            <input id="inp-name" value="${user.name}" class="w-full bg-white border-2 border-slate-100 py-4 px-4 rounded-xl font-bold text-slate-900" placeholder="Your Name">
-                            <input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border-2 border-slate-100 py-4 px-4 rounded-xl font-bold text-slate-900" placeholder="Mobile Number">
+                        <div class="space-y-4 mb-6">
+                            <div><label class="block text-xs font-bold text-jodo-textSecondary uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-jodo-textPrimary text-base outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all" ${isExpired ? 'disabled' : ''}></div>
+                            <div><label class="block text-xs font-bold text-jodo-textSecondary uppercase mb-1.5 ml-1">WhatsApp Number</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-gray-100 border border-gray-300 p-3.5 rounded-lg font-bold text-jodo-textSecondary text-base outline-none cursor-not-allowed" disabled></div>
+                            <div><label class="block text-xs font-bold text-jodo-textSecondary uppercase mb-1.5 ml-1">Ward Number</label><input id="m-ward" value="${member.ward || ''}" type="number" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-jodo-textPrimary text-base outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all" ${isExpired ? 'disabled' : ''}></div>
                         </div>
                     </div>
-                    <div class="bg-white border-t border-slate-100 p-4 shrink-0 pb-safe">
-                        <button id="start-btn" class="w-full bg-psycho-action text-white h-[64px] rounded-2xl font-black text-xl shadow-lg flex items-center justify-center gap-2">
-                            <span>Start Group & Share</span> <i data-lucide="arrow-right" size="24"></i>
-                        </button>
-                    </div>
-                </div>
-            `);
-            
-            showModalNode(node);
-            
-            let qty = 2; 
-            const updateQty = () => { node.querySelector('#qty-display').innerText = `${(qty * p.baseWeight).toFixed(1)} ${p.weightUnit}`; };
-            node.querySelector('#btn-minus').onclick = () => { if(qty > 2) { qty--; updateQty(); } else { toast('Min 1kg required', 'alert-circle'); }};
-            node.querySelector('#btn-plus').onclick = () => { qty++; updateQty(); };
-            node.querySelector('#close-modal').onclick = window.closeModal;
-            updateQty();
-
-            node.querySelector('#start-btn').onclick = async () => {
-                const name = safeVal(node.querySelector('#inp-name'));
-                const phone = safeVal(node.querySelector('#inp-phone'));
-                if(!name || !phone) return toast("Details required", "alert-circle");
-                
-                node.querySelector('#start-btn').innerText = "Creating...";
-                const gid = await createGroup(pid, name, phone, qty, false);
-                window.closeModal();
-                window.openGroup(gid);
-                triggerConfetti();
-            };
-        };
-
-        window.openAddMemberModal = (gid) => {
-             const group = state.groups[gid];
-             const p = PRODUCTS.find(x => x.id === group.productId);
-             const node = createNodeFromHTML(`
-                <div class="flex flex-col h-[85vh] bg-slate-50 rounded-t-[2rem]">
-                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-slate-100">
-                        <h3 class="font-black text-xl text-slate-800 uppercase">Join Squad</h3>
-                        <button id="close-modal" class="p-2 bg-slate-100 rounded-full text-slate-500"><i data-lucide="x" size="20"></i></button>
-                    </div>
-                    <div class="p-5 overflow-y-auto flex-1">
-                        <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm mb-6 flex items-center justify-between">
-                            <div class="pl-2"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quantity</div><div class="text-[10px] text-psycho-urgency font-bold">Min 1kg</div></div>
-                            <div class="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-                                <button id="btn-minus" class="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center"><i data-lucide="minus" size="18"></i></button>
-                                <div class="text-xl font-black text-slate-900 w-20 text-center leading-none" id="qty-display">1.0 kg</div>
-                                <button id="btn-plus" class="w-10 h-10 rounded-lg bg-psycho-action text-white shadow-md flex items-center justify-center"><i data-lucide="plus" size="18"></i></button>
-                            </div>
-                        </div>
-                         <div class="space-y-4 mb-8">
-                            <input id="m-name" class="w-full bg-white border-2 border-slate-100 py-4 px-4 rounded-xl font-bold text-slate-900" placeholder="Your Name">
-                            <input id="m-phone" class="w-full bg-white border-2 border-slate-100 py-4 px-4 rounded-xl font-bold text-slate-900" placeholder="Mobile Number">
-                        </div>
-                    </div>
-                    <div class="bg-white border-t border-slate-100 p-4 shrink-0 pb-safe">
-                        <button id="add-btn" class="w-full bg-psycho-action text-white h-[64px] rounded-2xl font-black text-xl shadow-lg flex items-center justify-center gap-2">
-                           <i data-lucide="user-plus"></i> <span>Confirm & Join</span>
-                        </button>
-                    </div>
-                </div>
-             `);
-             showModalNode(node);
-             
-             let qty = 2;
-             const updateQty = () => { node.querySelector('#qty-display').innerText = `${(qty * p.baseWeight).toFixed(1)} ${p.weightUnit}`; };
-             node.querySelector('#btn-minus').onclick = () => { if(qty > 2) { qty--; updateQty(); }};
-             node.querySelector('#btn-plus').onclick = () => { qty++; updateQty(); };
-             node.querySelector('#close-modal').onclick = window.closeModal;
-             updateQty();
-
-             node.querySelector('#add-btn').onclick = async () => {
-                 const name = safeVal(node.querySelector('#m-name'));
-                 const phone = safeVal(node.querySelector('#m-phone'));
-                 if(!name || !phone) return toast("Details required", "alert-circle");
-                 
-                 node.querySelector('#add-btn').innerText = "Joining...";
-                 await addMemberToGroup(gid, name, phone, qty);
-                 window.closeModal();
-                 triggerConfetti();
-                 toast("Welcome to the Squad!", "check-circle");
-             };
-        }
-
-        window.openLiveGuide = window.openLiveGuide || (() => { 
-             const node = createNodeFromHTML(`<div class="flex flex-col h-[70vh]"><div class="flex-1 bg-black relative rounded-t-[2rem] overflow-hidden"><img src="${GUIDE_IMG_SRC}" class="w-full h-full object-cover opacity-80"><button onclick="window.closeModal()" class="absolute top-4 right-4 bg-white/20 p-2 rounded-full text-white"><i data-lucide="x" size="20"></i></button><div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-black/40"><h3 class="text-white text-2xl font-black mb-2">How JODO Works</h3><p class="text-white/90 text-sm mb-6">1. Pick Product<br>2. Share Link<br>3. Squad fills, Price drops!</p><button onclick="window.closeModal()" class="bg-white text-black px-8 py-3 rounded-full font-bold shadow-xl">Got it!</button></div></div></div>`);
-             showModalNode(node);
-        });
-
-        // --- 8. RENDER FUNCTIONS ---
-
-        function render() {
-            const app = document.getElementById('app');
-            if (state.view === 'home') renderHome(app);
-            else if (state.view === 'admin') renderAdmin(app);
-            else renderGroup(app);
-            if(window.lucide) window.lucide.createIcons();
-        }
-
-        function renderAdmin(el) {
-            el.innerHTML = `
-                <div class="fade-in bg-slate-100 min-h-screen pb-safe font-sans">
-                    <div class="bg-slate-900 text-white h-[68px] sticky top-0 z-50 px-4 flex justify-between items-center shadow-md">
-                        <div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="window.goHome()"><i data-lucide="arrow-left" size="24" class="text-white"></i><span class="font-black text-lg tracking-wide text-white">Company Admin</span></div>
-                        <div class="text-xs bg-slate-800 px-2 py-1 rounded border border-slate-700 pt-safe">Live Mode</div>
-                    </div>
-                    <div class="p-4">
-                        <h2 class="font-bold text-slate-500 uppercase text-xs tracking-widest mb-4">All Active Squads</h2>
-                        ${state.adminGroups.length === 0 ? '<div class="text-center text-slate-400 mt-10">Fetching active squads...</div>' : 
-                          state.adminGroups.map(g => {
-                              const p = PRODUCTS.find(x => x.id === g.productId);
-                              const count = (g.members || []).length;
-                              const isFull = count >= 2;
-                              return `
-                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4">
-                                    <div class="flex justify-between items-start mb-3">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0"><i data-lucide="${p ? p.icon : 'package'}" size="20" class="text-slate-500"></i></div>
-                                            <div>
-                                                <div class="font-black text-slate-900">${p ? p.name : 'Unknown'}</div>
-                                                <div class="text-xs text-slate-400 font-mono">${g.id}</div>
-                                            </div>
-                                        </div>
-                                        <div class="px-2 py-1 rounded text-[10px] font-bold uppercase ${isFull ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${isFull ? 'Deal Unlocked' : 'Pending'}</div>
-                                    </div>
-                                    <div class="border-t border-slate-100 pt-3 space-y-2">
-                                        ${(g.members || []).map(m => `
-                                            <div class="flex justify-between items-center text-sm">
-                                                <div class="flex items-center gap-2">
-                                                    <div class="w-2 h-2 rounded-full ${m.isLeader ? 'bg-blue-500' : 'bg-slate-300'}"></div>
-                                                    <span class="font-bold text-slate-700">${m.name}</span>
-                                                    <span class="text-slate-400 text-xs">${m.phone}</span>
-                                                </div>
-                                                <div class="font-mono font-bold text-slate-900">${m.quantity}kg</div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                    ${isFull ? `
-                                    <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
-                                        <div class="text-xs text-slate-400 font-bold uppercase">Total Order: ${(g.members.reduce((acc, m) => acc + (m.quantity || 0), 0) * (p ? p.baseWeight : 0.5)).toFixed(1)} kg</div>
-                                        <a href="https://wa.me/${g.members[0].phone}" target="_blank" class="text-green-600 text-xs font-bold hover:underline">Contact Leader</a>
-                                    </div>` : ''}
-                                </div>
-                              `;
-                          }).join('')
+                    <div class="bg-white border-t border-jodo-border p-4 shrink-0 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
+                        ${isExpired 
+                            ? '<div class="text-center text-jodo-urgency font-bold mb-4 bg-red-50 p-3 rounded-lg border border-red-100">Deal Expired - Cannot Edit</div>' 
+                            : '<button id="save-btn" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg btn-press flex items-center justify-center gap-2 cursor-pointer">Save Changes</button>'
                         }
                     </div>
                 </div>
-            `;
-        }
+            `);
+            showModalNode(node);
+            
+            let qty = member.quantity || 2;
+            if (qty < 2) qty = 2; const minQty = 2;
+            const updateEditDisplay = () => {
+                const totalWeight = qty * p.baseWeight;
+                node.querySelector('#qty-display').innerText = `${totalWeight.toFixed(2)} ${p.weightUnit}`;
+                const total = Math.round(p.price5 * qty);
+                const soloTotal = Math.round(p.price1 * qty);
+                const savings = soloTotal - total;
+                node.querySelector('#live-total').innerText = `₹${total}`;
+                node.querySelector('#live-savings').innerText = `Saves ₹${savings}`;
+                node.querySelector('#live-rate').innerText = `@ ₹${p.price5}/${p.unit}`;
+            };
+            const btnMinus = node.querySelector('#btn-minus');
+            if(btnMinus) btnMinus.onclick = () => { if(qty > minQty) { qty--; updateEditDisplay(); } else toast("Min quantity reached", "alert-triangle"); };
+            const btnPlus = node.querySelector('#btn-plus');
+            if(btnPlus) btnPlus.onclick = () => { if(qty < 20) { qty++; updateEditDisplay(); } };
+            updateEditDisplay();
+            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
+            
+            const saveBtn = node.querySelector('#save-btn');
+            if (saveBtn && !isExpired) {
+                saveBtn.onclick = async () => { 
+                    const name = safeVal(node.querySelector('#m-name')); 
+                    const phone = member.phone; 
+                    const ward = safeVal(node.querySelector('#m-ward'));
+                    
+                    if (!name || !ward) return toast('Name & Ward required', 'alert-circle'); 
+                    
+                    const updatedMember = { ...member, name, ward, quantity: qty, updatedAt: Date.now() };
+                    
+                    try {
+                        saveBtn.disabled = true;
+                        saveBtn.innerHTML = 'Saving...';
+                        await window.fs.setDoc(
+                            window.fs.doc(window.db, "groups", gid, "members", phone),
+                            updatedMember
+                        );
+                        saveUser(name, phone, ward); 
+                        window.closeModal(); 
+                        toast('Order Updated!', 'check-circle'); 
+                    } catch(e) {
+                        console.error(e);
+                        toast('Save Failed', 'alert-circle');
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = 'Save Changes';
+                    }
+                };
+            }
+        };
+
+        // --- RENDERERS ---
 
         function renderHome(el) {
-            const user = state.user;
-            const userActiveGroupIds = {}; 
-            const activeUserGroups = []; 
-
-            if (user.name && user.phone) { 
-                Object.values(state.groups).forEach(g => { 
-                    const members = state.members[g.id] || []; 
-                    if (members.some(m => m.name === user.name && m.phone === user.phone)) { 
-                        userActiveGroupIds[g.productId] = g.id;
-                        activeUserGroups.push(g); 
-                    } 
-                }); 
-            }
+            // Check for user's active groups from state
+            const activeUserGroups = [];
+            state.user.joinedGroupIds.forEach(gid => {
+                if (state.groups[gid]) activeUserGroups.push(state.groups[gid]);
+            });
             activeUserGroups.sort((a, b) => b.createdAt - a.createdAt);
-
-            const sortedProducts = [...PRODUCTS].sort((a, b) => {
-                const aActive = !!userActiveGroupIds[a.id];
-                const bActive = !!userActiveGroupIds[b.id];
-                if (aActive && !bActive) return 1;
-                if (!aActive && bActive) return -1;
-                return 0;
+            
+            // Map active groups to products to mark them
+            const userActiveGroupIds = {};
+            activeUserGroups.forEach(g => { userActiveGroupIds[g.productId] = g.id; });
+            
+            // Sort products so ones with active orders come first
+            const sortedProducts = [...PRODUCTS].sort((a, b) => { 
+                const aActive = !!userActiveGroupIds[a.id]; 
+                const bActive = !!userActiveGroupIds[b.id]; 
+                if (aActive && !bActive) return -1; 
+                if (!aActive && bActive) return 1; 
+                return 0; 
             });
 
+            // --- HERO SECTION ---
             let heroContent = '';
             if (activeUserGroups.length > 0) {
-                heroContent = `<div class="mt-6 mb-4 px-4 flex gap-3 overflow-x-auto snap-x no-scrollbar pb-2">
-                    ${activeUserGroups.map(g => {
-                        const p = PRODUCTS.find(x => x.id === g.productId);
-                        if(!p) return '';
-                        const members = state.members[g.id] || [];
-                        const count = members.length;
-                        return `<div onclick="window.openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
-                            <div class="bg-slate-900 rounded-2xl p-4 shadow-md border border-slate-800 relative overflow-hidden h-full flex flex-col justify-between">
-                                <div class="absolute -right-10 -top-10 w-40 h-40 bg-psycho-action/10 rounded-full blur-3xl"></div>
-                                <div class="flex items-center gap-3 mb-3 relative z-10 mt-2">
-                                    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-900 shadow-sm shrink-0"><i data-lucide="${p.icon}" size="24"></i></div>
-                                    <div class="flex-1 min-w-0">
-                                        <h3 class="font-black text-white text-base leading-none mb-1 truncate">${p.name}</h3>
-                                        <div class="flex items-center gap-1.5 text-[10px]">
-                                            <span class="text-white font-bold">${count}/2</span>
-                                            <span class="text-psycho-reward font-bold">In Progress</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                    <div class="absolute inset-y-0 left-0 bg-psycho-action" style="width: ${(count/2)*100}%"></div>
+                const cardsHtml = activeUserGroups.map(g => {
+                    const p = PRODUCTS.find(x => x.id === g.productId); if (!p) return '';
+                    const members = state.members[g.id] || []; 
+                    const count = members.length;
+                    const progress = Math.min(100, (count / 3) * 100);
+                    const needed = Math.max(0, 3 - count); 
+                    const isUnlocked = count >= 3;
+                    const statusLabel = isUnlocked ? 'Price Unlocked!' : `${needed} more needed`;
+                    const statusClass = isUnlocked ? 'text-green-700 bg-green-50 border-green-200' : 'text-yellow-800 bg-yellow-50 border-yellow-200';
+                    const barClass = isUnlocked ? 'bg-jodo-ctaSuccess' : 'bg-jodo-progress';
+                    
+                    return `<div onclick="openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 relative overflow-hidden h-full flex flex-col justify-between">
+                            <div class="flex items-center gap-3 mb-3 relative z-10 mt-2">
+                                <div class="w-12 h-12 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-jodo-textPrimary shadow-sm shrink-0"><i data-lucide="${p.icon}" size="24"></i></div>
+                                <div class="flex-1 min-w-0"><h3 class="font-bold text-jodo-textPrimary text-base leading-none mb-2 truncate">${p.name}</h3>
+                                    <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-1 text-[10px] text-jodo-textSecondary"><i data-lucide="users" size="12"></i><span class="text-jodo-textPrimary font-bold">${count}/3</span></div><div class="${statusClass} text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider whitespace-nowrap">${statusLabel}</div></div>
                                 </div>
                             </div>
-                        </div>`;
-                    }).join('')}
-                </div>`;
+                            <div class="relative h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="absolute inset-y-0 left-0 ${barClass} transition-all duration-1000" style="width: ${progress}%"></div></div>
+                        </div>
+                    </div>`;
+                }).join('');
+                heroContent = `<div class="mt-6 mb-4"><div class="px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">${cardsHtml}</div></div>`;
             } else {
-                heroContent = `<div onclick="window.openLiveGuide()" class="px-4 mt-6 mb-4 cursor-pointer tilt-card">
-                    <div class="relative w-full h-48 bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-100"><img src="${GUIDE_IMG_SRC}" class="w-full h-full object-cover opacity-90"><div class="absolute bottom-4 left-4 right-4 text-center"><div class="text-white font-bold text-sm">Quick Guide</div><div class="text-slate-200 text-[10px] font-medium uppercase tracking-widest">Learn to Save 60%</div></div></div>
+                heroContent = `
+                <div class="px-4 mt-6 mb-4">
+                    <div onclick="openLiveGuide()" class="relative w-full h-40 bg-gray-900 rounded-2xl overflow-hidden shadow-md border border-gray-200 group cursor-pointer tilt-card">
+                        <img src="https://images.unsplash.com/photo-1595245863955-d14dc7a488e0?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-110">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-5">
+                            <div class="text-white font-black text-xl mb-1 flex items-center gap-2">How JODO Works <i data-lucide="play-circle" class="text-white fill-white/20"></i></div>
+                            <div class="text-gray-200 text-xs font-medium">Join forces with neighbors to unlock wholesale mandi prices.</div>
+                        </div>
+                    </div>
                 </div>`;
             }
 
             el.innerHTML = `
-                <div class="pb-safe fade-in">
-                    <div class="glass-header h-[68px] flex items-center justify-between px-4 sticky top-0 z-40 shadow-md">
-                        <div class="pt-safe"><h1 class="font-black text-2xl tracking-tight text-white">JODO</h1><div class="text-[10px] text-white/80 font-medium">Group Up. Price Down.</div></div>
+                <div class="pb-safe fade-in bg-white">
+                    <!-- HEADER -->
+                    <div class="glass-header sticky top-0 z-40 shadow-sm border-b-0">
+                        <div class="pt-safe px-4 pb-3 flex justify-between items-end min-h-[88px]">
+                            <div class="flex flex-col justify-end pb-0.5">
+                                <h1 class="font-black text-3xl tracking-tighter text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
+                                <span class="text-[10px] text-jodo-textSecondary font-bold uppercase tracking-widest">Community Buying</span>
+                            </div>
+                            <div class="flex flex-col items-end justify-end h-full">
+                                <button onclick="openSupportOptions()" class="group flex items-center gap-2 bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-xl active:bg-gray-200 transition-all shadow-sm">
+                                    <i data-lucide="headset" size="14" class="text-gray-600 group-active:scale-90 transition-transform"></i>
+                                    <span class="text-sm font-bold text-gray-700 tracking-wide">Help</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
+                    <div class="px-4 mt-4">
+                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-2.5 flex items-center gap-2 text-[10px] font-bold text-blue-800 shadow-sm">
+                            <span class="relative flex h-2 w-2">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                            </span>
+                            58 squads completed in Duvva today.
+                        </div>
+                    </div>
+                    
                     ${heroContent}
-                    <div class="px-3 space-y-3 mt-2 pb-24">
-                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2">Daily Deals</h2>
+                    
+                    <div class="px-4 space-y-3 mt-2 pb-32">
+                        <div class="flex items-center justify-between mb-2 mt-6">
+                            <h2 class="text-xs font-bold text-jodo-textSecondary uppercase tracking-widest">Live Deals</h2>
+                            <div class="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100">Ends 8 PM</div>
+                        </div>
+                        
                         ${sortedProducts.map(p => {
                             const activeGid = userActiveGroupIds[p.id];
                             const savings = p.price1 - p.price5;
-                            const actionAttr = activeGid ? `onclick="window.openGroup('${activeGid}')"` : `onclick="window.openStartModal('${p.id}')"`;
-                            return `<div class="bg-white p-3 rounded-xl flex gap-3 shadow-sm border border-slate-100 relative overflow-hidden active:scale-[0.99] transition-transform duration-100" ${actionAttr}>
-                                <div class="w-32 h-32 bg-slate-100 rounded-lg relative overflow-hidden shrink-0 border border-slate-100">
-                                    <img src="${p.image}" class="absolute inset-0 w-full h-full object-cover" />
-                                    <div class="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-md text-white text-[8px] font-black px-1.5 py-0.5 rounded flex items-center gap-1 z-10"><div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div> LIVE</div>
-                                    <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] font-medium text-center py-0.5 backdrop-blur-sm">Only ${p.remainingStock}kg left</div>
+                            const actionAttr = activeGid ? `onclick="openGroup('${activeGid}')"` : `onclick="openStartModal('${p.id}')"`;
+                            const btnText = activeGid ? 'View Order' : 'Grab Deal';
+                            const btnClass = activeGid ? 'bg-white border border-jodo-ctaPrimary text-jodo-ctaPrimary' : 'bg-jodo-ctaPrimary text-white border border-transparent';
+                            
+                            return `
+                            <div class="bg-white p-3 rounded-2xl flex gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 relative overflow-hidden active:scale-[0.99] transition-all duration-200 group-card" ${actionAttr}>
+                                <!-- Image Section -->
+                                <div onclick="event.stopPropagation(); openFullFeed('${p.id}')" class="w-28 h-28 bg-gray-100 rounded-xl relative overflow-hidden shrink-0 border border-gray-100 cursor-pointer group shadow-sm">
+                                    <img src="${p.imageSrc}" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="${p.name}" loading="lazy">
+                                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 pt-6"><div class="text-white text-[9px] font-bold text-center leading-none tracking-wide">${p.remainingStock}kg left</div></div>
                                 </div>
-                                <div class="flex-1 flex flex-col justify-between py-0.5 min-w-0">
+
+                                <!-- Content Section -->
+                                <div class="flex-1 flex flex-col justify-between py-1 min-w-0">
                                     <div>
-                                        <div class="flex items-center gap-1.5 mb-1.5 flex-wrap"><span class="bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]">Brand</span><span class="border border-psycho-action text-psycho-action text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] flex items-center gap-0.5"><i data-lucide="zap" size="8"></i> Best Price</span></div>
-                                        <h3 class="font-bold text-base text-slate-900 leading-tight line-clamp-2 mb-1">${p.name}</h3>
-                                        <div class="inline-flex items-center gap-1 bg-red-50 text-psycho-action text-[10px] px-1.5 py-0.5 rounded border border-red-100 mb-1"><span>Save ₹${savings} with Squad</span></div>
+                                        <div class="mb-1"><h3 class="font-black text-lg text-jodo-textPrimary leading-tight line-clamp-1">${p.name}</h3><div class="text-xs font-semibold text-jodo-textSecondary line-clamp-1">${p.nameTe}</div></div>
+                                        <div class="flex flex-wrap gap-1.5"><span class="bg-gray-100 text-jodo-textSecondary text-[9px] font-bold px-1.5 py-0.5 rounded border border-gray-200">Fresh</span><span class="bg-green-50 text-green-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-green-200 flex items-center gap-0.5"><i data-lucide="trending-down" size="10"></i> Save ₹${savings}</span></div>
                                     </div>
-                                    <div class="flex items-end justify-between mt-1">
-                                        <div class="relative top-1"><div class="text-[10px] text-slate-400 font-medium mb-[-2px]">Group Price</div><div class="flex items-baseline gap-0.5 text-psycho-action"><span class="text-xs font-bold">₹</span><span class="text-2xl font-black tracking-tighter">${p.price5}</span></div></div>
-                                        <div class="bg-gradient-to-r from-red-500 to-psycho-action text-white px-3 py-1.5 rounded-lg shadow-md flex flex-col items-center justify-center min-w-[70px]"><span class="text-[10px] font-medium opacity-90 leading-none mb-0.5">Limited</span><span class="text-xs font-black leading-none uppercase">Grab</span></div>
+                                    <div>
+                                        <div class="flex items-end justify-between gap-2">
+                                            <div>
+                                                <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5 line-through decoration-red-500">₹${p.price1}</div>
+                                                <div class="flex items-baseline gap-1.5 text-jodo-priceFinal"><div class="flex items-baseline leading-none"><span class="text-sm font-bold">₹</span><span class="text-2xl font-black tracking-tighter">${p.price5}</span></div><span class="text-[10px] text-jodo-textSecondary font-bold">/ ${p.unit}</span></div>
+                                            </div>
+                                            <button class="${btnClass} h-9 px-3.5 rounded-lg shadow-sm flex items-center gap-1.5 active:scale-95 transition-transform shrink-0"><span class="text-xs font-bold uppercase tracking-wide">${btnText}</span><i data-lucide="${activeGid ? 'chevron-right' : 'arrow-right'}" size="14"></i></button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>`;
                         }).join('')}
                     </div>
-                    <div class="text-center pb-8 pt-4">
-                        <button onclick="window.goToAdmin()" class="text-slate-300 text-[10px] uppercase font-bold tracking-widest hover:text-slate-500 transition-colors">Partner Login</button>
-                    </div>
-                </div>`;
+                </div>
+            `;
             initCardTilt();
         }
 
         function renderGroup(el) {
-            if (state.timerInterval) clearInterval(state.timerInterval);
+            if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+            
             const g = state.groups[state.currentGroupId]; 
+            // If group data isn't loaded yet, show skeleton
             if (!g) {
-                el.innerHTML = `<div class="flex items-center justify-center h-screen flex-col"><div class="animate-spin w-8 h-8 border-4 border-slate-200 border-t-psycho-action rounded-full mb-4"></div><div class="text-slate-400 font-bold">Searching Global Database...</div></div>`;
+                el.innerHTML = `
+                <div class="min-h-screen bg-white p-6 pt-24 space-y-6">
+                    <div class="w-2/3 h-8 bg-gray-100 rounded-lg skeleton mx-auto"></div>
+                    <div class="w-1/2 h-4 bg-gray-100 rounded-lg skeleton mx-auto"></div>
+                    <div class="w-full h-64 bg-gray-100 rounded-xl skeleton mt-8"></div>
+                    <div class="space-y-3 mt-8">
+                         <div class="w-full h-20 bg-gray-100 rounded-xl skeleton"></div>
+                         <div class="w-full h-20 bg-gray-100 rounded-xl skeleton"></div>
+                    </div>
+                </div>`;
                 return;
             }
-            const p = PRODUCTS.find(x => x.id === g.productId);
-            const members = state.members[g.id] || [];
+            
+            const p = PRODUCTS.find(x => x.id === g.productId); 
+            if (!p) { toast('Product unavailable', 'alert-circle'); return goHome(); }
+            
+            const members = state.members[g.id] || []; 
             const count = members.length;
-            const needed = Math.max(0, 2 - count);
-            const isMeJoined = members.some(m => m.name === state.user.name && m.phone === state.user.phone);
+            const needed = Math.max(0, 3 - count);
+            const currentUserMember = members.find(m => m.phone === state.user.phone);
+            
+            // Confetti check
+            if (count >= 3 && count !== state.lastMemberCount && state.lastMemberCount !== 0) {
+                triggerConfetti();
+            }
+            state.lastMemberCount = count;
+
+            // Generate WhatsApp String
+            let waOrderLink = "#";
+            if (members.length > 0) {
+                const pricePerUnit = (count >= 3) ? p.price5 : p.price1;
+                let membersDetails = "";
+                let grandTotal = 0;
+                let grandWeight = 0;
+                members.forEach((m, i) => {
+                    const w = parseFloat((m.quantity * p.baseWeight).toFixed(2));
+                    const c = Math.round(m.quantity * pricePerUnit);
+                    grandTotal += c;
+                    grandWeight += w;
+                    membersDetails += `\n${i+1}. *${m.name}* ${m.isLeader ? '👑' : ''}\n   📞 ${m.phone}\n   📍 Ward: ${m.ward || 'N/A'}\n   📦 ${w} ${p.weightUnit} (₹${c})`;
+                });
+                const formattedGrandWeight = parseFloat(grandWeight.toFixed(2));
+                const msg = `*New Order Request* 🛒\n` + `---------------------------\n` + `*Product:* ${p.name} (${p.nameTe})\n` + `*Total Qty:* ${formattedGrandWeight} ${p.weightUnit}\n` + `*Total Value:* ₹${grandTotal}\n` + `---------------------------\n` + `*Customer Details:*` + `${membersDetails}\n` + `---------------------------\n` + `*Group ID:* ${g.id}\n` + `Please confirm delivery! ✅`;
+                waOrderLink = `https://wa.me/${COMPANY_PHONE}?text=${encodeURIComponent(msg)}`;
+            }
+
+            const expiryDate = new Date(g.expiresAt);
+            const now = new Date();
+            const isExpired = g.expiresAt < now.getTime();
+            let hours = expiryDate.getHours();
+            const minutes = expiryDate.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12; hours = hours ? hours : 12; 
+            const minutesStr = minutes < 10 ? '0'+minutes : minutes;
+            const timeStr = hours + ':' + minutesStr + ' ' + ampm;
+            let dateLabel = "Today";
+            const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+            if (expiryDate.toDateString() === now.toDateString()) dateLabel = "Today";
+            else if (expiryDate.toDateString() === tomorrow.toDateString()) dateLabel = "Tomorrow";
+            else { const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; dateLabel = `${monthNames[expiryDate.getMonth()]} ${expiryDate.getDate()}`; }
+
+            // 1️⃣ & 2️⃣ FIX SHARE LINK Logic with BASE_URL
+            const currentUrl = `${BASE_URL}?group=${g.id}`;
+            const inviteMsg = `Join my squad for ${p.name} on JODO! We need ${needed} more to get it for ₹${p.price5}/${p.unit}. Order here: ${currentUrl}`;
+            const inviteLink = `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
 
             el.innerHTML = `
-                <div class="fade-in bg-slate-50 min-h-screen pb-40 font-sans">
-                    <div class="bg-psycho-action text-white h-[68px] sticky top-0 z-50 px-4 flex justify-between items-center shadow-none">
-                        <div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="window.goHome()"><i data-lucide="arrow-left" size="24" class="text-white"></i><span class="font-black text-lg tracking-wide text-white">Our Gang</span></div>
-                        <div class="font-mono font-bold text-lg tracking-widest text-white tabular-nums pt-safe" id="header-timer"></div>
+                <div class="fade-in bg-white min-h-screen pb-40 font-sans">
+                    <div class="glass-header h-[64px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white shadow-sm">
+                        <div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="goHome()">
+                            <i data-lucide="arrow-left" size="24" class="text-jodo-textPrimary"></i>
+                            <span class="font-bold text-lg tracking-wide text-jodo-textPrimary">Group #${g.id.slice(-4)}</span>
+                        </div>
+                        <div class="font-mono font-bold text-lg tracking-widest text-jodo-textPrimary tabular-nums pt-safe" id="header-timer">...</div>
                     </div>
 
                     <div class="p-4">
-                        <div class="flex flex-col items-center mb-6 mt-2 animate-in fade-in-up duration-300">
-                            <h1 class="text-2xl font-black text-slate-900 leading-none mb-1 tracking-tight">${p.name}</h1>
-                            <p class="text-sm font-bold text-slate-400">${p.nameTe} • ${p.unit} Bundle</p>
+                        <div class="flex flex-col items-center mb-6 mt-6 animate-in fade-in-up duration-300">
+                            <h1 class="text-3xl font-black text-jodo-textPrimary leading-none mb-1 tracking-tight text-center">${p.name}</h1>
+                            <p class="text-sm font-bold text-jodo-textSecondary">${p.nameTe} • ${p.unit} Bundle</p>
                         </div>
-                        
-                        <div class="card-modern p-4 mb-6 tilt-card">
+
+                        ${isExpired ? `
+                        <div class="bg-red-50 text-red-700 p-4 mb-6 rounded-xl shadow-sm text-center border border-red-100 flex items-center justify-center gap-2">
+                            <i data-lucide="clock" size="20"></i>
+                            <div class="font-bold text-lg uppercase">Squad Expired</div>
+                        </div>` : ''}
+
+                        <div class="text-center mb-8 relative">
+                            <div class="inline-block relative">
+                                <div class="text-6xl font-mono font-black text-jodo-textPrimary tracking-tighter tabular-nums relative z-10 leading-none" id="hero-timer">--:--:--</div>
+                            </div>
+                            <div class="text-jodo-textSecondary text-xs font-bold uppercase tracking-[0.2em] mt-3">Expires ${dateLabel} ${timeStr}</div>
+                        </div>
+
+                        <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
                             <div class="space-y-4 mb-6">
-                                <div class="flex justify-between items-center ${count < 2 ? 'opacity-100' : 'opacity-40 grayscale'} transition-all">
-                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold">1</div><span class="text-sm font-bold text-slate-600">Solo Price</span></div>
-                                    <span class="text-base font-bold text-slate-900">₹${p.price1}</span>
+                                <div class="flex justify-between items-center ${count < 3 ? 'opacity-100' : 'opacity-40 grayscale'} transition-all">
+                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">1</div><span class="text-sm font-bold text-jodo-textSecondary">Solo Price</span></div>
+                                    <span class="text-base font-bold text-jodo-priceOld line-through">₹${p.price1}</span>
                                 </div>
-                                <div class="flex justify-between items-center ${count >= 2 ? 'scale-105' : ''} transition-all p-3 -mx-3 rounded-xl ${count >= 2 ? 'bg-psycho-rewardBg border border-psycho-reward shadow-sm' : ''}">
-                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full ${count >= 2 ? 'bg-psycho-reward text-black' : 'bg-slate-200 text-slate-600'} flex items-center justify-center text-xs font-bold">2+</div><span class="text-sm font-black ${count >= 2 ? 'text-psycho-rewardText' : 'text-slate-400'}">Group Price</span></div>
-                                    <span class="text-2xl font-black ${count >= 2 ? 'text-psycho-rewardText' : 'text-slate-300'}">₹${p.price5}</span>
+                                <div class="flex justify-between items-center ${count >= 3 ? 'scale-105' : ''} transition-all p-3 -mx-3 rounded-lg ${count >= 3 ? 'bg-green-50 border border-green-200 shadow-sm' : ''}">
+                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full ${count >= 3 ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-500'} flex items-center justify-center text-xs font-bold">3+</div><span class="text-sm font-bold ${count >= 3 ? 'text-green-800' : 'text-jodo-textSecondary'}">Group Price</span></div>
+                                    <span class="text-2xl price-anchor ${count >= 3 ? 'text-jodo-priceFinal' : 'text-gray-400'}">₹${p.price5}</span>
                                 </div>
                             </div>
                             <div class="text-center">
-                                <div class="text-3xl font-black text-slate-900 mb-1">${count} <span class="text-slate-300 text-2xl">/</span> 2+</div>
-                                <div class="text-sm font-bold ${count < 2 ? 'text-psycho-action' : 'text-psycho-rewardText'}">${count < 2 ? `Need ${needed} more to unlock ₹${p.price5}` : '🎉 LOWEST PRICE UNLOCKED!'}</div>
+                                <div class="text-3xl font-black text-jodo-textPrimary mb-1">${count} <span class="text-gray-300 text-2xl">/</span> 3+</div>
+                                <div class="text-sm font-bold ${count < 3 ? 'text-jodo-urgency' : 'text-jodo-priceFinal'}">${count < 3 ? `Need ${needed} more to unlock ₹${p.price5}` : '🎉 LOWEST PRICE UNLOCKED!'}</div>
                             </div>
                         </div>
 
                         <div class="space-y-3 mb-8">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Squad Members</h3>
+                            <h3 class="text-xs font-bold text-jodo-textSecondary uppercase tracking-widest mb-4">Our Gang (${count} Joined)</h3>
                             ${(() => {
-                                const totalSlots = Math.max(members.length + 1, 2); 
+                                const totalSlots = Math.max(members.length + 1, 3); 
                                 return Array(totalSlots).fill(0).map((_, i) => {
                                     const member = members[i];
                                     if (member) {
-                                        const isMe = (state.user.name && member.name === state.user.name && member.phone === state.user.phone);
-                                        return `<div class="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm mb-3">
+                                        const isMe = (state.user.phone && member.phone === state.user.phone);
+                                        const t1 = Math.round(member.quantity * p.price1);
+                                        const t5 = Math.round(member.quantity * p.price5);
+                                        return `<div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mb-3 transition-all active:scale-[0.99]" onclick="openEditMemberModal('${g.id}', ${i})">
                                             <div class="flex items-center justify-between mb-3">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="w-10 h-10 rounded-full ${isMe ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'} flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm">${member.name[0]}</div>
-                                                    <div><div class="text-sm font-bold text-slate-900 flex items-center gap-2">${isMe ? 'YOU' : member.name} ${member.isLeader ? '<span class="text-[9px] bg-yellow-100 text-yellow-800 px-1 rounded border border-yellow-200 font-bold uppercase">Leader</span>' : ''}</div><div class="text-xs text-slate-400 font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit} confirmed</div></div>
+                                                    <div class="w-10 h-10 rounded-full ${isMe ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm shrink-0">${member.name[0]}</div>
+                                                    <div><div class="text-sm font-bold text-jodo-textPrimary flex items-center gap-2">${isMe ? 'YOU' : member.name} ${member.isLeader ? '<span class="text-[9px] bg-yellow-100 text-yellow-800 px-1 rounded border border-yellow-200 font-bold uppercase">Leader</span>' : ''}</div><div class="text-xs text-jodo-textSecondary font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit} confirmed</div></div>
                                                 </div>
+                                                ${isMe ? '<div class="text-green-600 bg-green-50 p-1.5 rounded-full"><i data-lucide="edit-2" size="14"></i></div>' : ''}
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-2 text-center bg-gray-50 rounded-lg p-2 border border-gray-100">
+                                                <div class="flex flex-col"><span class="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Solo Cost</span><span class="text-xs font-medium text-gray-500">₹${t1}</span></div>
+                                                <div class="flex flex-col relative">${count >= 3 ? '<div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] bg-green-100 text-green-800 px-1.5 rounded-full font-bold border border-green-200">Unlocked</div>' : ''}<span class="text-[9px] font-bold ${count >= 3 ? 'text-green-700' : 'text-gray-400'} uppercase mb-0.5">Group Cost</span><span class="text-xs font-black ${count >= 3 ? 'text-green-700' : 'text-jodo-textPrimary'}">₹${t5}</span></div>
                                             </div>
                                         </div>`;
                                     } else {
-                                        if (isMeJoined) {
-                                            return `<div onclick="window.shareGroupLink()" class="flex items-center justify-between bg-white border-2 border-dashed border-slate-300 p-4 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all group mb-3">
-                                                <div class="flex items-center gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><i data-lucide="share-2" size="18"></i></div>
-                                                    <span class="text-sm font-bold text-slate-400">Waiting for friend...</span>
-                                                </div>
-                                                <div class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">Invite via Link</div>
-                                            </div>`;
-                                        } else {
-                                            return `<div onclick="window.openAddMemberModal('${g.id}')" class="flex items-center justify-between bg-slate-50 border-2 border-dashed border-psycho-action/30 p-4 rounded-2xl cursor-pointer hover:bg-white hover:border-psycho-action transition-all group mb-3 animate-pulse">
-                                                <div class="flex items-center gap-3">
-                                                    <div class="w-10 h-10 rounded-full bg-psycho-action/10 text-psycho-action flex items-center justify-center"><i data-lucide="user-plus" size="18"></i></div>
-                                                    <span class="text-sm font-bold text-slate-900">Open Spot</span>
-                                                </div>
-                                                <div class="text-xs font-bold text-white bg-psycho-action px-3 py-1.5 rounded-lg shadow-sm">Join Squad</div>
-                                            </div>`;
-                                        }
+                                        return `<div class="flex items-center justify-between bg-white border-2 border-dashed border-gray-200 p-4 rounded-xl mb-3">
+                                            <div class="flex items-center gap-3 opacity-60"><div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><i data-lucide="user" size="18"></i></div><span class="text-sm font-bold text-gray-500">Open Spot</span></div>
+                                            <div class="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">Waiting...</div>
+                                        </div>`;
                                     }
                                 }).join('');
                             })()}
                         </div>
                     </div>
 
-                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 pb-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-                        <div class="max-w-md mx-auto">
-                            ${count < 2 ? `
-                            <div class="mb-3 text-center bg-psycho-urgencyBg text-psycho-urgency text-xs font-black uppercase py-1 rounded-lg border border-psycho-urgency/20 animate-pulse">
-                                ⚠ 1 Person Away from Deal
-                            </div>
-                            <button onclick="window.shareToWhatsApp()" class="w-full bg-[#25D366] text-white h-[56px] flex items-center justify-center rounded-2xl font-black text-lg shadow-xl btn-press gap-2 mb-3">
-                                <i data-lucide="message-circle" size="24"></i> <span>Share on WhatsApp</span>
-                            </button>
-                            <button onclick="window.shareGroupLink()" class="w-full bg-slate-900 text-white h-[56px] flex items-center justify-center rounded-2xl font-bold text-base shadow-lg btn-press gap-2">
-                                <i data-lucide="copy" size="20"></i> <span>Copy Link</span>
-                            </button>
+                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-jodo-border p-4 pb-safe z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                        <div class="max-w-md mx-auto pt-2 pb-2">
+                            ${count < 3 ? `
+                                ${!currentUserMember && !isExpired ? `
+                                <button onclick="openStartModal('${p.id}', '${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-3 btn-press">
+                                    <i data-lucide="user-plus" size="24"></i>
+                                    <span>Join This Squad</span>
+                                </button>
+                                ` : ''}
+                                <a href="${inviteLink}" target="_blank" class="block w-full bg-[#25D366] text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2 transition-all hover:bg-[#1ebc57]">
+                                    <i data-lucide="share-2" size="24"></i>
+                                    <span>Share Invite Link</span>
+                                </a>
+                                <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs font-medium text-jodo-textSecondary">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                    <span>${needed} spots left to unlock ₹${p.price5}</span>
+                                </div>
                             ` : `
-                            ${isMeJoined ? `
-                            <button onclick="window.confirmOrderWhatsApp()" class="w-full bg-green-600 text-white h-[56px] flex items-center justify-center rounded-2xl font-black text-lg shadow-xl btn-press gap-2">
-                                <i data-lucide="check-circle" size="20"></i> <span>Confirm Order via WhatsApp</span>
-                            </button>
-                            ` : `
-                            <div class="text-center text-slate-400 font-bold mb-2">Deal Unlocked! Join to buy.</div>
-                            `}
+                                <a href="${waOrderLink}" target="_blank" class="block w-full bg-jodo-ctaSuccess text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2"><i data-lucide="message-circle" size="24"></i><span>Submit Order to WhatsApp</span></a>
+                                <div class="text-center mt-3 text-xs font-medium text-green-700 bg-green-50 py-1 rounded inline-block w-full border border-green-100">🏆 Lowest Price Unlocked!</div>
                             `}
                         </div>
                     </div>
                 </div>
             `;
-            
-            // Re-init timer
-            const timerEl = document.getElementById('header-timer');
-            if(timerEl) {
+
+            // Timer Logic
+            const timerEl = el.querySelector('#hero-timer');
+            const headerTimerEl = el.querySelector('#header-timer');
+            if (timerEl) {
                 const tick = () => {
-                   const diff = Math.max(0, g.expiresAt - Date.now());
-                   const h = Math.floor(diff / 3600000);
-                   const m = Math.floor((diff % 3600000) / 60000);
-                   timerEl.innerText = `${h}:${m<10?'0'+m:m}`;
+                    const now = Date.now();
+                    const diff = Math.max(0, g.expiresAt - now);
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    const fmt = (n) => n < 10 ? '0'+n : n;
+                    const mainStr = `${fmt(h)}:${fmt(m)}:${fmt(s)}`;
+                    timerEl.innerText = mainStr;
+                    if (headerTimerEl) headerTimerEl.innerText = mainStr;
+                    if (diff < 7200000 && diff > 0) { timerEl.classList.add('text-jodo-urgency'); if (headerTimerEl) headerTimerEl.classList.add('text-jodo-urgency'); }
+                    if (diff <= 0) { timerEl.innerText = "00:00:00"; timerEl.classList.add('text-gray-400'); if (headerTimerEl) headerTimerEl.classList.add('text-gray-400'); clearInterval(state.timerInterval); state.timerInterval = null; }
                 };
                 state.timerInterval = setInterval(tick, 1000); tick();
             }
-            initCardTilt();
         }
 
-        // --- 9. INIT ---
-        loadLocalData();
-        initAuth();
-        initCardTilt();
+        // --- MAIN RENDER CYCLE ---
+        function render() {
+            const app = document.getElementById('app');
+            if (!app) return;
+            
+            if (state.view === 'home') renderHome(app);
+            else renderGroup(app);
+            
+            if (window.lucide) window.lucide.createIcons();
+        }
         
-        window.addEventListener('popstate', () => {
-            const params = new URLSearchParams(location.search);
-            const gid = params.get('group');
-            if(gid) window.openGroup(gid); else window.goHome();
-        });
-        
-        render();
+        function safeRender() {
+            if (renderScheduled) return;
+            renderScheduled = true;
+            requestAnimationFrame(() => {
+                render();
+                renderScheduled = false;
+            });
+        }
 
+        // --- GLOBAL LISTENERS (For Home Screen updates) ---
+        function listenToGroupForHome(gid) {
+            if (!window.fs || !window.db) return;
+            // Avoid duplicate listeners for same GID
+            // For MVP simplicity, we just add one. In complex apps, we'd map them.
+            
+            // Listen to group changes
+            const unsubG = window.fs.onSnapshot(
+                window.fs.doc(window.db, "groups", gid),
+                (doc) => { if (doc.exists()) { state.groups[gid] = doc.data(); safeRender(); } }
+            );
+            state.homeListeners.push(unsubG);
+
+            // Listen to member counts
+            const unsubM = window.fs.onSnapshot(
+                window.fs.collection(window.db, "groups", gid, "members"),
+                (snap) => {
+                    const m = []; snap.forEach(d => m.push(d.data()));
+                    state.members[gid] = m;
+                    safeRender();
+                }
+            );
+            state.homeListeners.push(unsubM);
+        }
+
+        function initHomeListeners() {
+            // Clean old listeners
+            state.homeListeners.forEach(u => u());
+            state.homeListeners = [];
+            
+            // Setup new listeners for all cached groups
+            state.user.joinedGroupIds.forEach(gid => {
+                listenToGroupForHome(gid);
+            });
+        }
+
+        // --- ROUTING & NAV ---
+        window.openGroup = function(gid) { 
+            // 8️⃣ FINAL SAFETY CHECK
+            if (!gid || typeof gid !== 'string') {
+                toast('Invalid group link', 'alert-circle');
+                window.goHome();
+                return;
+            }
+            
+            // 3️⃣ FIX openGroup() HISTORY PUSH (CRITICAL)
+            try { 
+                if (window.location.protocol !== 'blob:') {
+                    history.pushState({}, '', `${BASE_URL}?group=${gid}`);
+                }
+            } catch(e) {} 
+
+            state.currentGroupId = gid; 
+            state.view = 'group'; 
+            
+            // Cleanup previous single-group listeners (not home listeners)
+            if (state.unsubGroup) { state.unsubGroup(); state.unsubGroup = null; }
+            if (state.unsubMembers) { state.unsubMembers(); state.unsubMembers = null; }
+
+            safeRender(); 
+
+            if (window.fs && window.db) {
+                // Main Group Listener
+                state.unsubGroup = window.fs.onSnapshot(
+                    window.fs.doc(window.db, "groups", gid),
+                    (doc) => {
+                        if (doc.exists()) {
+                            state.groups[gid] = doc.data();
+                            safeRender();
+                        } else {
+                            // If group deleted/doesn't exist
+                            toast("Squad not found", "alert-circle");
+                            window.goHome();
+                        }
+                    },
+                    (error) => { console.error("Group Listen Error:", error); }
+                );
+
+                // Members Listener
+                state.unsubMembers = window.fs.onSnapshot(
+                    window.fs.collection(window.db, "groups", gid, "members"),
+                    (snapshot) => {
+                        const members = [];
+                        snapshot.forEach((doc) => members.push(doc.data()));
+                        state.members[gid] = members;
+                        safeRender();
+                    },
+                     (error) => { console.error("Member Listen Error:", error); }
+                );
+            }
+        };
+
+        window.goHome = function() { 
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            
+            // Unsubscribe from single group focus listeners
+            if (state.unsubGroup) { state.unsubGroup(); state.unsubGroup = null; }
+            if (state.unsubMembers) { state.unsubMembers(); state.unsubMembers = null; }
+
+            // 4️⃣ FIX goHome() RESET (CRITICAL)
+            try { 
+                if (window.location.protocol !== 'blob:') {
+                    history.pushState({}, '', BASE_URL);
+                }
+            } catch(e) {} 
+            
+            state.view = 'home'; 
+            state.currentGroupId = null; 
+            
+            safeRender(); 
+            startTicker(); 
+        };
+
+        function init() {
+            if (JODO_INITIALIZED) return; 
+            JODO_INITIALIZED = true;
+            
+            loadData(); 
+            loadHabit(); 
+            
+            // 7️⃣ ENSURE FIREBASE LOAD ORDER (Already was correct, keeping strict)
+            const startApp = () => {
+                initHomeListeners(); // Start listening to my groups for the home screen
+                
+                // 3️⃣ ENSURE ROUTE HANDLING WORKS ON REFRESH
+                const params = new URLSearchParams(window.location.search);
+                const gid = params.get('group');
+                
+                if (gid) {
+                    window.openGroup(gid);
+                } else {
+                    state.view = 'home';
+                    safeRender();
+                    startTicker();
+                }
+            };
+
+            if (window.db) startApp();
+            else window.addEventListener('firebase-ready', startApp);
+
+            window.addEventListener('popstate', () => {
+                const params = new URLSearchParams(location.search);
+                const gid = params.get('group');
+                if (gid) window.openGroup(gid); else window.goHome();
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
