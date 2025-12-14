@@ -726,10 +726,10 @@
                 saveData(); 
                 markOrderHabit();
                 
-                // CHANGE 1: STOP AUTO REDIRECT - OPEN GROUP PAGE INSTEAD
+                // CHANGE: Redirect creator to form to join as first member
                 window.closeModal(); 
-                toast("Group Created!", "check-circle");
-                openGroup(gid);
+                toast("Group Created! Please join now.", "check-circle");
+                redirectToJoinForm(gid, qty);
             };
 
             renderStep1();
@@ -937,4 +937,4 @@
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
-</html>
+    </html>
