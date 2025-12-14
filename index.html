@@ -88,10 +88,13 @@
         const COMPANY_PHONE = "918500742671"; 
         const GUIDE_VIDEO_SRC = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
         
+        // 🔒 CANONICAL SITE URL (CHANGE THIS AFTER GITHUB DEPLOY)
+        const SITE_BASE_URL = "https://yourusername.github.io/jodo";
+
         // ================= GOOGLE SHEET BACKEND =================
         const SHEET_API = "https://script.google.com/macros/s/AKfycbxDsU-xD2k_RWHgkGFj0sU7iuDr0FgqZ5QsH6jaHw0oRUGWFlHXCi6CzdxxlPEyZAux/exec";
-        // ⚠️ REPLACE THIS WITH YOUR REAL GOOGLE FORM LINK
-        const JOIN_FORM_BASE = "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform";
+        // ✅ REAL GOOGLE FORM LINK CONNECTED
+        const JOIN_FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSdkPSHKnb2Uh4a_p17cgL3AHcei3SOjRdpftgOI1-C5QJW50w/viewform";
         // Poll interval (ms)
         const GROUP_POLL_INTERVAL = 8000;
 
@@ -323,27 +326,24 @@
         // --- NEW GOOGLE BACKEND FUNCTIONS ---
 
         function shareJoinLink(gid) {
-            const link = `${location.origin}${location.pathname}?group=${gid}&join=1`;
+            // REMOVE &join=1 for cleaner sharing - user lands on group page first
+            // FIXED: Use canonical URL to avoid preview environment garbage
+            const link = `${SITE_BASE_URL}?group=${gid}`;
             const msg = `🛒 Join my JODO group & unlock wholesale price:\n${link}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
         }
 
-        function redirectToJoinForm(gid) {
-            // ⚠️ CRITICAL: Replace 'entry.xxxxxx' with your actual Google Form Entry IDs
-            // 1. Open your Google Form
-            // 2. Click 3 dots > "Get pre-filled link"
-            // 3. Fill dummy data, click "Get Link", copy it
-            // 4. Look at the URL to find entry.123456=... for each field
-            
-            const url = `${JOIN_FORM_BASE}` +
-                `?entry.111111=${gid}` +   // Replace 111111 with Group ID field ID
-                `&entry.222222=${encodeURIComponent(state.user.name || "")}` + // Replace 222222 with Name field ID
-                `&entry.333333=${encodeURIComponent(state.user.phone || "")}` + // Replace 333333 with Phone field ID
-                `&entry.444444=${encodeURIComponent(state.user.ward || "")}`;  // Replace 444444 with Ward field ID
-            
-            console.log("Redirecting to:", url);
+        function redirectToJoinForm(gid, qty = 2) {
+            // ✅ EXACT GOOGLE FORM REDIRECT LOGIC WITH REAL IDS
+            const url =
+                `${JOIN_FORM_BASE}` +
+                `?entry.1962588497=${gid}` + // Group ID
+                `&entry.1926360261=${encodeURIComponent(state.user.name || "")}` + // Name
+                `&entry.430795843=${encodeURIComponent(state.user.phone || "")}` + // Phone
+                `&entry.826445249=${encodeURIComponent(state.user.ward || "")}` + // Ward
+                `&entry.217585953=${qty}`; // Quantity
 
-            // Safety check removed so you can test immediately with correct IDs
+            console.log("Redirecting to:", url);
             window.location.href = url;
         }
 
@@ -440,6 +440,37 @@
             const statusText = count >= 3 
                 ? `You're paying the lowest price: ₹${p.price5}` 
                 : `Join ${needed} more neighbors to pay ₹${p.price5} instead of ₹${p.price1}`;
+            
+            // --- ACTION BUTTON LOGIC ---
+            let bottomCtaHtml = '';
+            if (!currentUserMember) {
+                // CHANGE: Join Button for non-members
+                bottomCtaHtml = `
+                    <button 
+                      onclick="redirectToJoinForm('${g.id}')"
+                      class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg btn-press">
+                      Join This Group
+                    </button>
+                    <div class="text-center mt-3 text-xs text-jodo-textSecondary font-medium">You must join to get the deal</div>
+                `;
+            } else {
+                 // Existing logic for members
+                 if (count < 3) {
+                     bottomCtaHtml = `
+                        <a href="${isExpired ? '#' : waOrderLink}" target="_blank" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2 relative overflow-hidden group ${isExpired ? 'grayscale opacity-50 pointer-events-none' : ''}">
+                            <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                            <span>Send Order to Company</span>
+                            <i data-lucide="message-circle" size="24"></i>
+                        </a>
+                        <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs font-medium text-jodo-textSecondary"><span class="w-2 h-2 bg-jodo-progress rounded-full animate-pulse"></span><span>${needed} spots left • ${isExpired ? 'Expired' : 'Typical squads finish in 6 mins'}</span></div>
+                     `;
+                 } else {
+                     bottomCtaHtml = `
+                        <a href="${waOrderLink}" target="_blank" class="block w-full bg-jodo-ctaSuccess text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2"><i data-lucide="message-circle" size="24"></i><span>Get Best Price Slip</span></a>
+                        <div class="text-center mt-3 text-xs font-medium text-green-700 bg-green-50 py-1 rounded inline-block w-full border border-green-100">Best price applied</div>
+                     `;
+                 }
+            }
 
             el.innerHTML = `
                 <div class="fade-in bg-white min-h-screen pb-40 font-sans">
@@ -518,17 +549,7 @@
 
                     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-jodo-border p-4 pb-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                         <div class="max-w-md mx-auto">
-                            ${count < 3 ? `
-                            <a href="${isExpired ? '#' : waOrderLink}" target="_blank" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2 relative overflow-hidden group ${isExpired ? 'grayscale opacity-50 pointer-events-none' : ''}">
-                                <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                                <span>Send Order to Company</span>
-                                <i data-lucide="message-circle" size="24"></i>
-                            </a>
-                            <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs font-medium text-jodo-textSecondary"><span class="w-2 h-2 bg-jodo-progress rounded-full animate-pulse"></span><span>${needed} spots left • ${isExpired ? 'Expired' : 'Typical squads finish in 6 mins'}</span></div>
-                            ` : `
-                            <a href="${waOrderLink}" target="_blank" class="block w-full bg-jodo-ctaSuccess text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2"><i data-lucide="message-circle" size="24"></i><span>Get Best Price Slip</span></a>
-                            <div class="text-center mt-3 text-xs font-medium text-green-700 bg-green-50 py-1 rounded inline-block w-full border border-green-100">Best price applied</div>
-                            `}
+                            ${bottomCtaHtml}
                         </div>
                     </div>
                 </div>
@@ -668,8 +689,11 @@
                 state.groups[gid] = group; 
                 saveData(); 
                 markOrderHabit();
-                // REDIRECT TO FORM (Self-join flow)
-                redirectToJoinForm(gid);
+                
+                // CHANGE 1: STOP AUTO REDIRECT - OPEN GROUP PAGE INSTEAD
+                window.closeModal(); 
+                toast("Group Created!", "check-circle");
+                openGroup(gid);
             };
 
             renderStep1();
