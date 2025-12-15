@@ -92,8 +92,8 @@
           getFirestore,
           doc,
           setDoc,
-          getDoc, // ✅ Added for secure count
-          getDocs, // ✅ Added for secure count
+          getDoc, 
+          getDocs, 
           updateDoc,
           onSnapshot,
           collection
@@ -112,7 +112,6 @@
         const db = getFirestore(app);
       
         window.db = db;
-        // Exposed getDocs for logic
         window.fs = { doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, collection };
         
         window.dispatchEvent(new Event('firebase-ready'));
@@ -122,7 +121,7 @@
         // --- CONSTANTS & CONFIG ---
         const COMPANY_PHONE = "918500742671"; 
         const BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp';
-        const MAX_GROUP_MEMBERS = 20; // 🔒 Hard Limit
+        const MAX_GROUP_MEMBERS = 20; 
         
         const PRODUCTS = [
             { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price5: 18, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-red-50 text-red-600', location: 'Duvva Fields', imageSrc: 'https://images.unsplash.com/photo-1620574387735-3624d75b2dbc?auto=format&fit=crop&w=600&q=80' },
@@ -462,7 +461,7 @@
                      await new Promise(r => setTimeout(r, 1000));
                 }
 
-                // 1. EXPIRY & STATUS CHECK (FETCH SERVER TRUTH)
+                // 1. EXPIRY & STATUS CHECK
                 let groupExpiryTime = deliveryTime.getTime(); 
                 if (joinGroupId) {
                     try {
@@ -486,12 +485,26 @@
                                 return;
                             }
 
-                            // ✅ CHECK 3: Max Members (SECURE - Count Subcollection)
+                            // CHECK 3: Max Members (SECURE - Count Subcollection)
                             const mCol = window.fs.collection(window.db, "groups", joinGroupId, "members");
                             const mSnap = await window.fs.getDocs(mCol);
                             if (mSnap.size >= MAX_GROUP_MEMBERS) {
                                 toast("Group is full (Max 20)", "users");
                                 actionBtn.disabled = false; actionBtn.innerHTML = originalText;
+                                return;
+                            }
+                            
+                            // CHECK 4: Check if member already exists (By scanning phone numbers)
+                            // Note: We scan the docs because IDs are now unique timestamps
+                            let alreadyJoined = false;
+                            mSnap.forEach(doc => {
+                                if (doc.data().phone === phone) alreadyJoined = true;
+                            });
+                            if (alreadyJoined) {
+                                toast("Already joined this squad", "user-check");
+                                saveJoinedGroup(joinGroupId); 
+                                window.closeModal();
+                                window.openGroup(joinGroupId);
                                 return;
                             }
 
@@ -500,20 +513,6 @@
                     } catch(e) { console.error("Validation error", e); }
                 }
 
-                // 2. CHECK IF MEMBER ALREADY EXISTS
-                try {
-                    const memberRef = window.fs.doc(window.db, "groups", gid, "members", phone);
-                    const existing = await window.fs.getDoc(memberRef);
-                    if (existing.exists()) {
-                        toast("Already joined this squad", "user-check");
-                        saveJoinedGroup(gid); 
-                        window.closeModal();
-                        window.openGroup(gid);
-                        return;
-                    }
-                } catch(e) { console.error("Validation error", e); }
-
-                // Group Doc: Only created, NEVER UPDATED by client (except status auto-close)
                 const group = { 
                     id: gid, 
                     productId: pid, 
@@ -525,8 +524,12 @@
                     status: isGroupMode ? 'open' : 'closed', 
                     type: isGroupMode ? 'group' : 'solo' 
                 };
-
+                
+                // 🔑 FIX 1: UNIQUE MEMBER ID
+                const memberId = phone + '_' + Date.now();
+                
                 const member = { 
+                    memberId, // Store ID in doc
                     groupId: gid, 
                     name, 
                     phone, 
@@ -540,7 +543,8 @@
                     if (!joinGroupId) {
                         await window.fs.setDoc(window.fs.doc(window.db, "groups", gid), group);
                     }
-                    await window.fs.setDoc(window.fs.doc(window.db, "groups", gid, "members", phone), member);
+                    // 🔑 FIX 1: Use Unique ID for Doc
+                    await window.fs.setDoc(window.fs.doc(window.db, "groups", gid, "members", memberId), member);
                     
                     saveJoinedGroup(gid);
                     markOrderHabit(); 
@@ -667,8 +671,10 @@
                     try {
                         saveBtn.disabled = true;
                         saveBtn.innerHTML = 'Saving...';
+                        
+                        // 🔑 FIX 1b: Use captured DOC ID (not phone) to update correct record
                         await window.fs.setDoc(
-                            window.fs.doc(window.db, "groups", gid, "members", phone),
+                            window.fs.doc(window.db, "groups", gid, "members", member.id),
                             updatedMember
                         );
                         saveUser(name, phone, ward); 
@@ -844,24 +850,6 @@
             }
             state.lastMemberCount = count;
 
-            let waOrderLink = "#";
-            if (members.length > 0) {
-                const pricePerUnit = (count >= 3) ? p.price5 : p.price1;
-                let membersDetails = "";
-                let grandTotal = 0;
-                let grandWeight = 0;
-                members.forEach((m, i) => {
-                    const w = parseFloat((m.quantity * p.baseWeight).toFixed(2));
-                    const c = Math.round(m.quantity * pricePerUnit);
-                    grandTotal += c;
-                    grandWeight += w;
-                    membersDetails += `\n${i+1}. *${m.name}* ${m.isLeader ? '👑' : ''}\n   📞 ${m.phone}\n   📍 Ward: ${m.ward || 'N/A'}\n   📦 ${w} ${p.weightUnit} (₹${c})`;
-                });
-                const formattedGrandWeight = parseFloat(grandWeight.toFixed(2));
-                const msg = `*New Order Request* 🛒\n` + `---------------------------\n` + `*Product:* ${p.name} (${p.nameTe})\n` + `*Total Qty:* ${formattedGrandWeight} ${p.weightUnit}\n` + `*Total Value:* ₹${grandTotal}\n` + `---------------------------\n` + `*Customer Details:*` + `${membersDetails}\n` + `---------------------------\n` + `*Group ID:* ${g.id}\n` + `Please confirm delivery! ✅`;
-                waOrderLink = `https://wa.me/${COMPANY_PHONE}?text=${encodeURIComponent(msg)}`;
-            }
-
             const expiryDate = new Date(g.expiresAt);
             const now = new Date();
             const isExpired = g.expiresAt < now.getTime();
@@ -983,8 +971,11 @@
                                     <span>${needed} spots left to unlock ₹${p.price5}</span>
                                 </div>
                             ` : `
-                                <a href="${waOrderLink}" target="_blank" class="block w-full bg-jodo-ctaSuccess text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2"><i data-lucide="message-circle" size="24"></i><span>Submit Order to WhatsApp</span></a>
-                                <div class="text-center mt-3 text-xs font-medium text-green-700 bg-green-50 py-1 rounded inline-block w-full border border-green-100">🏆 Lowest Price Unlocked!</div>
+                                <div class="text-center text-green-700 bg-green-50 p-3 rounded-lg border border-green-200 font-bold mb-3 shadow-sm flex items-center justify-center gap-2">
+                                  <i data-lucide="lock" size="18"></i>
+                                  🎉 Lowest Price Unlocked! Order Locked.
+                                </div>
+                                <div class="text-center text-xs text-gray-400 font-medium">Admin will process delivery soon.</div>
                             `}
                         </div>
                     </div>
@@ -1117,13 +1108,10 @@
                         const members = [];
                         snapshot.forEach((doc) => {
                             const data = doc.data();
-                            members.push(data);
+                            // 🔑 CAPTURE UNIQUE ID so we can edit later
+                            members.push({ ...data, id: doc.id });
                         });
                         state.members[gid] = members;
-                        
-                        // 🔐 SECURE CHANGE: Removed client-side aggregate writing to group doc.
-                        // Calculations are now done purely in UI render logic (members.length).
-                        // This prevents spoofing.
                         safeRender();
                     },
                      (error) => { console.error("Member Listen Error:", error); }
