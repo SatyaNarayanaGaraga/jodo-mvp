@@ -178,6 +178,8 @@
         let renderScheduled = false;
         let IS_JOIN_LINK = false;
         let JOIN_SESSION_PHONE = null;
+        // FIX 1: Auto Join Guard
+        let AUTO_JOIN_TRIGGERED = false;
 
         function loadData() {
             try {
@@ -1022,7 +1024,7 @@
                                 </div>
                             ` : ''}
 
-                            ${!isExpired && !hasJoinedThisGroup ? `
+                            ${!isExpired && !hasJoinedThisGroup && count < MAX_GROUP_MEMBERS ? `
                             <button onclick="openJoinFlow('${p.id}', '${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-3 btn-press">
                                 <i data-lucide="user-plus" size="24"></i>
                                 <span>Join This Squad</span>
@@ -1175,6 +1177,27 @@
                         members.sort((a, b) => a.joinedAt - b.joinedAt); // FIX 3: Consistent order
                         state.members[gid] = members;
                         safeRender();
+
+                        // 🔥 AUTO JOIN TRIGGER (ONLY ONCE)
+                        if (
+                            IS_JOIN_LINK &&
+                            !AUTO_JOIN_TRIGGERED &&
+                            !JOIN_SESSION_PHONE &&   // user not identified yet
+                            members.length < MAX_GROUP_MEMBERS
+                        ) {
+                            AUTO_JOIN_TRIGGERED = true;
+
+                            const g = state.groups[gid];
+                            if (!g) return;
+
+                            const p = PRODUCTS.find(x => x.id === g.productId);
+                            if (!p) return;
+
+                            // delay to avoid render/modal clash
+                            setTimeout(() => {
+                                window.openJoinFlow(p.id, gid);
+                            }, 300);
+                        }
                     },
                      (error) => { console.error("Member Listen Error:", error); }
                 );
@@ -1192,6 +1215,9 @@
                     history.pushState({}, '', BASE_URL);
                 }
             } catch(e) {} 
+            
+            // FIX: Reset flag on navigation home
+            AUTO_JOIN_TRIGGERED = false;
             
             state.view = 'home'; 
             state.currentGroupId = null; 
@@ -1248,3 +1274,4 @@
     </script>
 </body>
 </html>
+
