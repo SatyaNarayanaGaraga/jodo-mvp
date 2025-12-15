@@ -7,7 +7,6 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -129,7 +128,7 @@
         const GROUPS_KEY = 'jodo_groups_joined_v1';
         
         const DELIVERY_DAYS = [3, 6]; 
-        const CUTOFF_HOUR = 20; 
+        const CUTOFF_HOUR = 12; // 12 PM Hard Stop
 
         function getNextDeliveryDate() {
             const now = new Date();
@@ -144,6 +143,18 @@
             const d = new Date(); 
             d.setDate(d.getDate() + 1);
             return d;
+        }
+
+        // --- NEW HELPER FOR 12PM CUTOFF ---
+        function getTodayCutoffTimestamp() {
+          const now = new Date();
+          const cutoff = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            12, 0, 0, 0 // 12:00 PM
+          );
+          return cutoff.getTime();
         }
 
         const state = { 
@@ -241,7 +252,7 @@
         }
 
         function triggerConfetti() { 
-            if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#15803D', '#FFFFFF', '#E5E7EB'] }); 
+            // Confetti removed
         }
 
         function triggerVibration() { 
@@ -353,9 +364,7 @@
             let qty = 1; let isGroupMode = true; // CHANGED: Default qty 1
             
             const nextDelivery = getNextDeliveryDate();
-            const deliveryTime = new Date(nextDelivery);
-            deliveryTime.setHours(CUTOFF_HOUR, 0, 0, 0); 
-
+            
             const title = joinGroupId ? "Join Order" : "Start Order";
             const btnText = joinGroupId ? "Confirm Join" : "Confirm Order";
 
@@ -371,7 +380,7 @@
                             <div class="flex-1 flex flex-col justify-center"><h4 class="font-bold text-lg text-gray-900 leading-none mb-1">${p.name}</h4><div class="text-sm text-gray-500">${p.nameTe}</div><div class="mt-1 text-xs text-green-700 font-medium">In Stock</div></div>
                         </div>
                         <div class="bg-gray-50 border border-gray-100 p-3 rounded-lg mb-6 text-xs text-gray-600">
-                            Delivery scheduled for <strong>${nextDelivery.toLocaleDateString('en-US', { weekday: 'long' })}</strong>.
+                            Pickup: <strong>Next day morning</strong>
                         </div>
                         
                         ${!joinGroupId ? `
@@ -475,7 +484,14 @@
                 }
 
                 // 1. EXPIRY & STATUS CHECK
-                let groupExpiryTime = deliveryTime.getTime(); 
+                let groupExpiryTime = getTodayCutoffTimestamp(); // Corrected logic
+
+                // 12 PM Hard Stop Logic for Creation - Client Side Guard
+                if (Date.now() > groupExpiryTime) {
+                     toast("Orders closed for today", "clock");
+                     resetActionButton(actionBtn, originalText);
+                     return;
+                }
                 
                 // FIX 2: MEMBER ID = PHONE ONLY
                 const memberId = phone; 
@@ -530,7 +546,7 @@
                     ownerName: name, 
                     ownerArea: area, 
                     expiresAt: groupExpiryTime, 
-                    deliveryDay: groupExpiryTime, 
+                    deliveryDay: groupExpiryTime, // Storing cutoff as delivery anchor
                     createdAt: Date.now(), 
                     type: isGroupMode ? 'group' : 'solo'
                     // FIX 1: Removed status
@@ -607,7 +623,7 @@
 
             const p = PRODUCTS.find(x => x.id === group.productId);
             // FIX 7: Edit security - expiry check
-            const isExpired = group.expiresAt < Date.now();
+            const isExpired = new Date().getHours() >= CUTOFF_HOUR;
 
             const node = createNodeFromHTML(`
                 <div class="flex flex-col h-[85vh] bg-white transition-all duration-300 relative rounded-t-[1.5rem] overflow-hidden font-sans">
@@ -636,7 +652,7 @@
                         </div>
                         <div class="space-y-4 mb-6">
                             <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-gray-900 text-base outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all" ${isExpired ? 'disabled' : ''}></div>
-                            <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Mobile</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-lg font-bold text-gray-400 text-base outline-none cursor-not-allowed" disabled></div>
+                            <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Mobile</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-lg font-bold text-jodo-textSecondary text-base outline-none cursor-not-allowed" disabled></div>
                             <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Area</label><input id="m-area" value="${member.area || ''}" type="text" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-gray-900 text-base outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all" ${isExpired ? 'disabled' : ''}></div>
                         </div>
                     </div>
@@ -685,7 +701,7 @@
                     if (!name) return toast('Name required', 'alert-circle'); 
                     
                     // 🔒 SECURITY: Re-check expiry
-                    if (group.expiresAt < Date.now()) {
+                    if (new Date().getHours() >= CUTOFF_HOUR) {
                         toast("Expired", "clock");
                         window.closeModal();
                         return;
@@ -772,10 +788,9 @@
                                 <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Daily Delivery</span>
                             </div>
                             <div class="flex flex-col items-end justify-end h-full">
-                                <button onclick="openSupportOptions()" class="group flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full active:bg-gray-100 transition-all">
-                                    <i data-lucide="headset" size="14" class="text-gray-600"></i>
-                                    <span class="text-xs font-bold text-gray-600 tracking-wide">Support</span>
-                                </button>
+                                <div class="text-right">
+                                    <div class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100">Orders open: 7 AM – 12 PM</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -794,7 +809,7 @@
                     <div class="px-4 space-y-3 mt-2 pb-32">
                         <div class="flex items-center justify-between mb-2 mt-6">
                             <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Open Orders</h2>
-                            <div class="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100">Order by 8 PM</div>
+                            <div class="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100">Order by 12 PM</div>
                         </div>
                         
                         ${sortedProducts.map(p => {
@@ -865,36 +880,17 @@
             // if (count >= 3 && count !== state.lastMemberCount && state.lastMemberCount !== 0) { triggerConfetti(); }
             state.lastMemberCount = count;
 
-            const expiryDate = new Date(g.expiresAt);
-            const now = new Date();
-            const isExpired = g.expiresAt < now.getTime();
+            // 4️⃣ USE REAL-WORLD TIME & 12 PM Cutoff
+            const currentHour = new Date().getHours();
+            const isClosedToday = currentHour >= CUTOFF_HOUR;
             
-            // 4️⃣ USE REAL-WORLD TIME
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const expiryDay = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
-            const diffDays = Math.round((expiryDay - today) / (1000 * 60 * 60 * 24));
+            // We disable joining if it's past 12 PM on the user's device
+            const isExpired = isClosedToday;
 
-            let closeText = "";
-            let deliveryText = "";
-            let headerText = "";
-
-            const deliveryDate = new Date(expiryDate);
-            deliveryDate.setDate(deliveryDate.getDate() + 1); // Delivery is morning after cutoff
-
-            if (diffDays <= 0) {
-                closeText = "Orders close today evening";
-                headerText = "Closes today";
-                deliveryText = "Delivery Tomorrow morning";
-            } else if (diffDays === 1) {
-                closeText = "Orders close tomorrow evening";
-                headerText = "Closes tomorrow";
-                deliveryText = "Delivery " + deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }) + " morning";
-            } else {
-                const dayName = expiryDate.toLocaleDateString('en-US', { weekday: 'long' });
-                closeText = "Orders close " + dayName + " evening";
-                headerText = "Closes " + dayName;
-                deliveryText = "Delivery " + deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }) + " morning";
-            }
+            const headerText = "Orders open: 7 AM – 12 PM";
+            const deliveryText = "Pickup: Next day morning";
+            const closeText = isClosedToday ? "Orders closed for today" : "Orders close today 12:00 PM";
+            const subText = isClosedToday ? "Come back tomorrow" : "Delivery Wednesday morning";
 
             const currentUrl = `${BASE_URL}?group=${g.id}`;
             // FIX 8: Static Share Link Text
@@ -924,8 +920,10 @@
                         ${isExpired ? `
                         <div class="bg-gray-100 text-gray-600 p-4 mb-6 rounded-xl text-center border border-gray-200 flex items-center justify-center gap-2">
                             <i data-lucide="clock" size="20"></i>
-                            <div class="font-bold text-sm uppercase">Order Closed</div>
-                        </div>` : ''}
+                            <div class="font-bold text-sm uppercase">Orders closed for today</div>
+                        </div>
+                        <div class="text-center text-gray-500 text-xs font-medium -mt-4 mb-6">Come back tomorrow</div>
+                        ` : ''}
 
                         <div class="text-center mb-8 px-6">
                             <h2 class="text-lg font-bold text-gray-800 mb-1">${deliveryText}</h2>
