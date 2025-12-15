@@ -7,6 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -121,9 +122,7 @@
         const MAX_GROUP_MEMBERS = 20; 
         
         const PRODUCTS = [
-            { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price5: 18, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-gray-100 text-gray-600', location: 'Duvva Fields', imageSrc: 'https://images.unsplash.com/photo-1620574387735-3624d75b2dbc?auto=format&fit=crop&w=600&q=80' },
-            { id: 'oil', name: 'Sunflower Oil', nameTe: 'పొద్దుతిరుగుడు నూనె', unit: '500ml', baseWeight: 0.5, weightUnit: 'L', price1: 60, price5: 50, mandiPrice: 65, remainingStock: 8, icon: 'droplet', imageColor: 'bg-gray-100 text-gray-600', location: 'Factory Direct', imageSrc: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=600&q=80' },
-            { id: 'sugar', name: 'Sugar', nameTe: 'చక్కెర', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 24, price5: 20, mandiPrice: 38, remainingStock: 42, icon: 'package', imageColor: 'bg-gray-100 text-gray-600', location: 'Local Stock', imageSrc: 'https://images.unsplash.com/photo-1581441363689-1f3c3c414635?auto=format&fit=crop&w=600&q=80' }
+            { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '1kg', baseWeight: 1, weightUnit: 'kg', price1: 25, price5: 20, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-gray-100 text-gray-600', location: 'Duvva Fields', imageSrc: 'https://images.unsplash.com/photo-1620574387735-3624d75b2dbc?auto=format&fit=crop&w=600&q=80' }
         ];
 
         const HABIT_KEY = 'jodo_habit_v1';
@@ -241,6 +240,10 @@
             setTimeout(() => t.classList.add('hidden'), 3000); 
         }
 
+        function triggerConfetti() { 
+            if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#15803D', '#FFFFFF', '#E5E7EB'] }); 
+        }
+
         function triggerVibration() { 
             if (navigator.vibrate) navigator.vibrate(10); 
         }
@@ -347,7 +350,7 @@
         window.openStartModal = function(pid, joinGroupId = null) {
             const p = PRODUCTS.find(x => x.id === pid);
             const user = state.user;
-            let qty = 2; let isGroupMode = true; 
+            let qty = 1; let isGroupMode = true; // CHANGED: Default qty 1
             
             const nextDelivery = getNextDeliveryDate();
             const deliveryTime = new Date(nextDelivery);
@@ -378,7 +381,7 @@
                         </div>` : ''}
 
                         <div class="bg-white p-3 rounded-xl border border-gray-200 mb-6 flex items-center justify-between">
-                            <div class="pl-1"><div class="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity</div><div class="text-[10px] text-gray-400">Min 2 ${p.weightUnit}</div></div>
+                            <div class="pl-1"><div class="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity</div><div class="text-[10px] text-gray-400">Min 1 ${p.unit}</div></div>
                             <div class="flex items-center gap-3 bg-gray-50 p-1 rounded-lg border border-gray-200"><button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-200 text-gray-500 flex items-center justify-center active:scale-90 transition-all"><i data-lucide="minus" size="18"></i></button><div class="text-lg font-bold text-gray-800 w-16 text-center leading-none tabular-nums" id="qty-display">1.0 kg</div><button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-sm flex items-center justify-center active:scale-90 transition-all"><i data-lucide="plus" size="18"></i></button></div>
                         </div>
                         <div class="space-y-4 mb-8">
@@ -432,7 +435,7 @@
                 modeGroupEl.onclick = () => { isGroupMode = true; renderMode(); };
             }
             
-            const btnMinus = node.querySelector('#btn-minus'); if (btnMinus) btnMinus.onclick = () => { if (qty > 2) { qty--; renderMode(); } else { toast("Min quantity reached", 'alert-triangle'); triggerVibration(); } };
+            const btnMinus = node.querySelector('#btn-minus'); if (btnMinus) btnMinus.onclick = () => { if (qty > 1) { qty--; renderMode(); } else { toast("Min quantity reached", 'alert-triangle'); triggerVibration(); } }; // CHANGED: Min 1
             const btnPlus = node.querySelector('#btn-plus'); if (btnPlus) btnPlus.onclick = () => { if (qty < 20) { qty++; renderMode(); } };
             renderMode(); 
             node.querySelector('#close-modal').addEventListener('click', window.closeModal);
@@ -540,7 +543,7 @@
                     phone, 
                     area, 
                     isLeader: !joinGroupId, 
-                    quantity: Math.max(2, qty), 
+                    quantity: Math.max(1, qty), // CHANGED: Min 1
                     joinedAt: Date.now() 
                 };
                 
@@ -647,8 +650,8 @@
             `);
             showModalNode(node);
             
-            let qty = member.quantity || 2;
-            if (qty < 2) qty = 2; const minQty = 2;
+            let qty = member.quantity || 1; // CHANGED: Default 1
+            if (qty < 1) qty = 1; const minQty = 1; // CHANGED: Min 1
             const updateEditDisplay = () => {
                 const totalWeight = qty * p.baseWeight;
                 node.querySelector('#qty-display').innerText = `${totalWeight.toFixed(2)} ${p.weightUnit}`;
