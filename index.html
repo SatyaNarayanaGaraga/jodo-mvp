@@ -3,11 +3,10 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
-    <title>JODO - Farm Deals</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
+    <title>JODO</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -15,18 +14,20 @@
                     colors: {
                         jodo: {
                             base: '#FFFFFF',
-                            textPrimary: '#1F2937', 
-                            textSecondary: '#6B7280', 
-                            priceFinal: '#15803D', 
-                            priceCut: '#DC2626',   
+                            textPrimary: '#111827', // Gray-900 (High contrast, safe)
+                            textSecondary: '#4B5563', // Gray-600 (Neutral)
+                            priceFinal: '#15803D', // Green-700 (Trust Green)
+                            priceCut: '#9CA3AF',   // Gray-400 (Neutral strike)
                             priceOld: '#9CA3AF',   
-                            ctaPrimary: '#DC2626', 
-                            ctaSuccess: '#16A34A', 
-                            progress: '#FACC15',   
-                            progressBg: '#F3F4F6', 
-                            bonus: '#EAB308',      
-                            urgency: '#DC2626',    
+                            ctaPrimary: '#15803D', // Green-700 (Trust Green)
+                            ctaSuccess: '#15803D', 
+                            progress: '#15803D',   
+                            progressBg: '#E5E7EB', // Gray-200
+                            bonus: '#F3F4F6',      // Gray-100 (Boring badge)
+                            bonusText: '#374151',  // Gray-700
+                            urgency: '#4B5563',    // Gray-600 (No red urgency)
                             border: '#E5E7EB',     
+                            error: '#DC2626',      // Red-600 (Strictly errors)
                         }
                     },
                     fontFamily: {
@@ -46,23 +47,22 @@
         }
     </script>
     <style>
-        body { background: #FFFFFF; color: #1F2937; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; }
+        body { background: #FFFFFF; color: #111827; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; }
         #app { width: 100%; max-width: 448px; background: #FFFFFF; min-height: 100dvh; position: relative; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
         .btn-press { transition: transform 0.1s; cursor: pointer; user-select: none; }
         .btn-press:active:not(:disabled) { transform: scale(0.96); }
-        .card-modern { background: #FFFFFF; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #E5E7EB; }
-        .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 1px 2px rgba(0,0,0,0.05); border-bottom: 1px solid #E5E7EB; }
+        .card-modern { background: #FFFFFF; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #E5E7EB; }
+        .glass-header { background: rgba(255, 255, 255, 0.98); border-bottom: 1px solid #E5E7EB; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .fade-in { animation: fadeInUp 0.5s ease-out forwards; }
         .tilt-card { transition: transform 0.15s ease-out; transform-style: preserve-3d; }
-        .animate-explode { animation: explode 0.4s ease-out forwards; }
-        .price-anchor { color: #15803D; font-weight: 900; letter-spacing: -0.025em; }
+        .price-anchor { color: #15803D; font-weight: 700; letter-spacing: -0.01em; }
         
         /* Loading skeleton shimmer */
         .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+            background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
         }
@@ -74,17 +74,12 @@
     <div id="app"></div>
 
     <div id="modal-overlay" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300">
-        <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[2rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden pb-safe"></div>
+        <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[1.5rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden pb-safe"></div>
     </div>
 
     <div id="full-feed-container"></div>
 
-    <div id="live-ticker" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur text-white px-4 py-2.5 rounded-full text-xs font-medium shadow-2xl z-[55] flex items-center gap-2 pointer-events-none whitespace-nowrap hidden max-w-[90%] overflow-hidden transition-all duration-500 pb-safe border border-white/10">
-        <div id="ticker-dot" class="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></div>
-        <span id="ticker-text" class="truncate font-bold tracking-wide">...</span>
-    </div>
-
-    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900/95 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe backdrop-blur border border-white/10"></div>
+    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -114,7 +109,6 @@
         window.db = db;
         window.fs = { doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, collection };
         
-        // CHANGE 3: Verify Project ID
         console.log("🔥 FIREBASE PROJECT:", window.db._databaseId ? window.db._databaseId.projectId : "Unknown");
 
         window.dispatchEvent(new Event('firebase-ready'));
@@ -127,20 +121,14 @@
         const MAX_GROUP_MEMBERS = 20; 
         
         const PRODUCTS = [
-            { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price5: 18, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-red-50 text-red-600', location: 'Duvva Fields', imageSrc: 'https://images.unsplash.com/photo-1620574387735-3624d75b2dbc?auto=format&fit=crop&w=600&q=80' },
-            { id: 'oil', name: 'Sunflower Oil', nameTe: 'పొద్దుతిరుగుడు నూనె', unit: '500ml', baseWeight: 0.5, weightUnit: 'L', price1: 60, price5: 50, mandiPrice: 65, remainingStock: 8, icon: 'droplet', imageColor: 'bg-yellow-50 text-yellow-600', location: 'Factory Direct', imageSrc: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=600&q=80' },
-            { id: 'sugar', name: 'Sugar', nameTe: 'చక్కెర', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 24, price5: 20, mandiPrice: 38, remainingStock: 42, icon: 'package', imageColor: 'bg-blue-50 text-blue-600', location: 'Local Stock', imageSrc: 'https://images.unsplash.com/photo-1581441363689-1f3c3c414635?auto=format&fit=crop&w=600&q=80' }
+            { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price5: 18, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-gray-100 text-gray-600', location: 'Duvva Fields', imageSrc: 'https://images.unsplash.com/photo-1620574387735-3624d75b2dbc?auto=format&fit=crop&w=600&q=80' },
+            { id: 'oil', name: 'Sunflower Oil', nameTe: 'పొద్దుతిరుగుడు నూనె', unit: '500ml', baseWeight: 0.5, weightUnit: 'L', price1: 60, price5: 50, mandiPrice: 65, remainingStock: 8, icon: 'droplet', imageColor: 'bg-gray-100 text-gray-600', location: 'Factory Direct', imageSrc: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=600&q=80' },
+            { id: 'sugar', name: 'Sugar', nameTe: 'చక్కెర', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 24, price5: 20, mandiPrice: 38, remainingStock: 42, icon: 'package', imageColor: 'bg-gray-100 text-gray-600', location: 'Local Stock', imageSrc: 'https://images.unsplash.com/photo-1581441363689-1f3c3c414635?auto=format&fit=crop&w=600&q=80' }
         ];
 
         const HABIT_KEY = 'jodo_habit_v1';
         const GROUPS_KEY = 'jodo_groups_joined_v1';
-        const TICKER_MESSAGES = [
-            { msg: "✅ 58 squads completed in Duvva.", type: 'good' }, 
-            { msg: "🛡️ Pay on delivery available.", type: 'neutral' },
-            { msg: "🔥 Red Onions lowest price unlocked!", type: 'good' },
-            { msg: "🚚 Next delivery tomorrow 8 AM.", type: 'neutral' }
-        ];
-
+        
         const DELIVERY_DAYS = [3, 6]; 
         const CUTOFF_HOUR = 20; 
 
@@ -164,7 +152,7 @@
             currentGroupId: null, 
             groups: {}, 
             members: {}, 
-            user: { name: '', phone: '', ward: '', joinedGroupIds: [] }, 
+            user: { name: '', phone: '', area: '', joinedGroupIds: [] }, 
             timerInterval: null, 
             tickerInterval: null, 
             lastMemberCount: 0,
@@ -178,14 +166,13 @@
         let renderScheduled = false;
         let IS_JOIN_LINK = false;
         let JOIN_SESSION_PHONE = null;
-        // FIX 1: Auto Join Guard
         let AUTO_JOIN_TRIGGERED = false;
 
         function loadData() {
             try {
                 state.user.name = localStorage.getItem('jodo_user_name') || '';
                 state.user.phone = localStorage.getItem('jodo_user_phone') || '';
-                state.user.ward = localStorage.getItem('jodo_user_ward') || '';
+                state.user.area = localStorage.getItem('jodo_user_area') || '';
                 const savedGroups = localStorage.getItem(GROUPS_KEY);
                 state.user.joinedGroupIds = savedGroups ? JSON.parse(savedGroups) : [];
                 
@@ -193,14 +180,14 @@
             } catch(e) { console.error("Load Error", e); }
         }
 
-        function saveUser(name, phone, ward) {
+        function saveUser(name, phone, area) {
             state.user.name = name;
             state.user.phone = phone;
             localStorage.setItem('jodo_user_name', name);
             localStorage.setItem('jodo_user_phone', phone);
-            if (ward) {
-                state.user.ward = ward;
-                localStorage.setItem('jodo_user_ward', ward);
+            if (area) {
+                state.user.area = area;
+                localStorage.setItem('jodo_user_area', area);
             }
             JOIN_SESSION_PHONE = phone;
         }
@@ -247,18 +234,15 @@
 
         function toast(msg, icon) { 
             const t = document.getElementById('toast'); 
-            t.innerHTML = `<i data-lucide="${icon}" size="16"></i> ${msg}`; 
+            const iconColor = icon === 'alert-circle' || icon === 'alert-triangle' || icon === 'wifi-off' ? 'text-red-400' : 'text-green-400';
+            t.innerHTML = `<i data-lucide="${icon}" size="16" class="${iconColor}"></i> ${msg}`; 
             t.classList.remove('hidden'); 
             if(window.lucide) window.lucide.createIcons(); 
             setTimeout(() => t.classList.add('hidden'), 3000); 
         }
 
-        function triggerConfetti() { 
-            if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#16A34A', '#FACC15', '#FFFFFF'] }); 
-        }
-
         function triggerVibration() { 
-            if (navigator.vibrate) navigator.vibrate(20); 
+            if (navigator.vibrate) navigator.vibrate(10); 
         }
 
         function resetActionButton(btn, html) {
@@ -301,22 +285,7 @@
         function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
 
         function startTicker() {
-            if (state.tickerInterval) clearInterval(state.tickerInterval);
-            const update = () => {
-                const el = document.getElementById('live-ticker');
-                const txt = document.getElementById('ticker-text');
-                if(!el || !txt) return;
-                const item = TICKER_MESSAGES[Math.floor(Math.random() * TICKER_MESSAGES.length)];
-                txt.innerText = item.msg;
-                el.classList.remove('hidden', 'translate-y-10', 'opacity-0');
-                el.classList.add('translate-y-0', 'opacity-100');
-                setTimeout(() => { 
-                    el.classList.add('translate-y-10', 'opacity-0'); 
-                    setTimeout(() => el.classList.add('hidden'), 500); 
-                }, 5000);
-            };
-            update(); 
-            state.tickerInterval = setInterval(update, 12000); 
+            // Ticker Removed
         }
 
         function initCardTilt() {
@@ -329,9 +298,9 @@
                     const y = e.clientY - rect.top;
                     const centerX = rect.width / 2;
                     const centerY = rect.height / 2;
-                    const rotateX = ((y - centerY) / centerY) * -5; 
-                    const rotateY = ((x - centerX) / centerX) * 5;
-                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                    const rotateX = ((y - centerY) / centerY) * -3; // Subtle tilt
+                    const rotateY = ((x - centerX) / centerX) * 3;
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
                 });
                 card.addEventListener('mouseleave', () => {
                     card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
@@ -339,16 +308,16 @@
             });
         }
 
-        window.openLiveGuide = function() {
-            toast("Guide video coming soon!", "video");
-        };
+        // Guide removed
+        // window.openLiveGuide = function() { ... };
 
         window.openSupportOptions = function() {
             window.open("https://wa.me/" + COMPANY_PHONE, "_blank");
         };
 
+        // Full feed logic removed from UI
         window.openFullFeed = function(productId) {
-            toast("Live farm feed loading...", "signal");
+            // No-op or removed
         };
 
         // --- FIX 3: UX CLARITY (Confirmation Flow) ---
@@ -358,7 +327,7 @@
                 // FIX 1: Join link logic - preserve joinedGroupIds, only wipe identity
                 state.user.name = '';
                 state.user.phone = '';
-                state.user.ward = '';
+                state.user.area = '';
                 // Do NOT wipe joinedGroupIds here
                 JOIN_SESSION_PHONE = null; // Prevent persistence pollution on fresh join
             } else if (state.user.phone) {
@@ -368,7 +337,7 @@
                 if (!ok) {
                     state.user.name = '';
                     state.user.phone = '';
-                    state.user.ward = '';
+                    state.user.area = '';
                 }
             }
             
@@ -384,44 +353,44 @@
             const deliveryTime = new Date(nextDelivery);
             deliveryTime.setHours(CUTOFF_HOUR, 0, 0, 0); 
 
-            const title = joinGroupId ? "Join Squad" : "Select Buying Option";
-            const btnText = joinGroupId ? "Join Squad Now" : "Start Group Buy";
+            const title = joinGroupId ? "Join Order" : "Start Order";
+            const btnText = joinGroupId ? "Confirm Join" : "Confirm Order";
 
             const node = createNodeFromHTML(`
-                <div class="flex flex-col h-[90vh] bg-white relative rounded-t-[2rem] overflow-hidden">
-                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-jodo-border shrink-0 z-20">
-                        <div class="flex items-center gap-2"><h3 class="font-bold text-xl text-jodo-textPrimary uppercase tracking-tight">${title}</h3></div>
-                        <button id="close-modal" class="p-2 bg-gray-100 rounded-full text-jodo-textSecondary hover:bg-gray-200 transition-colors"><i data-lucide="x" size="20"></i></button>
+                <div class="flex flex-col h-[90vh] bg-white relative rounded-t-[1.5rem] overflow-hidden font-sans">
+                    <div class="bg-white px-5 py-4 flex items-center justify-between border-b border-gray-100 shrink-0 z-20">
+                        <div class="flex items-center gap-2"><h3 class="font-bold text-lg text-gray-800">${title}</h3></div>
+                        <button id="close-modal" class="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"><i data-lucide="x" size="20"></i></button>
                     </div>
                     <div class="p-5 overflow-y-auto flex-1 relative">
                         <div class="flex gap-4 mb-6">
-                            <div class="w-20 h-20 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden shrink-0"><div class="absolute inset-0 ${p.imageColor} flex items-center justify-center"><i data-lucide="${p.icon}" size="32" class="text-white/80"></i></div></div>
-                            <div class="flex-1 flex flex-col justify-center"><h4 class="font-black text-xl text-jodo-textPrimary leading-none mb-1">${p.name}</h4><div class="text-sm font-semibold text-jodo-textSecondary mb-2">${p.nameTe}</div><div class="inline-block bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase w-fit">${p.remainingStock}kg In Stock</div></div>
+                            <div class="w-16 h-16 rounded-lg bg-gray-50 border border-gray-100 relative overflow-hidden shrink-0 flex items-center justify-center"><i data-lucide="${p.icon}" size="28" class="text-gray-400"></i></div>
+                            <div class="flex-1 flex flex-col justify-center"><h4 class="font-bold text-lg text-gray-900 leading-none mb-1">${p.name}</h4><div class="text-sm text-gray-500">${p.nameTe}</div><div class="mt-1 text-xs text-green-700 font-medium">In Stock</div></div>
                         </div>
-                        <div class="bg-yellow-50 border border-yellow-100 p-3 rounded-xl mb-6 text-xs text-yellow-800 font-medium">
-                            <i data-lucide="clock" class="inline-block w-3 h-3 mr-1"></i> Order for <strong>${nextDelivery.toLocaleDateString('en-US', { weekday: 'long' })} Delivery</strong>. Cutoff is 8 PM.
+                        <div class="bg-gray-50 border border-gray-100 p-3 rounded-lg mb-6 text-xs text-gray-600">
+                            Delivery scheduled for <strong>${nextDelivery.toLocaleDateString('en-US', { weekday: 'long' })}</strong>.
                         </div>
                         
                         ${!joinGroupId ? `
                         <div class="grid grid-cols-2 gap-3 mb-6">
-                            <div id="mode-solo" class="relative p-4 rounded-xl border-2 border-gray-200 bg-white cursor-pointer active:scale-95 transition-all"><div class="font-bold text-jodo-textSecondary text-xs uppercase tracking-wider mb-0.5">Solo Buy</div><div class="price-anchor text-xl text-jodo-textPrimary price-text">₹${p.price1}</div></div>
-                            <div id="mode-group" class="relative p-4 rounded-xl border-2 border-jodo-progress bg-yellow-50 cursor-pointer active:scale-95 transition-all shadow-md"><div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-jodo-bonus text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm border border-white">Best Value</div><div class="font-bold text-yellow-800 text-xs uppercase tracking-wider mb-0.5">Group Buy</div><div class="price-anchor text-xl text-jodo-priceFinal price-text">₹${p.price5}</div></div>
+                            <div id="mode-solo" class="relative p-4 rounded-xl border border-gray-200 bg-white cursor-pointer active:scale-95 transition-all"><div class="font-bold text-gray-500 text-xs uppercase tracking-wider mb-0.5">Single</div><div class="font-bold text-lg text-gray-900 price-text">₹${p.price1}</div></div>
+                            <div id="mode-group" class="relative p-4 rounded-xl border border-green-200 bg-green-50/30 cursor-pointer active:scale-95 transition-all"><div class="font-bold text-green-800 text-xs uppercase tracking-wider mb-0.5">Group</div><div class="font-bold text-lg text-green-700 price-text">₹${p.price5}</div></div>
                         </div>` : ''}
 
-                        <div class="bg-white p-3 rounded-xl border border-jodo-border shadow-sm mb-6 flex items-center justify-between">
-                            <div class="pl-2"><div class="text-[10px] font-bold text-jodo-textSecondary uppercase tracking-wider">Quantity</div><div class="text-[10px] text-jodo-urgency font-bold">Min 2 ${p.weightUnit}</div></div>
-                            <div class="flex items-center gap-3 bg-gray-50 p-1.5 rounded-lg border border-gray-200"><button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-300 text-gray-500 flex items-center justify-center active:scale-90 transition-all shadow-sm"><i data-lucide="minus" size="18"></i></button><div class="text-xl font-bold text-jodo-textPrimary w-20 text-center leading-none tabular-nums" id="qty-display">1.0 kg</div><button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-md flex items-center justify-center active:scale-90 transition-all"><i data-lucide="plus" size="18"></i></button></div>
+                        <div class="bg-white p-3 rounded-xl border border-gray-200 mb-6 flex items-center justify-between">
+                            <div class="pl-1"><div class="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity</div><div class="text-[10px] text-gray-400">Min 2 ${p.weightUnit}</div></div>
+                            <div class="flex items-center gap-3 bg-gray-50 p-1 rounded-lg border border-gray-200"><button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-200 text-gray-500 flex items-center justify-center active:scale-90 transition-all"><i data-lucide="minus" size="18"></i></button><div class="text-lg font-bold text-gray-800 w-16 text-center leading-none tabular-nums" id="qty-display">1.0 kg</div><button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-sm flex items-center justify-center active:scale-90 transition-all"><i data-lucide="plus" size="18"></i></button></div>
                         </div>
                         <div class="space-y-4 mb-8">
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all placeholder-gray-400" placeholder="Your Name"></div>
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all placeholder-gray-400" placeholder="WhatsApp Number"></div>
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-jodo-textSecondary"><i data-lucide="map-pin" size="18"></i></div><input id="inp-ward" value="${user.ward || ''}" type="number" class="w-full bg-white border border-gray-300 py-3.5 pl-12 pr-4 rounded-lg font-bold text-jodo-textPrimary outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all placeholder-gray-400" placeholder="Ward Number (e.g. 12)"></div>
+                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Your Name"></div>
+                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Mobile Number"></div>
+                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="map-pin" size="18"></i></div><input id="inp-area" value="${user.area || ''}" type="text" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Nearby area (optional)"></div>
                         </div>
                     </div>
-                    <div class="bg-white border-t border-jodo-border p-4 shrink-0 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
-                        <div class="flex justify-between items-end mb-4 px-1"><div><div class="text-[10px] text-jodo-textSecondary font-bold uppercase">Total to Pay</div><div class="text-3xl price-anchor text-jodo-textPrimary leading-none" id="footer-total">₹${p.price5 * 2}</div></div><div class="text-right"><div class="text-[10px] text-green-700 font-bold bg-green-50 px-2 py-1 rounded border border-green-100 uppercase" id="footer-savings">Savings: ₹${(p.price1 - p.price5) * 2}</div></div></div>
-                        <button id="action-btn" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-xl font-black text-xl shadow-lg flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] transition-all btn-press">
-                            <i data-lucide="zap" size="24"></i> 
+                    <div class="bg-white border-t border-gray-100 p-4 shrink-0 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
+                        <div class="flex justify-between items-end mb-3 px-1"><div><div class="text-[10px] text-gray-500 font-bold uppercase">Total</div><div class="text-3xl font-bold text-gray-900 leading-none" id="footer-total">₹${p.price5 * 2}</div></div></div>
+                        <div class="text-center text-[11px] text-gray-500 font-medium mb-2">No payment now • Pay on delivery</div>
+                        <button id="action-btn" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] transition-all btn-press">
                             <span id="btn-text-action">${btnText}</span>
                         </button>
                     </div>
@@ -432,7 +401,6 @@
             const modeSoloEl = node.querySelector('#mode-solo');
             const modeGroupEl = node.querySelector('#mode-group');
             const footerTotalEl = node.querySelector('#footer-total');
-            const footerSavingsEl = node.querySelector('#footer-savings');
             const btnTextEl = node.querySelector('#btn-text-action');
             const actionBtn = node.querySelector('#action-btn');
 
@@ -441,8 +409,8 @@
                 const t5 = Math.round(p.price5 * qty);
                 
                 if (!joinGroupId) {
-                    modeSoloEl.className = `relative p-4 rounded-xl border-2 cursor-pointer transition-all active:scale-95 ${!isGroupMode ? 'border-gray-900 bg-white ring-1 ring-gray-900/10' : 'border-gray-200 bg-white'}`;
-                    modeGroupEl.className = `relative p-4 rounded-xl border-2 cursor-pointer transition-all shadow-md active:scale-95 ${isGroupMode ? 'border-jodo-progress bg-yellow-50 ring-1 ring-jodo-progress/50' : 'border-gray-200 bg-white'}`;
+                    modeSoloEl.className = `relative p-4 rounded-xl border cursor-pointer transition-all active:scale-95 ${!isGroupMode ? 'border-gray-400 bg-gray-50' : 'border-gray-200 bg-white'}`;
+                    modeGroupEl.className = `relative p-4 rounded-xl border cursor-pointer transition-all active:scale-95 ${isGroupMode ? 'border-green-600 bg-green-50/50' : 'border-gray-200 bg-white'}`;
                     modeSoloEl.querySelector('.price-text').innerText = `₹${t1}`;
                     modeGroupEl.querySelector('.price-text').innerText = `₹${t5}`;
                 }
@@ -453,11 +421,8 @@
                 footerTotalEl.innerText = `₹${total}`;
                 
                 if (isGroupMode) { 
-                    const savings = Math.round((p.price1 * qty) - total); 
-                    footerSavingsEl.innerHTML = `Savings: ₹${savings}`; 
-                    btnTextEl.innerText = joinGroupId ? "Join Squad Now" : "Start Group Buy"; 
+                    btnTextEl.innerText = joinGroupId ? "Confirm Join" : "Start Order"; 
                 } else { 
-                    footerSavingsEl.innerText = "No Savings"; 
                     btnTextEl.innerText = `Buy Solo (₹${total})`; 
                 }
             };
@@ -483,26 +448,26 @@
                 if (actionBtn.disabled) return; 
                 actionBtn.disabled = true;
                 const originalText = actionBtn.innerHTML; 
-                actionBtn.innerHTML = `<div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Processing...`; 
+                actionBtn.innerHTML = `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>`; 
                 actionBtn.classList.add('opacity-75', 'cursor-not-allowed');
                 
                 const name = safeVal(node.querySelector('#inp-name')); 
                 const phone = safeVal(node.querySelector('#inp-phone')); 
-                const ward = safeVal(node.querySelector('#inp-ward'));
+                const area = safeVal(node.querySelector('#inp-area'));
                 
-                if (!name || !/^[6-9]\d{9}$/.test(phone) || !ward) { 
+                if (!name || !/^[6-9]\d{9}$/.test(phone)) { 
                     resetActionButton(actionBtn, originalText); // FIX 6: Reset on validation
-                    toast('Please check details', 'alert-circle'); 
+                    toast('Please enter name and mobile number', 'alert-circle'); 
                     return; 
                 }
                 
                 triggerVibration(); 
-                saveUser(name, phone, ward);
+                saveUser(name, phone, area);
                 
                 const gid = joinGroupId || ('g-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
 
                 if (!window.fs || !window.db) {
-                     toast("Connecting to server...", "wifi");
+                     toast("Connecting...", "wifi");
                      await new Promise(r => setTimeout(r, 1000));
                 }
 
@@ -524,7 +489,7 @@
                             // FIX 1: Remove group.status check completely
                             // Only check time
                             if (gData.expiresAt < Date.now()) {
-                                toast("This group has expired", "clock");
+                                toast("Group expired", "clock");
                                 resetActionButton(actionBtn, originalText); // FIX 6
                                 return;
                             }
@@ -534,7 +499,7 @@
                             const mSnap = await window.fs.getDocs(mCol);
                             // Soft limit to avoid race conditions
                             if (mSnap.size >= MAX_GROUP_MEMBERS + 2) {
-                                toast("Group is mostly full", "users");
+                                toast("Group full", "users");
                                 resetActionButton(actionBtn, originalText); // FIX 6
                                 return;
                             }
@@ -544,7 +509,7 @@
                             const mDocSnap = await window.fs.getDoc(mRef);
 
                             if (mDocSnap.exists()) {
-                                toast("This phone already joined", "user-check");
+                                toast("Already joined", "check-circle");
                                 saveJoinedGroup(joinGroupId); 
                                 window.closeModal();
                                 window.openGroup(joinGroupId);
@@ -560,7 +525,7 @@
                     id: gid, 
                     productId: pid, 
                     ownerName: name, 
-                    ownerWard: ward, 
+                    ownerArea: area, 
                     expiresAt: groupExpiryTime, 
                     deliveryDay: groupExpiryTime, 
                     createdAt: Date.now(), 
@@ -573,7 +538,7 @@
                     groupId: gid, 
                     name, 
                     phone, 
-                    ward, 
+                    area, 
                     isLeader: !joinGroupId, 
                     quantity: Math.max(2, qty), 
                     joinedAt: Date.now() 
@@ -604,21 +569,21 @@
                     JOIN_SESSION_PHONE = phone;
                     console.log("[ADMIN] JOINED:", gid, phone, qty);
                     
-                    alert("GROUP ID: " + gid);
+                    // alert("GROUP ID: " + gid);
 
                     setTimeout(() => { 
                         window.closeModal(); 
                         if (isGroupMode) window.openGroup(gid); 
                         else { 
-                            toast("Solo Order Confirmed!", "check-circle"); 
+                            toast("Order Confirmed", "check-circle"); 
                             render(); 
                         } 
-                        triggerConfetti(); 
-                    }, 800); 
+                        // Confetti removed
+                    }, 500); 
                 } catch (e) {
                     console.error(e);
                     resetActionButton(actionBtn, originalText); // FIX 6
-                    toast(e.message || "Firestore error", "alert-triangle");
+                    toast("Connection error", "wifi-off");
                 }
             };
             actionBtn.onclick = triggerAction;
@@ -626,14 +591,14 @@
 
         window.openEditMemberModal = function(gid, memberIndex) {
             const group = state.groups[gid];
-            if (!group) return toast('Group data missing', 'alert-circle');
+            if (!group) return toast('Data missing', 'alert-circle');
             const members = state.members[gid];
             if (!Array.isArray(members) || !members[memberIndex]) return;
             const member = members[memberIndex];
             
             // FIX 7: Edit security - session phone check
             if (!JOIN_SESSION_PHONE || member.phone !== JOIN_SESSION_PHONE) {
-                toast("You can only edit your own order", "lock");
+                toast("Edit your own order only", "lock");
                 return;
             }
 
@@ -642,41 +607,40 @@
             const isExpired = group.expiresAt < Date.now();
 
             const node = createNodeFromHTML(`
-                <div class="flex flex-col h-[85vh] bg-white transition-all duration-300 relative rounded-t-[2rem] overflow-hidden">
-                    <div class="bg-white px-5 py-4 flex items-center justify-between shadow-sm border-b border-jodo-border shrink-0 z-20">
-                        <h3 class="font-bold text-xl text-jodo-textPrimary">Edit Order</h3>
-                        <button id="close-modal" class="p-2 bg-gray-100 rounded-full text-jodo-textSecondary hover:bg-gray-200 cursor-pointer"><i data-lucide="x" size="20"></i></button>
+                <div class="flex flex-col h-[85vh] bg-white transition-all duration-300 relative rounded-t-[1.5rem] overflow-hidden font-sans">
+                    <div class="bg-white px-5 py-4 flex items-center justify-between border-b border-gray-100 shrink-0 z-20">
+                        <h3 class="font-bold text-lg text-gray-900">Update Order</h3>
+                        <button id="close-modal" class="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-gray-100 cursor-pointer"><i data-lucide="x" size="20"></i></button>
                     </div>
                     <div class="p-5 overflow-y-auto flex-1 overscroll-contain relative">
-                        <div class="bg-white border border-jodo-border rounded-xl p-4 mb-6 text-center shadow-sm relative overflow-hidden">
-                             <div class="text-[10px] text-jodo-textSecondary font-bold uppercase tracking-wider mb-1">Est. Total Cost</div>
-                             <div class="text-4xl price-anchor tracking-tighter" id="live-total">₹0</div>
+                        <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6 text-center shadow-sm relative overflow-hidden">
+                             <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">New Total</div>
+                             <div class="text-3xl font-bold text-gray-900 tracking-tighter" id="live-total">₹0</div>
                              <div class="flex items-center justify-center gap-2 mt-2">
-                                <div class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100 flex items-center gap-1"><i data-lucide="trending-down" size="10"></i> <span id="live-savings">Saves ₹0</span></div>
-                                <div class="text-[10px] font-bold text-jodo-textSecondary bg-gray-50 px-2 py-1 rounded border border-gray-100" id="live-rate">@ ₹0/${p.unit}</div>
+                                <div class="text-[10px] font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-100" id="live-rate">@ ₹0/${p.unit}</div>
                              </div>
                         </div>
-                        <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-jodo-border mb-6 shadow-sm">
+                        <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm">
                             <div class="ml-1">
-                                <div class="text-xs font-bold text-jodo-textSecondary uppercase">Total Weight</div>
+                                <div class="text-xs font-bold text-gray-500 uppercase">Quantity</div>
                                 <div class="text-[10px] text-gray-400 font-medium">Increments of ${p.unit}</div>
                             </div>
                             <div class="flex items-center gap-3">
                                 <button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-300 text-gray-500 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer" ${isExpired ? 'disabled' : ''}><i data-lucide="minus" size="18"></i></button>
-                                <span id="qty-display" class="font-bold text-xl w-20 text-center text-jodo-textPrimary tabular-nums">...</span>
+                                <span id="qty-display" class="font-bold text-xl w-20 text-center text-gray-900 tabular-nums">...</span>
                                 <button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-md flex items-center justify-center active:scale-95 transition-transform cursor-pointer" ${isExpired ? 'disabled' : ''}><i data-lucide="plus" size="18"></i></button>
                             </div>
                         </div>
                         <div class="space-y-4 mb-6">
-                            <div><label class="block text-xs font-bold text-jodo-textSecondary uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-jodo-textPrimary text-base outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all" ${isExpired ? 'disabled' : ''}></div>
-                            <div><label class="block text-xs font-bold text-jodo-textSecondary uppercase mb-1.5 ml-1">WhatsApp Number</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-gray-100 border border-gray-300 p-3.5 rounded-lg font-bold text-jodo-textSecondary text-base outline-none cursor-not-allowed" disabled></div>
-                            <div><label class="block text-xs font-bold text-jodo-textSecondary uppercase mb-1.5 ml-1">Ward Number</label><input id="m-ward" value="${member.ward || ''}" type="number" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-jodo-textPrimary text-base outline-none focus:border-jodo-ctaPrimary focus:ring-1 focus:ring-jodo-ctaPrimary transition-all" ${isExpired ? 'disabled' : ''}></div>
+                            <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-gray-900 text-base outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all" ${isExpired ? 'disabled' : ''}></div>
+                            <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Mobile</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-lg font-bold text-gray-400 text-base outline-none cursor-not-allowed" disabled></div>
+                            <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Area</label><input id="m-area" value="${member.area || ''}" type="text" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-gray-900 text-base outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all" ${isExpired ? 'disabled' : ''}></div>
                         </div>
                     </div>
-                    <div class="bg-white border-t border-jodo-border p-4 shrink-0 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
+                    <div class="bg-white border-t border-gray-100 p-4 shrink-0 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
                         ${isExpired 
-                            ? '<div class="text-center text-jodo-urgency font-bold mb-4 bg-red-50 p-3 rounded-lg border border-red-100">Deal Expired - Cannot Edit</div>' 
-                            : '<button id="save-btn" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg btn-press flex items-center justify-center gap-2 cursor-pointer">Save Changes</button>'
+                            ? '<div class="text-center text-gray-500 font-bold mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">Order Locked (Expired)</div>' 
+                            : '<button id="save-btn" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-sm btn-press flex items-center justify-center gap-2 cursor-pointer">Save Changes</button>'
                         }
                     </div>
                 </div>
@@ -692,11 +656,11 @@
                 const soloTotal = Math.round(p.price1 * qty);
                 const savings = soloTotal - total;
                 node.querySelector('#live-total').innerText = `₹${total}`;
-                node.querySelector('#live-savings').innerText = `Saves ₹${savings}`;
+                // node.querySelector('#live-savings').innerText = `${savings}`;
                 node.querySelector('#live-rate').innerText = `@ ₹${p.price5}/${p.unit}`;
             };
             const btnMinus = node.querySelector('#btn-minus');
-            if(btnMinus) btnMinus.onclick = () => { if(qty > minQty) { qty--; updateEditDisplay(); } else toast("Min quantity reached", "alert-triangle"); };
+            if(btnMinus) btnMinus.onclick = () => { if(qty > minQty) { qty--; updateEditDisplay(); } else toast("Min reached", "alert-triangle"); };
             const btnPlus = node.querySelector('#btn-plus');
             if(btnPlus) btnPlus.onclick = () => { if(qty < 20) { qty++; updateEditDisplay(); } };
             updateEditDisplay();
@@ -707,26 +671,26 @@
                 saveBtn.onclick = async () => { 
                     // FIX 5: Offline handle
                     if (!navigator.onLine) {
-                        toast("No internet connection", "wifi-off");
+                        toast("No internet", "wifi-off");
                         return;
                     }
 
                     const name = safeVal(node.querySelector('#m-name')); 
                     const phone = member.phone; 
-                    const ward = safeVal(node.querySelector('#m-ward'));
+                    const area = safeVal(node.querySelector('#m-area'));
                     
-                    if (!name || !ward) return toast('Name & Ward required', 'alert-circle'); 
+                    if (!name) return toast('Name required', 'alert-circle'); 
                     
                     // 🔒 SECURITY: Re-check expiry
                     if (group.expiresAt < Date.now()) {
-                        toast("Group has expired", "clock");
+                        toast("Expired", "clock");
                         window.closeModal();
                         return;
                     }
 
                     // FIX 3: Edit Flow Bug - removed id check (firestore id is trustworthy)
 
-                    const updatedMember = { ...member, name, ward, quantity: qty, updatedAt: Date.now() };
+                    const updatedMember = { ...member, name, area, quantity: qty, updatedAt: Date.now() };
                     
                     try {
                         saveBtn.disabled = true;
@@ -736,12 +700,12 @@
                             window.fs.doc(window.db, "groups", gid, "members", member.id),
                             updatedMember
                         );
-                        saveUser(name, phone, ward); 
+                        saveUser(name, phone, area); 
                         window.closeModal(); 
-                        toast('Order Updated!', 'check-circle'); 
+                        toast('Updated', 'check-circle'); 
                     } catch(e) {
                         console.error(e);
-                        toast('Save Failed', 'alert-circle');
+                        toast('Error saving', 'alert-circle');
                         saveBtn.disabled = false;
                         saveBtn.innerHTML = 'Save Changes';
                     }
@@ -776,34 +740,24 @@
                     const progress = Math.min(100, (count / 3) * 100);
                     const needed = Math.max(0, 3 - count); 
                     const isUnlocked = count >= 3;
-                    const statusLabel = isUnlocked ? 'Price Unlocked!' : `${needed} more needed`;
-                    const statusClass = isUnlocked ? 'text-green-700 bg-green-50 border-green-200' : 'text-yellow-800 bg-yellow-50 border-yellow-200';
-                    const barClass = isUnlocked ? 'bg-jodo-ctaSuccess' : 'bg-jodo-progress';
+                    const statusLabel = isUnlocked ? 'Active' : `${needed} more`;
+                    const statusClass = isUnlocked ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-gray-50 border-gray-200';
+                    const barClass = isUnlocked ? 'bg-jodo-ctaSuccess' : 'bg-gray-300';
                     
                     return `<div onclick="openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
                         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 relative overflow-hidden h-full flex flex-col justify-between">
                             <div class="flex items-center gap-3 mb-3 relative z-10 mt-2">
-                                <div class="w-12 h-12 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-jodo-textPrimary shadow-sm shrink-0"><i data-lucide="${p.icon}" size="24"></i></div>
-                                <div class="flex-1 min-w-0"><h3 class="font-bold text-jodo-textPrimary text-base leading-none mb-2 truncate">${p.name}</h3>
-                                    <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-1 text-[10px] text-jodo-textSecondary"><i data-lucide="users" size="12"></i><span class="text-jodo-textPrimary font-bold">${count}/3</span></div><div class="${statusClass} text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider whitespace-nowrap">${statusLabel}</div></div>
+                                <div class="w-12 h-12 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-gray-700 shadow-sm shrink-0"><i data-lucide="${p.icon}" size="24"></i></div>
+                                <div class="flex-1 min-w-0"><h3 class="font-bold text-gray-900 text-base leading-none mb-2 truncate">${p.name}</h3>
+                                    <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-1 text-[10px] text-gray-500"><i data-lucide="users" size="12"></i><span class="text-gray-900 font-bold">${count}</span></div><div class="${statusClass} text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider whitespace-nowrap">${statusLabel}</div></div>
                                 </div>
                             </div>
-                            <div class="relative h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="absolute inset-y-0 left-0 ${barClass} transition-all duration-1000" style="width: ${progress}%"></div></div>
                         </div>
                     </div>`;
                 }).join('');
                 heroContent = `<div class="mt-6 mb-4"><div class="px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">${cardsHtml}</div></div>`;
             } else {
-                heroContent = `
-                <div class="px-4 mt-6 mb-4">
-                    <div onclick="openLiveGuide()" class="relative w-full h-40 bg-gray-900 rounded-2xl overflow-hidden shadow-md border border-gray-200 group cursor-pointer tilt-card">
-                        <img src="https://images.unsplash.com/photo-1595245863955-d14dc7a488e0?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-5">
-                            <div class="text-white font-black text-xl mb-1 flex items-center gap-2">How JODO Works <i data-lucide="play-circle" class="text-white fill-white/20"></i></div>
-                            <div class="text-gray-200 text-xs font-medium">Join forces with neighbors to unlock wholesale mandi prices.</div>
-                        </div>
-                    </div>
-                </div>`;
+                heroContent = ``;
             }
 
             el.innerHTML = `
@@ -811,25 +765,24 @@
                     <div class="glass-header sticky top-0 z-40 shadow-sm border-b-0">
                         <div class="pt-safe px-4 pb-3 flex justify-between items-end min-h-[88px]">
                             <div class="flex flex-col justify-end pb-0.5">
-                                <h1 class="font-black text-3xl tracking-tighter text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
-                                <span class="text-[10px] text-jodo-textSecondary font-bold uppercase tracking-widest">Community Buying</span>
+                                <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
+                                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Daily Delivery</span>
                             </div>
                             <div class="flex flex-col items-end justify-end h-full">
-                                <button onclick="openSupportOptions()" class="group flex items-center gap-2 bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-xl active:bg-gray-200 transition-all shadow-sm">
-                                    <i data-lucide="headset" size="14" class="text-gray-600 group-active:scale-90 transition-transform"></i>
-                                    <span class="text-sm font-bold text-gray-700 tracking-wide">Help</span>
+                                <button onclick="openSupportOptions()" class="group flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full active:bg-gray-100 transition-all">
+                                    <i data-lucide="headset" size="14" class="text-gray-600"></i>
+                                    <span class="text-xs font-bold text-gray-600 tracking-wide">Support</span>
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     <div class="px-4 mt-4">
-                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-2.5 flex items-center gap-2 text-[10px] font-bold text-blue-800 shadow-sm">
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-2.5 flex items-center gap-2 text-[10px] font-medium text-gray-600 shadow-sm">
                             <span class="relative flex h-2 w-2">
-                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                              <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                             </span>
-                            58 squads completed in Duvva today.
+                            Orders delivered regularly in this area
                         </div>
                     </div>
                     
@@ -837,36 +790,35 @@
                     
                     <div class="px-4 space-y-3 mt-2 pb-32">
                         <div class="flex items-center justify-between mb-2 mt-6">
-                            <h2 class="text-xs font-bold text-jodo-textSecondary uppercase tracking-widest">Live Deals</h2>
-                            <div class="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100">Ends 8 PM</div>
+                            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Open Orders</h2>
+                            <div class="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100">Order by 8 PM</div>
                         </div>
                         
                         ${sortedProducts.map(p => {
                             const activeGid = userActiveGroupIds[p.id];
                             const savings = p.price1 - p.price5;
                             const actionAttr = activeGid ? `onclick="openGroup('${activeGid}')"` : `onclick="openStartModal('${p.id}')"`;
-                            const btnText = activeGid ? 'View Order' : 'Grab Deal';
-                            const btnClass = activeGid ? 'bg-white border border-jodo-ctaPrimary text-jodo-ctaPrimary' : 'bg-jodo-ctaPrimary text-white border border-transparent';
+                            const btnText = activeGid ? 'View' : 'Add';
+                            const btnClass = activeGid ? 'bg-white border border-gray-200 text-gray-700' : 'bg-jodo-ctaPrimary text-white border border-transparent';
                             
                             return `
-                            <div class="bg-white p-3 rounded-2xl flex gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 relative overflow-hidden active:scale-[0.99] transition-all duration-200 group-card" ${actionAttr}>
-                                <div onclick="event.stopPropagation(); openFullFeed('${p.id}')" class="w-28 h-28 bg-gray-100 rounded-xl relative overflow-hidden shrink-0 border border-gray-100 cursor-pointer group shadow-sm">
-                                    <img src="${p.imageSrc}" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="${p.name}" loading="lazy">
-                                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 pt-6"><div class="text-white text-[9px] font-bold text-center leading-none tracking-wide">${p.remainingStock}kg left</div></div>
+                            <div class="bg-white p-3 rounded-2xl flex gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden active:scale-[0.99] transition-all duration-200 group-card" ${actionAttr}>
+                                <div class="w-24 h-24 bg-gray-100 rounded-xl relative overflow-hidden shrink-0 border border-gray-100 cursor-pointer group">
+                                    <img src="${p.imageSrc}" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="${p.name}" loading="lazy">
+                                    <div class="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm p-1"><div class="text-gray-800 text-[9px] font-bold text-center leading-none">${p.remainingStock}kg left</div></div>
                                 </div>
 
                                 <div class="flex-1 flex flex-col justify-between py-1 min-w-0">
                                     <div>
-                                        <div class="mb-1"><h3 class="font-black text-lg text-jodo-textPrimary leading-tight line-clamp-1">${p.name}</h3><div class="text-xs font-semibold text-jodo-textSecondary line-clamp-1">${p.nameTe}</div></div>
-                                        <div class="flex flex-wrap gap-1.5"><span class="bg-gray-100 text-jodo-textSecondary text-[9px] font-bold px-1.5 py-0.5 rounded border border-gray-200">Fresh</span><span class="bg-green-50 text-green-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-green-200 flex items-center gap-0.5"><i data-lucide="trending-down" size="10"></i> Save ₹${savings}</span></div>
+                                        <div class="mb-1"><h3 class="font-bold text-lg text-gray-900 leading-tight line-clamp-1">${p.name}</h3><div class="text-xs font-medium text-gray-500 line-clamp-1">${p.nameTe}</div></div>
                                     </div>
                                     <div>
                                         <div class="flex items-end justify-between gap-2">
                                             <div>
-                                                <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5 line-through decoration-red-500">₹${p.price1}</div>
-                                                <div class="flex items-baseline gap-1.5 text-jodo-priceFinal"><div class="flex items-baseline leading-none"><span class="text-sm font-bold">₹</span><span class="text-2xl font-black tracking-tighter">${p.price5}</span></div><span class="text-[10px] text-jodo-textSecondary font-bold">/ ${p.unit}</span></div>
+                                                <div class="text-[9px] text-gray-400 font-medium uppercase tracking-wider mb-0.5 line-through decoration-gray-300">₹${p.price1}</div>
+                                                <div class="flex items-baseline gap-1 text-gray-900"><div class="flex items-baseline leading-none"><span class="text-sm font-medium">₹</span><span class="text-xl font-bold tracking-tight">${p.price5}</span></div><span class="text-[10px] text-gray-400 font-medium">/${p.unit}</span></div>
                                             </div>
-                                            <button class="${btnClass} h-9 px-3.5 rounded-lg shadow-sm flex items-center gap-1.5 active:scale-95 transition-transform shrink-0"><span class="text-xs font-bold uppercase tracking-wide">${btnText}</span><i data-lucide="${activeGid ? 'chevron-right' : 'arrow-right'}" size="14"></i></button>
+                                            <button class="${btnClass} h-8 px-4 rounded-lg shadow-sm flex items-center gap-1.5 active:scale-95 transition-transform shrink-0"><span class="text-xs font-bold uppercase tracking-wide">${btnText}</span></button>
                                         </div>
                                     </div>
                                 </div>
@@ -913,71 +865,89 @@
             const expiryDate = new Date(g.expiresAt);
             const now = new Date();
             const isExpired = g.expiresAt < now.getTime();
-            let hours = expiryDate.getHours();
-            const minutes = expiryDate.getMinutes();
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12; hours = hours ? hours : 12; 
-            const minutesStr = minutes < 10 ? '0'+minutes : minutes;
-            const timeStr = hours + ':' + minutesStr + ' ' + ampm;
-            let dateLabel = "Today";
-            const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
-            if (expiryDate.toDateString() === now.toDateString()) dateLabel = "Today";
-            else if (expiryDate.toDateString() === tomorrow.toDateString()) dateLabel = "Tomorrow";
-            else { const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; dateLabel = `${monthNames[expiryDate.getMonth()]} ${expiryDate.getDate()}`; }
+            
+            // 4️⃣ USE REAL-WORLD TIME
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const expiryDay = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
+            const diffDays = Math.round((expiryDay - today) / (1000 * 60 * 60 * 24));
+
+            let closeText = "";
+            let deliveryText = "";
+            let headerText = "";
+
+            const deliveryDate = new Date(expiryDate);
+            deliveryDate.setDate(deliveryDate.getDate() + 1); // Delivery is morning after cutoff
+
+            if (diffDays <= 0) {
+                closeText = "Orders close today evening";
+                headerText = "Closes today";
+                deliveryText = "Delivery Tomorrow morning";
+            } else if (diffDays === 1) {
+                closeText = "Orders close tomorrow evening";
+                headerText = "Closes tomorrow";
+                deliveryText = "Delivery " + deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }) + " morning";
+            } else {
+                const dayName = expiryDate.toLocaleDateString('en-US', { weekday: 'long' });
+                closeText = "Orders close " + dayName + " evening";
+                headerText = "Closes " + dayName;
+                deliveryText = "Delivery " + deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }) + " morning";
+            }
 
             const currentUrl = `${BASE_URL}?group=${g.id}`;
             // FIX 8: Static Share Link Text
-            const inviteMsg = `Join my squad for ${p.name} on JODO to unlock wholesale price! Order here: ${currentUrl}`;
+            const inviteMsg = `We are ordering ${p.name} together.\nIf you need, you can add here:\n${currentUrl}`;
             const inviteLink = `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
 
             el.innerHTML = `
                 <div class="fade-in bg-white min-h-screen pb-40 font-sans">
-                    <div class="glass-header h-[64px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white shadow-sm">
+                    <div class="glass-header h-[60px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white shadow-sm border-b border-gray-100">
                         <div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="goHome()">
-                            <i data-lucide="arrow-left" size="24" class="text-jodo-textPrimary"></i>
-                            <span class="font-bold text-lg tracking-wide text-jodo-textPrimary">Group #${g.id.slice(-4)}</span>
+                            <i data-lucide="arrow-left" size="24" class="text-gray-700"></i>
+                            <span class="font-bold text-base tracking-wide text-gray-800">Back</span>
                         </div>
-                        <div class="font-mono font-bold text-lg tracking-widest text-jodo-textPrimary tabular-nums pt-safe" id="header-timer">...</div>
+                        <div class="text-xs font-medium text-gray-500 pt-safe">${headerText}</div>
                     </div>
 
                     <div class="p-4">
                         <div class="flex flex-col items-center mb-6 mt-6 animate-in fade-in-up duration-300">
-                            <h1 class="text-3xl font-black text-jodo-textPrimary leading-none mb-1 tracking-tight text-center">${p.name}</h1>
-                            <p class="text-sm font-bold text-jodo-textSecondary">${p.nameTe} • ${p.unit} Bundle</p>
+                            <h1 class="text-2xl font-black text-gray-900 leading-none mb-1 tracking-tight text-center">${p.name}</h1>
+                            <p class="text-sm font-medium text-gray-500 mb-2">${p.nameTe} • ${p.unit} Bundle</p>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs font-medium text-gray-600">
+                                <i data-lucide="user" size="12"></i>
+                                Started by ${g.ownerName || 'Neighbor'} (near ${g.ownerArea || 'local area'})
+                            </div>
                         </div>
 
                         ${isExpired ? `
-                        <div class="bg-red-50 text-red-700 p-4 mb-6 rounded-xl shadow-sm text-center border border-red-100 flex items-center justify-center gap-2">
+                        <div class="bg-gray-100 text-gray-600 p-4 mb-6 rounded-xl text-center border border-gray-200 flex items-center justify-center gap-2">
                             <i data-lucide="clock" size="20"></i>
-                            <div class="font-bold text-lg uppercase">Squad Expired</div>
+                            <div class="font-bold text-sm uppercase">Order Closed</div>
                         </div>` : ''}
 
-                        <div class="text-center mb-8 relative">
-                            <div class="inline-block relative">
-                                <div class="text-6xl font-mono font-black text-jodo-textPrimary tracking-tighter tabular-nums relative z-10 leading-none" id="hero-timer">--:--:--</div>
-                            </div>
-                            <div class="text-jodo-textSecondary text-xs font-bold uppercase tracking-[0.2em] mt-3">Expires ${dateLabel} ${timeStr}</div>
+                        <div class="text-center mb-8 px-6">
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">${deliveryText}</h2>
+                            <p class="text-xs text-gray-400">${closeText}</p>
                         </div>
 
                         <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
                             <div class="space-y-4 mb-6">
                                 <div class="flex justify-between items-center ${count < 3 ? 'opacity-100' : 'opacity-40 grayscale'} transition-all">
-                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">1</div><span class="text-sm font-bold text-jodo-textSecondary">Solo Price</span></div>
-                                    <span class="text-base font-bold text-jodo-priceOld line-through">₹${p.price1}</span>
+                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">1</div><span class="text-sm font-bold text-gray-500">Single</span></div>
+                                    <span class="text-base font-bold text-gray-400 line-through decoration-gray-300">₹${p.price1}</span>
                                 </div>
-                                <div class="flex justify-between items-center ${count >= 3 ? 'scale-105' : ''} transition-all p-3 -mx-3 rounded-lg ${count >= 3 ? 'bg-green-50 border border-green-200 shadow-sm' : ''}">
-                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full ${count >= 3 ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-500'} flex items-center justify-center text-xs font-bold">3+</div><span class="text-sm font-bold ${count >= 3 ? 'text-green-800' : 'text-jodo-textSecondary'}">Group Price</span></div>
-                                    <span class="text-2xl price-anchor ${count >= 3 ? 'text-jodo-priceFinal' : 'text-gray-400'}">₹${p.price5}</span>
+                                <div class="flex justify-between items-center ${count >= 3 ? 'scale-100' : ''} transition-all p-3 -mx-3 rounded-lg ${count >= 3 ? 'bg-green-50 border border-green-100' : ''}">
+                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full ${count >= 3 ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-500'} flex items-center justify-center text-xs font-bold">3+</div><span class="text-sm font-bold ${count >= 3 ? 'text-green-800' : 'text-gray-500'}">Group</span></div>
+                                    <span class="text-2xl font-bold ${count >= 3 ? 'text-green-700' : 'text-gray-400'}">₹${p.price5}</span>
                                 </div>
                             </div>
                             <div class="text-center">
-                                <div class="text-3xl font-black text-jodo-textPrimary mb-1">${count} <span class="text-gray-300 text-2xl">/</span> 3+</div>
-                                <div class="text-sm font-bold ${count < 3 ? 'text-jodo-urgency' : 'text-jodo-priceFinal'}">${count < 3 ? `Need ${needed} more to unlock ₹${p.price5}` : '🎉 LOWEST PRICE UNLOCKED!'}</div>
+                                <div class="text-3xl font-black text-gray-900 mb-1">${count} <span class="text-gray-300 text-xl font-normal">joined</span></div>
+                                <div class="text-sm font-medium ${count < 3 ? 'text-gray-500' : 'text-green-600'}">${count < 3 ? `${needed} more for group price` : 'Group price active'}</div>
                             </div>
                         </div>
 
                         <div class="space-y-3 mb-8">
-                            <h3 class="text-xs font-bold text-jodo-textSecondary uppercase tracking-widest mb-4">Our Gang (${count} Joined)</h3>
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">People Joined</h3>
                             ${(() => {
                                 const totalSlots = Math.max(members.length + 1, 3); 
                                 return Array(totalSlots).fill(0).map((_, i) => {
@@ -991,23 +961,22 @@
                                         const clickAttr = isMe ? `onclick="openEditMemberModal('${g.id}', ${i})"` : '';
                                         const cursorClass = isMe ? 'active:scale-[0.99] cursor-pointer' : 'cursor-default';
 
-                                        return `<div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mb-3 transition-all ${cursorClass}" ${clickAttr}>
-                                            <div class="flex items-center justify-between mb-3">
+                                        return `<div class="bg-white border border-gray-100 p-3 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] mb-2 transition-all ${cursorClass}" ${clickAttr}>
+                                            <div class="flex items-center justify-between mb-2">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="w-10 h-10 rounded-full ${isMe ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm shrink-0">${member.name[0]}</div>
-                                                    <div><div class="text-sm font-bold text-jodo-textPrimary flex items-center gap-2">${isMe ? 'YOU' : member.name} ${member.isLeader ? '<span class="text-[9px] bg-yellow-100 text-yellow-800 px-1 rounded border border-yellow-200 font-bold uppercase">Leader</span>' : ''}</div><div class="text-xs text-jodo-textSecondary font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit} confirmed</div></div>
+                                                    <div class="w-8 h-8 rounded-full ${isMe ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} flex items-center justify-center font-bold text-xs border border-white shadow-sm shrink-0">${member.name[0]}</div>
+                                                    <div><div class="text-sm font-bold text-gray-800 flex items-center gap-2">${isMe ? 'You' : member.name} ${member.isLeader ? '<span class="text-[8px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 font-bold uppercase tracking-wide">Host</span>' : ''}</div><div class="text-xs text-gray-400 font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit}</div></div>
                                                 </div>
-                                                ${isMe ? '<div class="text-green-600 bg-green-50 p-1.5 rounded-full"><i data-lucide="edit-2" size="14"></i></div>' : '<div class="text-gray-400 bg-gray-100 p-1.5 rounded-full"><i data-lucide="lock" size="14"></i></div>'}
+                                                ${isMe ? '<div class="text-green-600 bg-green-50 p-1.5 rounded-full"><i data-lucide="edit-2" size="12"></i></div>' : ''}
                                             </div>
-                                            <div class="grid grid-cols-2 gap-2 text-center bg-gray-50 rounded-lg p-2 border border-gray-100">
-                                                <div class="flex flex-col"><span class="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Solo Cost</span><span class="text-xs font-medium text-gray-500">₹${t1}</span></div>
-                                                <div class="flex flex-col relative">${count >= 3 ? '<div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] bg-green-100 text-green-800 px-1.5 rounded-full font-bold border border-green-200">Unlocked</div>' : ''}<span class="text-[9px] font-bold ${count >= 3 ? 'text-green-700' : 'text-gray-400'} uppercase mb-0.5">Group Cost</span><span class="text-xs font-black ${count >= 3 ? 'text-green-700' : 'text-jodo-textPrimary'}">₹${t5}</span></div>
+                                            <div class="flex justify-between items-center pt-2 border-t border-gray-50">
+                                                <span class="text-[10px] font-medium text-gray-400 uppercase">Total</span>
+                                                <span class="text-sm font-bold ${count >= 3 ? 'text-green-700' : 'text-gray-900'}">₹${count >= 3 ? t5 : t1}</span>
                                             </div>
                                         </div>`;
                                     } else {
-                                        return `<div class="flex items-center justify-between bg-white border-2 border-dashed border-gray-200 p-4 rounded-xl mb-3">
-                                            <div class="flex items-center gap-3 opacity-60"><div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><i data-lucide="user" size="18"></i></div><span class="text-sm font-bold text-gray-500">Open Spot</span></div>
-                                            <div class="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">Waiting...</div>
+                                        return `<div class="flex items-center justify-between bg-gray-50 border border-dashed border-gray-200 p-3 rounded-xl mb-2 opacity-60">
+                                            <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-300"><i data-lucide="user" size="14"></i></div><span class="text-xs font-medium text-gray-400">Open Slot</span></div>
                                         </div>`;
                                     }
                                 }).join('');
@@ -1015,69 +984,37 @@
                         </div>
                     </div>
 
-                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-jodo-border p-4 pb-safe z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
                         <div class="max-w-md mx-auto pt-2 pb-2">
                             ${count >= 3 ? `
-                                <div class="text-center text-green-700 bg-green-50 p-2 rounded-lg border border-green-200 font-bold mb-3 shadow-sm flex items-center justify-center gap-2 text-sm">
-                                  <i data-lucide="check-circle" size="16"></i>
-                                  🎉 Lowest Price Unlocked!
+                                <div class="text-center text-green-700 bg-green-50 p-2 rounded-lg border border-green-100 font-bold mb-3 flex items-center justify-center gap-2 text-sm">
+                                  <i data-lucide="check" size="16"></i>
+                                  Group Active
                                 </div>
                             ` : ''}
 
                             ${!isExpired && !hasJoinedThisGroup && count < MAX_GROUP_MEMBERS ? `
-                            <button onclick="openJoinFlow('${p.id}', '${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-3 btn-press">
-                                <i data-lucide="user-plus" size="24"></i>
-                                <span>Join This Squad</span>
+                            <div class="text-center text-[11px] text-gray-500 font-medium mb-2">No payment now • Pay on delivery</div>
+                            <button onclick="openJoinFlow('${p.id}', '${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 mb-3 btn-press">
+                                <span>Join Order</span>
                             </button>
                             ` : ''}
                             
-                            <a href="${inviteLink}" target="_blank" class="block w-full bg-[#25D366] text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2 transition-all hover:bg-[#1ebc57]">
-                                <i data-lucide="share-2" size="24"></i>
-                                <span>Share Invite Link</span>
+                            <a href="${inviteLink}" target="_blank" class="block w-full bg-white border border-gray-300 text-gray-700 h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2 transition-all hover:bg-gray-50">
+                                <i data-lucide="share-2" size="20"></i>
+                                <span>Share Link</span>
                             </a>
                             
                             ${count < 3 ? `
-                            <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs font-medium text-jodo-textSecondary">
-                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                <span>${needed} spots left to unlock ₹${p.price5}</span>
+                            <div class="text-center mt-3 text-xs font-medium text-gray-400">
+                                ${needed} more needed for group price
                             </div>
                             ` : ''}
                         </div>
                     </div>
                 </div>
             `;
-
-            const timerEl = el.querySelector('#hero-timer');
-            const headerTimerEl = el.querySelector('#header-timer');
-            if (timerEl) {
-                const tick = () => {
-                    const now = Date.now();
-                    const diff = Math.max(0, g.expiresAt - now);
-                    const h = Math.floor(diff / 3600000);
-                    const m = Math.floor((diff % 3600000) / 60000);
-                    const s = Math.floor((diff % 60000) / 1000);
-                    const fmt = (n) => n < 10 ? '0'+n : n;
-                    const mainStr = `${fmt(h)}:${fmt(m)}:${fmt(s)}`;
-                    timerEl.innerText = mainStr;
-                    if (headerTimerEl) headerTimerEl.innerText = mainStr;
-                    
-                    if (diff < 7200000 && diff > 0) { 
-                        timerEl.classList.add('text-jodo-urgency'); 
-                        if (headerTimerEl) headerTimerEl.classList.add('text-jodo-urgency'); 
-                    }
-                    
-                    if (diff <= 0) { 
-                        timerEl.innerText = "00:00:00"; 
-                        timerEl.classList.add('text-gray-400'); 
-                        if (headerTimerEl) headerTimerEl.classList.add('text-gray-400'); 
-                        
-                        // FIX 1: Removed client side status update
-                        clearInterval(state.timerInterval); 
-                        state.timerInterval = null; 
-                    }
-                };
-                state.timerInterval = setInterval(tick, 1000); tick();
-            }
+            // Removed ticking timer logic
         }
 
         function render() {
@@ -1131,7 +1068,7 @@
 
         window.openGroup = function(gid) { 
             if (!gid || typeof gid !== 'string') {
-                toast('Invalid group link', 'alert-circle');
+                toast('Invalid link', 'alert-circle');
                 window.goHome();
                 return;
             }
@@ -1158,7 +1095,7 @@
                             state.groups[gid] = doc.data();
                             safeRender();
                         } else {
-                            toast("Squad not found", "alert-circle");
+                            toast("Order not found", 'alert-circle');
                             window.goHome();
                         }
                     },
@@ -1274,4 +1211,3 @@
     </script>
 </body>
 </html>
-
