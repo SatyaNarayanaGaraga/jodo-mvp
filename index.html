@@ -86,19 +86,19 @@
 
     <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900/95 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe backdrop-blur border border-white/10"></div>
 
-    <!-- 1️⃣ FIREBASE MODULE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import {
           getFirestore,
           doc,
           setDoc,
-          getDoc,
+          getDoc, // ✅ Added for secure count
+          getDocs, // ✅ Added for secure count
+          updateDoc,
           onSnapshot,
           collection
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
       
-        // Using provided config
         const firebaseConfig = {
           apiKey: "AIzaSyBPqMkzfPjPzKIFSCYPipocH97TmPn2NLI",
           authDomain: "jodo-prod-e7788.firebaseapp.com",
@@ -112,18 +112,17 @@
         const db = getFirestore(app);
       
         window.db = db;
-        window.fs = { doc, setDoc, getDoc, onSnapshot, collection };
+        // Exposed getDocs for logic
+        window.fs = { doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, collection };
         
-        // Signal ready
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
-
+    
     <script>
         // --- CONSTANTS & CONFIG ---
         const COMPANY_PHONE = "918500742671"; 
-        // 🔹 1. CREATE ONE BASE URL (MANDATORY FOR GITHUB PAGES)
-        // Hardcoded to exact repo path to prevent any subdirectory inference issues
         const BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp';
+        const MAX_GROUP_MEMBERS = 20; // 🔒 Hard Limit
         
         const PRODUCTS = [
             { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '500g', baseWeight: 0.5, weightUnit: 'kg', price1: 25, price5: 18, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-red-50 text-red-600', location: 'Duvva Fields', imageSrc: 'https://images.unsplash.com/photo-1620574387735-3624d75b2dbc?auto=format&fit=crop&w=600&q=80' },
@@ -140,9 +139,8 @@
             { msg: "🚚 Next delivery tomorrow 8 AM.", type: 'neutral' }
         ];
 
-        // --- DELIVERY SYSTEM ---
-        const DELIVERY_DAYS = [3, 6]; // Wed, Sat
-        const CUTOFF_HOUR = 20; // 8 PM
+        const DELIVERY_DAYS = [3, 6]; 
+        const CUTOFF_HOUR = 20; 
 
         function getNextDeliveryDate() {
             const now = new Date();
@@ -154,13 +152,11 @@
                     return d;
                 }
             }
-            // Fallback
             const d = new Date(); 
             d.setDate(d.getDate() + 1);
             return d;
         }
 
-        // --- STATE MANAGEMENT ---
         const state = { 
             view: 'home', 
             currentGroupId: null, 
@@ -172,14 +168,13 @@
             lastMemberCount: 0,
             unsubGroup: null,
             unsubMembers: null,
-            homeListeners: [] // Array of unsubscribe functions for home screen
+            homeListeners: [] 
         };
 
         const habitState = { totalOrders: 0, streakDays: 0, lastOrderDate: null };
         let JODO_INITIALIZED = false;
         let renderScheduled = false;
 
-        // --- DATA LAYER ---
         function loadData() {
             try {
                 state.user.name = localStorage.getItem('jodo_user_name') || '';
@@ -205,7 +200,6 @@
             if (!state.user.joinedGroupIds.includes(gid)) {
                 state.user.joinedGroupIds.push(gid);
                 localStorage.setItem(GROUPS_KEY, JSON.stringify(state.user.joinedGroupIds));
-                // Immediately listen to this new group for home screen updates
                 listenToGroupForHome(gid);
             }
         }
@@ -242,7 +236,6 @@
             saveHabit();
         }
 
-        // --- UI UTILS ---
         function toast(msg, icon) { 
             const t = document.getElementById('toast'); 
             t.innerHTML = `<i data-lucide="${icon}" size="16"></i> ${msg}`; 
@@ -270,7 +263,6 @@
             const content = document.getElementById('modal-content');
             content.innerHTML = ''; content.appendChild(node); 
             overlay.classList.remove('hidden'); 
-            // Slight delay to allow display:block to apply before opacity transition
             setTimeout(() => { 
                 overlay.classList.remove('opacity-0'); 
                 content.classList.remove('translate-y-full'); 
@@ -307,14 +299,12 @@
                     setTimeout(() => el.classList.add('hidden'), 500); 
                 }, 5000);
             };
-            update(); // First run
+            update(); 
             state.tickerInterval = setInterval(update, 12000); 
         }
 
         function initCardTilt() {
-            // Only on desktop/mouse devices to prevent weird scroll blocking on mobile
             if (window.matchMedia("(pointer: coarse)").matches) return;
-
             const cards = document.querySelectorAll('.tilt-card');
             cards.forEach(card => {
                 card.addEventListener('mousemove', (e) => {
@@ -332,8 +322,6 @@
                 });
             });
         }
-
-        // --- MODALS & ACTIONS ---
 
         window.openLiveGuide = function() {
             toast("Guide video coming soon!", "video");
@@ -353,7 +341,6 @@
             let qty = 2; let isGroupMode = true; 
             
             const nextDelivery = getNextDeliveryDate();
-            // Create a consistent delivery/expiry time
             const deliveryTime = new Date(nextDelivery);
             deliveryTime.setHours(CUTOFF_HOUR, 0, 0, 0); 
 
@@ -402,7 +389,6 @@
             `);
             showModalNode(node);
 
-            // DOM Elements
             const modeSoloEl = node.querySelector('#mode-solo');
             const modeGroupEl = node.querySelector('#mode-group');
             const footerTotalEl = node.querySelector('#footer-total');
@@ -469,24 +455,49 @@
                 triggerVibration(); 
                 saveUser(name, phone, ward);
                 
-                // 5️⃣ SAFE GROUP ID GENERATION
                 const gid = joinGroupId || ('g-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
 
-                // Wait for Firebase to be ready if it's the very first interaction
                 if (!window.fs || !window.db) {
                      toast("Connecting to server...", "wifi");
                      await new Promise(r => setTimeout(r, 1000));
                 }
 
-                // 1. EXPIRY CHECK
+                // 1. EXPIRY & STATUS CHECK (FETCH SERVER TRUTH)
                 let groupExpiryTime = deliveryTime.getTime(); 
-                if (joinGroupId && state.groups[joinGroupId]) {
-                    groupExpiryTime = state.groups[joinGroupId].expiresAt;
-                }
-                if (Date.now() > groupExpiryTime) {
-                    toast("This group has expired", "clock");
-                    actionBtn.disabled = false; actionBtn.innerHTML = originalText;
-                    return;
+                if (joinGroupId) {
+                    try {
+                        const gRef = window.fs.doc(window.db, "groups", joinGroupId);
+                        const gSnap = await window.fs.getDoc(gRef);
+                        
+                        if (gSnap.exists()) {
+                            const gData = gSnap.data();
+                            
+                            // CHECK 1: Is Closed?
+                            if (gData.status === 'closed') {
+                                toast("This group is closed", "lock");
+                                actionBtn.disabled = false; actionBtn.innerHTML = originalText;
+                                return;
+                            }
+                            
+                            // CHECK 2: Is Expired?
+                            if (gData.expiresAt < Date.now()) {
+                                toast("This group has expired", "clock");
+                                actionBtn.disabled = false; actionBtn.innerHTML = originalText;
+                                return;
+                            }
+
+                            // ✅ CHECK 3: Max Members (SECURE - Count Subcollection)
+                            const mCol = window.fs.collection(window.db, "groups", joinGroupId, "members");
+                            const mSnap = await window.fs.getDocs(mCol);
+                            if (mSnap.size >= MAX_GROUP_MEMBERS) {
+                                toast("Group is full (Max 20)", "users");
+                                actionBtn.disabled = false; actionBtn.innerHTML = originalText;
+                                return;
+                            }
+
+                            groupExpiryTime = gData.expiresAt;
+                        }
+                    } catch(e) { console.error("Validation error", e); }
                 }
 
                 // 2. CHECK IF MEMBER ALREADY EXISTS
@@ -495,13 +506,14 @@
                     const existing = await window.fs.getDoc(memberRef);
                     if (existing.exists()) {
                         toast("Already joined this squad", "user-check");
-                        saveJoinedGroup(gid); // Ensure local cache is in sync
+                        saveJoinedGroup(gid); 
                         window.closeModal();
                         window.openGroup(gid);
                         return;
                     }
                 } catch(e) { console.error("Validation error", e); }
 
+                // Group Doc: Only created, NEVER UPDATED by client (except status auto-close)
                 const group = { 
                     id: gid, 
                     productId: pid, 
@@ -532,6 +544,8 @@
                     
                     saveJoinedGroup(gid);
                     markOrderHabit(); 
+                    
+                    console.log("[ADMIN] JOINED:", gid, phone, qty);
 
                     setTimeout(() => { 
                         window.closeModal(); 
@@ -636,9 +650,14 @@
                     
                     if (!name || !ward) return toast('Name & Ward required', 'alert-circle'); 
                     
-                    // 2️⃣ SAFETY RULE: RE-CHECK EXPIRY BEFORE WRITE
+                    // 🔒 SECURITY: Re-check expiry AND status before write
                     if (group.expiresAt < Date.now()) {
                         toast("Group has expired", "clock");
+                        window.closeModal();
+                        return;
+                    }
+                    if (group.status === 'closed') {
+                        toast("Group is closed", "lock");
                         window.closeModal();
                         return;
                     }
@@ -665,21 +684,16 @@
             }
         };
 
-        // --- RENDERERS ---
-
         function renderHome(el) {
-            // Check for user's active groups from state
             const activeUserGroups = [];
             state.user.joinedGroupIds.forEach(gid => {
                 if (state.groups[gid]) activeUserGroups.push(state.groups[gid]);
             });
             activeUserGroups.sort((a, b) => b.createdAt - a.createdAt);
             
-            // Map active groups to products to mark them
             const userActiveGroupIds = {};
             activeUserGroups.forEach(g => { userActiveGroupIds[g.productId] = g.id; });
             
-            // Sort products so ones with active orders come first
             const sortedProducts = [...PRODUCTS].sort((a, b) => { 
                 const aActive = !!userActiveGroupIds[a.id]; 
                 const bActive = !!userActiveGroupIds[b.id]; 
@@ -688,7 +702,6 @@
                 return 0; 
             });
 
-            // --- HERO SECTION ---
             let heroContent = '';
             if (activeUserGroups.length > 0) {
                 const cardsHtml = activeUserGroups.map(g => {
@@ -730,7 +743,6 @@
 
             el.innerHTML = `
                 <div class="pb-safe fade-in bg-white">
-                    <!-- HEADER -->
                     <div class="glass-header sticky top-0 z-40 shadow-sm border-b-0">
                         <div class="pt-safe px-4 pb-3 flex justify-between items-end min-h-[88px]">
                             <div class="flex flex-col justify-end pb-0.5">
@@ -773,13 +785,11 @@
                             
                             return `
                             <div class="bg-white p-3 rounded-2xl flex gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 relative overflow-hidden active:scale-[0.99] transition-all duration-200 group-card" ${actionAttr}>
-                                <!-- Image Section -->
                                 <div onclick="event.stopPropagation(); openFullFeed('${p.id}')" class="w-28 h-28 bg-gray-100 rounded-xl relative overflow-hidden shrink-0 border border-gray-100 cursor-pointer group shadow-sm">
                                     <img src="${p.imageSrc}" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="${p.name}" loading="lazy">
                                     <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 pt-6"><div class="text-white text-[9px] font-bold text-center leading-none tracking-wide">${p.remainingStock}kg left</div></div>
                                 </div>
 
-                                <!-- Content Section -->
                                 <div class="flex-1 flex flex-col justify-between py-1 min-w-0">
                                     <div>
                                         <div class="mb-1"><h3 class="font-black text-lg text-jodo-textPrimary leading-tight line-clamp-1">${p.name}</h3><div class="text-xs font-semibold text-jodo-textSecondary line-clamp-1">${p.nameTe}</div></div>
@@ -807,7 +817,6 @@
             if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
             
             const g = state.groups[state.currentGroupId]; 
-            // If group data isn't loaded yet, show skeleton
             if (!g) {
                 el.innerHTML = `
                 <div class="min-h-screen bg-white p-6 pt-24 space-y-6">
@@ -830,13 +839,11 @@
             const needed = Math.max(0, 3 - count);
             const currentUserMember = members.find(m => m.phone === state.user.phone);
             
-            // Confetti check
             if (count >= 3 && count !== state.lastMemberCount && state.lastMemberCount !== 0) {
                 triggerConfetti();
             }
             state.lastMemberCount = count;
 
-            // Generate WhatsApp String
             let waOrderLink = "#";
             if (members.length > 0) {
                 const pricePerUnit = (count >= 3) ? p.price5 : p.price1;
@@ -870,7 +877,6 @@
             else if (expiryDate.toDateString() === tomorrow.toDateString()) dateLabel = "Tomorrow";
             else { const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; dateLabel = `${monthNames[expiryDate.getMonth()]} ${expiryDate.getDate()}`; }
 
-            // 1️⃣ & 2️⃣ FIX SHARE LINK Logic with BASE_URL
             const currentUrl = `${BASE_URL}?group=${g.id}`;
             const inviteMsg = `Join my squad for ${p.name} on JODO! We need ${needed} more to get it for ₹${p.price5}/${p.unit}. Order here: ${currentUrl}`;
             const inviteLink = `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
@@ -985,7 +991,6 @@
                 </div>
             `;
 
-            // Timer Logic
             const timerEl = el.querySelector('#hero-timer');
             const headerTimerEl = el.querySelector('#header-timer');
             if (timerEl) {
@@ -999,14 +1004,30 @@
                     const mainStr = `${fmt(h)}:${fmt(m)}:${fmt(s)}`;
                     timerEl.innerText = mainStr;
                     if (headerTimerEl) headerTimerEl.innerText = mainStr;
-                    if (diff < 7200000 && diff > 0) { timerEl.classList.add('text-jodo-urgency'); if (headerTimerEl) headerTimerEl.classList.add('text-jodo-urgency'); }
-                    if (diff <= 0) { timerEl.innerText = "00:00:00"; timerEl.classList.add('text-gray-400'); if (headerTimerEl) headerTimerEl.classList.add('text-gray-400'); clearInterval(state.timerInterval); state.timerInterval = null; }
+                    
+                    if (diff < 7200000 && diff > 0) { 
+                        timerEl.classList.add('text-jodo-urgency'); 
+                        if (headerTimerEl) headerTimerEl.classList.add('text-jodo-urgency'); 
+                    }
+                    
+                    if (diff <= 0) { 
+                        timerEl.innerText = "00:00:00"; 
+                        timerEl.classList.add('text-gray-400'); 
+                        if (headerTimerEl) headerTimerEl.classList.add('text-gray-400'); 
+                        
+                        if (g.status !== 'closed' && window.fs && window.db) {
+                            const groupRef = window.fs.doc(window.db, "groups", g.id);
+                            window.fs.updateDoc(groupRef, { status: 'closed' }).catch(e => console.log("Auto-close err", e));
+                        }
+                        
+                        clearInterval(state.timerInterval); 
+                        state.timerInterval = null; 
+                    }
                 };
                 state.timerInterval = setInterval(tick, 1000); tick();
             }
         }
 
-        // --- MAIN RENDER CYCLE ---
         function render() {
             const app = document.getElementById('app');
             if (!app) return;
@@ -1026,20 +1047,15 @@
             });
         }
 
-        // --- GLOBAL LISTENERS (For Home Screen updates) ---
         function listenToGroupForHome(gid) {
             if (!window.fs || !window.db) return;
-            // Avoid duplicate listeners for same GID
-            // For MVP simplicity, we just add one. In complex apps, we'd map them.
             
-            // Listen to group changes
             const unsubG = window.fs.onSnapshot(
                 window.fs.doc(window.db, "groups", gid),
                 (doc) => { if (doc.exists()) { state.groups[gid] = doc.data(); safeRender(); } }
             );
             state.homeListeners.push(unsubG);
 
-            // Listen to member counts
             const unsubM = window.fs.onSnapshot(
                 window.fs.collection(window.db, "groups", gid, "members"),
                 (snap) => {
@@ -1052,26 +1068,20 @@
         }
 
         function initHomeListeners() {
-            // Clean old listeners
             state.homeListeners.forEach(u => u());
             state.homeListeners = [];
-            
-            // Setup new listeners for all cached groups
             state.user.joinedGroupIds.forEach(gid => {
                 listenToGroupForHome(gid);
             });
         }
 
-        // --- ROUTING & NAV ---
         window.openGroup = function(gid) { 
-            // 8️⃣ FINAL SAFETY CHECK
             if (!gid || typeof gid !== 'string') {
                 toast('Invalid group link', 'alert-circle');
                 window.goHome();
                 return;
             }
             
-            // 3️⃣ FIX openGroup() HISTORY PUSH (CRITICAL)
             try { 
                 if (window.location.protocol !== 'blob:') {
                     history.pushState({}, '', `${BASE_URL}?group=${gid}`);
@@ -1081,14 +1091,12 @@
             state.currentGroupId = gid; 
             state.view = 'group'; 
             
-            // Cleanup previous single-group listeners (not home listeners)
             if (state.unsubGroup) { state.unsubGroup(); state.unsubGroup = null; }
             if (state.unsubMembers) { state.unsubMembers(); state.unsubMembers = null; }
 
             safeRender(); 
 
             if (window.fs && window.db) {
-                // Main Group Listener
                 state.unsubGroup = window.fs.onSnapshot(
                     window.fs.doc(window.db, "groups", gid),
                     (doc) => {
@@ -1096,7 +1104,6 @@
                             state.groups[gid] = doc.data();
                             safeRender();
                         } else {
-                            // If group deleted/doesn't exist
                             toast("Squad not found", "alert-circle");
                             window.goHome();
                         }
@@ -1104,13 +1111,19 @@
                     (error) => { console.error("Group Listen Error:", error); }
                 );
 
-                // Members Listener
                 state.unsubMembers = window.fs.onSnapshot(
                     window.fs.collection(window.db, "groups", gid, "members"),
                     (snapshot) => {
                         const members = [];
-                        snapshot.forEach((doc) => members.push(doc.data()));
+                        snapshot.forEach((doc) => {
+                            const data = doc.data();
+                            members.push(data);
+                        });
                         state.members[gid] = members;
+                        
+                        // 🔐 SECURE CHANGE: Removed client-side aggregate writing to group doc.
+                        // Calculations are now done purely in UI render logic (members.length).
+                        // This prevents spoofing.
                         safeRender();
                     },
                      (error) => { console.error("Member Listen Error:", error); }
@@ -1121,11 +1134,9 @@
         window.goHome = function() { 
             if (state.timerInterval) clearInterval(state.timerInterval);
             
-            // Unsubscribe from single group focus listeners
             if (state.unsubGroup) { state.unsubGroup(); state.unsubGroup = null; }
             if (state.unsubMembers) { state.unsubMembers(); state.unsubMembers = null; }
 
-            // 4️⃣ FIX goHome() RESET (CRITICAL)
             try { 
                 if (window.location.protocol !== 'blob:') {
                     history.pushState({}, '', BASE_URL);
@@ -1146,11 +1157,9 @@
             loadData(); 
             loadHabit(); 
             
-            // 7️⃣ ENSURE FIREBASE LOAD ORDER (Already was correct, keeping strict)
             const startApp = () => {
-                initHomeListeners(); // Start listening to my groups for the home screen
+                initHomeListeners(); 
                 
-                // 3️⃣ ENSURE ROUTE HANDLING WORKS ON REFRESH
                 const params = new URLSearchParams(window.location.search);
                 const gid = params.get('group');
                 
