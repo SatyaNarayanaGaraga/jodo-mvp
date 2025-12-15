@@ -182,7 +182,7 @@
             try {
                 state.user.name = localStorage.getItem('jodo_user_name') || '';
                 state.user.phone = localStorage.getItem('jodo_user_phone') || '';
-                state.user.area = localStorage.getItem('jodo_user_area') || '';
+                // Removed area load
                 const savedGroups = localStorage.getItem(GROUPS_KEY);
                 state.user.joinedGroupIds = savedGroups ? JSON.parse(savedGroups) : [];
                 
@@ -190,15 +190,12 @@
             } catch(e) { console.error("Load Error", e); }
         }
 
-        function saveUser(name, phone, area) {
+        function saveUser(name, phone) { // Removed area param
             state.user.name = name;
             state.user.phone = phone;
             localStorage.setItem('jodo_user_name', name);
             localStorage.setItem('jodo_user_phone', phone);
-            if (area) {
-                state.user.area = area;
-                localStorage.setItem('jodo_user_area', area);
-            }
+            // Removed area save
             JOIN_SESSION_PHONE = phone;
         }
 
@@ -341,7 +338,7 @@
                 // FIX 1: Join link logic - preserve joinedGroupIds, only wipe identity
                 state.user.name = '';
                 state.user.phone = '';
-                state.user.area = '';
+                // Removed area wipe
                 // Do NOT wipe joinedGroupIds here
                 JOIN_SESSION_PHONE = null; // Prevent persistence pollution on fresh join
             } else if (state.user.phone) {
@@ -351,7 +348,7 @@
                 if (!ok) {
                     state.user.name = '';
                     state.user.phone = '';
-                    state.user.area = '';
+                    // Removed area wipe
                 }
             }
             
@@ -364,7 +361,9 @@
             let qty = 1; let isGroupMode = true; // CHANGED: Default qty 1
             
             const nextDelivery = getNextDeliveryDate();
-            
+            const deliveryTime = new Date(nextDelivery);
+            deliveryTime.setHours(CUTOFF_HOUR, 0, 0, 0); 
+
             const title = joinGroupId ? "Join Order" : "Start Order";
             const btnText = joinGroupId ? "Confirm Join" : "Confirm Order";
 
@@ -380,7 +379,7 @@
                             <div class="flex-1 flex flex-col justify-center"><h4 class="font-bold text-lg text-gray-900 leading-none mb-1">${p.name}</h4><div class="text-sm text-gray-500">${p.nameTe}</div><div class="mt-1 text-xs text-green-700 font-medium">In Stock</div></div>
                         </div>
                         <div class="bg-gray-50 border border-gray-100 p-3 rounded-lg mb-6 text-xs text-gray-600">
-                            Pickup: <strong>Next day morning</strong>
+                            Delivery scheduled for <strong>${nextDelivery.toLocaleDateString('en-US', { weekday: 'long' })}</strong>.
                         </div>
                         
                         ${!joinGroupId ? `
@@ -396,7 +395,7 @@
                         <div class="space-y-4 mb-8">
                             <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Your Name"></div>
                             <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Mobile Number"></div>
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="map-pin" size="18"></i></div><input id="inp-area" value="${user.area || ''}" type="text" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Nearby area (optional)"></div>
+                            <!-- Removed Area Input -->
                         </div>
                     </div>
                     <div class="bg-white border-t border-gray-100 p-4 shrink-0 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
@@ -465,7 +464,7 @@
                 
                 const name = safeVal(node.querySelector('#inp-name')); 
                 const phone = safeVal(node.querySelector('#inp-phone')); 
-                const area = safeVal(node.querySelector('#inp-area'));
+                // Removed area read
                 
                 if (!name || !/^[6-9]\d{9}$/.test(phone)) { 
                     resetActionButton(actionBtn, originalText); // FIX 6: Reset on validation
@@ -474,7 +473,7 @@
                 }
                 
                 triggerVibration(); 
-                saveUser(name, phone, area);
+                saveUser(name, phone); // Removed area save
                 
                 const gid = joinGroupId || ('g-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
 
@@ -544,9 +543,9 @@
                     id: gid, 
                     productId: pid, 
                     ownerName: name, 
-                    ownerArea: area, 
+                    // Removed ownerArea
                     expiresAt: groupExpiryTime, 
-                    deliveryDay: groupExpiryTime, // Storing cutoff as delivery anchor
+                    deliveryDay: groupExpiryTime, 
                     createdAt: Date.now(), 
                     type: isGroupMode ? 'group' : 'solo'
                     // FIX 1: Removed status
@@ -557,7 +556,7 @@
                     groupId: gid, 
                     name, 
                     phone, 
-                    area, 
+                    // Removed area
                     isLeader: !joinGroupId, 
                     quantity: Math.max(1, qty), // CHANGED: Min 1
                     joinedAt: Date.now() 
@@ -653,7 +652,7 @@
                         <div class="space-y-4 mb-6">
                             <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-gray-900 text-base outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all" ${isExpired ? 'disabled' : ''}></div>
                             <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Mobile</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-lg font-bold text-jodo-textSecondary text-base outline-none cursor-not-allowed" disabled></div>
-                            <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Area</label><input id="m-area" value="${member.area || ''}" type="text" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-gray-900 text-base outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all" ${isExpired ? 'disabled' : ''}></div>
+                            <!-- Removed Area Input -->
                         </div>
                     </div>
                     <div class="bg-white border-t border-gray-100 p-4 shrink-0 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
@@ -696,7 +695,7 @@
 
                     const name = safeVal(node.querySelector('#m-name')); 
                     const phone = member.phone; 
-                    const area = safeVal(node.querySelector('#m-area'));
+                    // Removed area val
                     
                     if (!name) return toast('Name required', 'alert-circle'); 
                     
@@ -709,7 +708,7 @@
 
                     // FIX 3: Edit Flow Bug - removed id check (firestore id is trustworthy)
 
-                    const updatedMember = { ...member, name, area, quantity: qty, updatedAt: Date.now() };
+                    const updatedMember = { ...member, name, quantity: qty, updatedAt: Date.now() }; // Removed area
                     
                     try {
                         saveBtn.disabled = true;
@@ -719,7 +718,7 @@
                             window.fs.doc(window.db, "groups", gid, "members", member.id),
                             updatedMember
                         );
-                        saveUser(name, phone, area); 
+                        saveUser(name, phone); // Removed area
                         window.closeModal(); 
                         toast('Updated', 'check-circle'); 
                     } catch(e) {
@@ -868,33 +867,34 @@
             
             const p = PRODUCTS.find(x => x.id === g.productId); 
             if (!p) { toast('Product unavailable', 'alert-circle'); return goHome(); }
-            
-            const members = state.members[g.id] || []; 
-            const count = members.length;
-            const needed = Math.max(0, 3 - count);
-            
-            // FIX 5: Join Button Visibility - use session phone check
-            const hasJoinedThisGroup = JOIN_SESSION_PHONE && members.some(m => m.phone === JOIN_SESSION_PHONE);
-            
-            // FIX 7: Auto-Confetti - removed client-side logic to rely on explicit trigger
-            // if (count >= 3 && count !== state.lastMemberCount && state.lastMemberCount !== 0) { triggerConfetti(); }
-            state.lastMemberCount = count;
+            const deliveryDate = new Date(expiryDate);
+            deliveryDate.setDate(deliveryDate.getDate() + 1); // Delivery is morning after cutoff
 
-            // 4️⃣ USE REAL-WORLD TIME & 12 PM Cutoff
-            const currentHour = new Date().getHours();
-            const isClosedToday = currentHour >= CUTOFF_HOUR;
-            
-            // We disable joining if it's past 12 PM on the user's device
-            const isExpired = isClosedToday;
-
-            const headerText = "Orders open: 7 AM – 12 PM";
-            const deliveryText = "Pickup: Next day morning";
-            const closeText = isClosedToday ? "Orders closed for today" : "Orders close today 12:00 PM";
-            const subText = isClosedToday ? "Come back tomorrow" : "Delivery Wednesday morning";
+            if (diffDays <= 0) {
+                closeText = "Orders close today evening";
+                headerText = "Closes today";
+                deliveryText = "Delivery Tomorrow morning";
+            } else if (diffDays === 1) {
+                closeText = "Orders close tomorrow evening";
+                headerText = "Closes tomorrow";
+                deliveryText = "Delivery " + deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }) + " morning";
+            } else {
+                const dayName = expiryDate.toLocaleDateString('en-US', { weekday: 'long' });
+                closeText = "Orders close " + dayName + " evening";
+                headerText = "Closes " + dayName;
+                deliveryText = "Delivery " + deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }) + " morning";
+            }
 
             const currentUrl = `${BASE_URL}?group=${g.id}`;
-            // FIX 8: Static Share Link Text
-            const inviteMsg = `We are ordering ${p.name} together.\nIf you need, you can add here:\n${currentUrl}`;
+            // FIX 8: Static Share Link Text (Strict Telugu Format)
+            const inviteMsg = `నేను ఈరోజు ఉల్లిపాయలు ఆర్డర్ చేస్తున్నాను.
+
+ధర: ₹20/kg  
+ఉదయం 12 గంటల వరకు ఆర్డర్.  
+రేపు ఉదయం పికప్ ఉంటుంది.
+
+కావాలంటే ఇక్కడ చేర్చుకోండి:
+${currentUrl}`;
             const inviteLink = `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
 
             el.innerHTML = `
@@ -913,7 +913,7 @@
                             <p class="text-sm font-medium text-gray-500 mb-2">${p.nameTe} • ${p.unit} Bundle</p>
                             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs font-medium text-gray-600">
                                 <i data-lucide="user" size="12"></i>
-                                Started by ${g.ownerName || 'Neighbor'} (near ${g.ownerArea || 'local area'})
+                                Started by ${g.ownerName || 'Neighbor'}
                             </div>
                         </div>
 
