@@ -114,6 +114,9 @@
         window.db = db;
         window.fs = { doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, collection };
         
+        // CHANGE 3: Verify Project ID
+        console.log("🔥 FIREBASE PROJECT:", window.db._databaseId ? window.db._databaseId.projectId : "Unknown");
+
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
     
@@ -173,6 +176,8 @@
         const habitState = { totalOrders: 0, streakDays: 0, lastOrderDate: null };
         let JODO_INITIALIZED = false;
         let renderScheduled = false;
+        let IS_JOIN_LINK = false;
+        let JOIN_SESSION_PHONE = null;
 
         function loadData() {
             try {
@@ -181,6 +186,8 @@
                 state.user.ward = localStorage.getItem('jodo_user_ward') || '';
                 const savedGroups = localStorage.getItem(GROUPS_KEY);
                 state.user.joinedGroupIds = savedGroups ? JSON.parse(savedGroups) : [];
+                
+                if (state.user.phone) JOIN_SESSION_PHONE = state.user.phone;
             } catch(e) { console.error("Load Error", e); }
         }
 
@@ -193,6 +200,7 @@
                 state.user.ward = ward;
                 localStorage.setItem('jodo_user_ward', ward);
             }
+            JOIN_SESSION_PHONE = phone;
         }
 
         function saveJoinedGroup(gid) {
@@ -249,6 +257,13 @@
 
         function triggerVibration() { 
             if (navigator.vibrate) navigator.vibrate(20); 
+        }
+
+        function resetActionButton(btn, html) {
+            if(!btn) return;
+            btn.disabled = false;
+            btn.innerHTML = html;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
         }
 
         function createNodeFromHTML(html) { 
@@ -332,6 +347,30 @@
 
         window.openFullFeed = function(productId) {
             toast("Live farm feed loading...", "signal");
+        };
+
+        // --- FIX 3: UX CLARITY (Confirmation Flow) ---
+        window.openJoinFlow = function(pid, gid) {
+             // 🔥 Shared link = force fresh join
+            if (IS_JOIN_LINK) {
+                // FIX 1: Join link logic - preserve joinedGroupIds, only wipe identity
+                state.user.name = '';
+                state.user.phone = '';
+                state.user.ward = '';
+                // Do NOT wipe joinedGroupIds here
+                JOIN_SESSION_PHONE = null; // Prevent persistence pollution on fresh join
+            } else if (state.user.phone) {
+                const ok = confirm(
+                `You are identified as ${state.user.phone}.\nContinue or cancel to enter new details.`
+                );
+                if (!ok) {
+                    state.user.name = '';
+                    state.user.phone = '';
+                    state.user.ward = '';
+                }
+            }
+            
+            window.openStartModal(pid, gid);
         };
 
         window.openStartModal = function(pid, joinGroupId = null) {
@@ -433,6 +472,12 @@
             
             // --- SUBMIT ACTION ---
             const triggerAction = async () => {
+                // FIX 5: Handle Offline
+                if (!navigator.onLine) {
+                    toast("No internet connection", "wifi-off");
+                    return;
+                }
+
                 if (actionBtn.disabled) return; 
                 actionBtn.disabled = true;
                 const originalText = actionBtn.innerHTML; 
@@ -444,9 +489,7 @@
                 const ward = safeVal(node.querySelector('#inp-ward'));
                 
                 if (!name || !/^[6-9]\d{9}$/.test(phone) || !ward) { 
-                    actionBtn.disabled = false; 
-                    actionBtn.innerHTML = originalText; 
-                    actionBtn.classList.remove('opacity-75', 'cursor-not-allowed'); 
+                    resetActionButton(actionBtn, originalText); // FIX 6: Reset on validation
                     toast('Please check details', 'alert-circle'); 
                     return; 
                 }
@@ -463,45 +506,43 @@
 
                 // 1. EXPIRY & STATUS CHECK
                 let groupExpiryTime = deliveryTime.getTime(); 
+                
+                // FIX 2: MEMBER ID = PHONE ONLY
+                const memberId = phone; 
+                
                 if (joinGroupId) {
                     try {
                         const gRef = window.fs.doc(window.db, "groups", joinGroupId);
+                        // FIX 3: Atomic-like Pre-Write Checks
                         const gSnap = await window.fs.getDoc(gRef);
                         
                         if (gSnap.exists()) {
                             const gData = gSnap.data();
                             
-                            // CHECK 1: Is Closed?
-                            if (gData.status === 'closed') {
-                                toast("This group is closed", "lock");
-                                actionBtn.disabled = false; actionBtn.innerHTML = originalText;
-                                return;
-                            }
-                            
-                            // CHECK 2: Is Expired?
+                            // FIX 1: Remove group.status check completely
+                            // Only check time
                             if (gData.expiresAt < Date.now()) {
                                 toast("This group has expired", "clock");
-                                actionBtn.disabled = false; actionBtn.innerHTML = originalText;
+                                resetActionButton(actionBtn, originalText); // FIX 6
                                 return;
                             }
 
-                            // CHECK 3: Max Members (SECURE - Count Subcollection)
+                            // CHECK 3: Max Members - RE-READ to be safe
                             const mCol = window.fs.collection(window.db, "groups", joinGroupId, "members");
                             const mSnap = await window.fs.getDocs(mCol);
-                            if (mSnap.size >= MAX_GROUP_MEMBERS) {
-                                toast("Group is full (Max 20)", "users");
-                                actionBtn.disabled = false; actionBtn.innerHTML = originalText;
+                            // Soft limit to avoid race conditions
+                            if (mSnap.size >= MAX_GROUP_MEMBERS + 2) {
+                                toast("Group is mostly full", "users");
+                                resetActionButton(actionBtn, originalText); // FIX 6
                                 return;
                             }
                             
-                            // CHECK 4: Check if member already exists (By scanning phone numbers)
-                            // Note: We scan the docs because IDs are now unique timestamps
-                            let alreadyJoined = false;
-                            mSnap.forEach(doc => {
-                                if (doc.data().phone === phone) alreadyJoined = true;
-                            });
-                            if (alreadyJoined) {
-                                toast("Already joined this squad", "user-check");
+                            // FIX 2: DUPLICATE CHECK - DIRECT LOOKUP BY ID
+                            const mRef = window.fs.doc(window.db, "groups", joinGroupId, "members", phone);
+                            const mDocSnap = await window.fs.getDoc(mRef);
+
+                            if (mDocSnap.exists()) {
+                                toast("This phone already joined", "user-check");
                                 saveJoinedGroup(joinGroupId); 
                                 window.closeModal();
                                 window.openGroup(joinGroupId);
@@ -521,12 +562,9 @@
                     expiresAt: groupExpiryTime, 
                     deliveryDay: groupExpiryTime, 
                     createdAt: Date.now(), 
-                    status: isGroupMode ? 'open' : 'closed', 
-                    type: isGroupMode ? 'group' : 'solo' 
+                    type: isGroupMode ? 'group' : 'solo'
+                    // FIX 1: Removed status
                 };
-                
-                // 🔑 FIX 1: UNIQUE MEMBER ID
-                const memberId = phone + '_' + Date.now();
                 
                 const member = { 
                     memberId, // Store ID in doc
@@ -540,16 +578,31 @@
                 };
                 
                 try {
-                    if (!joinGroupId) {
-                        await window.fs.setDoc(window.fs.doc(window.db, "groups", gid), group);
+                    // CHANGE 2: FORCE GROUP DOC CREATION (Atomic-like)
+                    const groupRef = window.fs.doc(window.db, "groups", gid);
+                    const groupDocSnap = await window.fs.getDoc(groupRef);
+                    if (!groupDocSnap.exists()) {
+                        await window.fs.setDoc(groupRef, group);
+                        console.log("✅ GROUP CREATED", gid);
                     }
-                    // 🔑 FIX 1: Use Unique ID for Doc
-                    await window.fs.setDoc(window.fs.doc(window.db, "groups", gid, "members", memberId), member);
+                    
+                    // CHANGE 1: HARD PROOF LOGS for Member Write
+                    console.log("👉 TRYING TO WRITE MEMBER", { gid, memberId, member });
+                    
+                    await window.fs.setDoc(
+                        window.fs.doc(window.db, "groups", gid, "members", memberId),
+                        member
+                    );
+                    
+                    console.log("✅ MEMBER WRITE SUCCESS");
                     
                     saveJoinedGroup(gid);
                     markOrderHabit(); 
                     
+                    JOIN_SESSION_PHONE = phone;
                     console.log("[ADMIN] JOINED:", gid, phone, qty);
+                    
+                    alert("GROUP ID: " + gid);
 
                     setTimeout(() => { 
                         window.closeModal(); 
@@ -562,8 +615,8 @@
                     }, 800); 
                 } catch (e) {
                     console.error(e);
-                    actionBtn.disabled = false; actionBtn.innerHTML = originalText; actionBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-                    toast('Network error. Try again.', 'wifi-off');
+                    resetActionButton(actionBtn, originalText); // FIX 6
+                    toast(e.message || "Firestore error", "alert-triangle");
                 }
             };
             actionBtn.onclick = triggerAction;
@@ -576,12 +629,14 @@
             if (!Array.isArray(members) || !members[memberIndex]) return;
             const member = members[memberIndex];
             
-            if (member.phone !== state.user.phone) {
+            // FIX 7: Edit security - session phone check
+            if (!JOIN_SESSION_PHONE || member.phone !== JOIN_SESSION_PHONE) {
                 toast("You can only edit your own order", "lock");
                 return;
             }
 
             const p = PRODUCTS.find(x => x.id === group.productId);
+            // FIX 7: Edit security - expiry check
             const isExpired = group.expiresAt < Date.now();
 
             const node = createNodeFromHTML(`
@@ -648,23 +703,26 @@
             const saveBtn = node.querySelector('#save-btn');
             if (saveBtn && !isExpired) {
                 saveBtn.onclick = async () => { 
+                    // FIX 5: Offline handle
+                    if (!navigator.onLine) {
+                        toast("No internet connection", "wifi-off");
+                        return;
+                    }
+
                     const name = safeVal(node.querySelector('#m-name')); 
                     const phone = member.phone; 
                     const ward = safeVal(node.querySelector('#m-ward'));
                     
                     if (!name || !ward) return toast('Name & Ward required', 'alert-circle'); 
                     
-                    // 🔒 SECURITY: Re-check expiry AND status before write
+                    // 🔒 SECURITY: Re-check expiry
                     if (group.expiresAt < Date.now()) {
                         toast("Group has expired", "clock");
                         window.closeModal();
                         return;
                     }
-                    if (group.status === 'closed') {
-                        toast("Group is closed", "lock");
-                        window.closeModal();
-                        return;
-                    }
+
+                    // FIX 3: Edit Flow Bug - removed id check (firestore id is trustworthy)
 
                     const updatedMember = { ...member, name, ward, quantity: qty, updatedAt: Date.now() };
                     
@@ -672,7 +730,6 @@
                         saveBtn.disabled = true;
                         saveBtn.innerHTML = 'Saving...';
                         
-                        // 🔑 FIX 1b: Use captured DOC ID (not phone) to update correct record
                         await window.fs.setDoc(
                             window.fs.doc(window.db, "groups", gid, "members", member.id),
                             updatedMember
@@ -843,11 +900,12 @@
             const members = state.members[g.id] || []; 
             const count = members.length;
             const needed = Math.max(0, 3 - count);
-            const currentUserMember = members.find(m => m.phone === state.user.phone);
             
-            if (count >= 3 && count !== state.lastMemberCount && state.lastMemberCount !== 0) {
-                triggerConfetti();
-            }
+            // FIX 5: Join Button Visibility - use session phone check
+            const hasJoinedThisGroup = JOIN_SESSION_PHONE && members.some(m => m.phone === JOIN_SESSION_PHONE);
+            
+            // FIX 7: Auto-Confetti - removed client-side logic to rely on explicit trigger
+            // if (count >= 3 && count !== state.lastMemberCount && state.lastMemberCount !== 0) { triggerConfetti(); }
             state.lastMemberCount = count;
 
             const expiryDate = new Date(g.expiresAt);
@@ -866,7 +924,8 @@
             else { const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; dateLabel = `${monthNames[expiryDate.getMonth()]} ${expiryDate.getDate()}`; }
 
             const currentUrl = `${BASE_URL}?group=${g.id}`;
-            const inviteMsg = `Join my squad for ${p.name} on JODO! We need ${needed} more to get it for ₹${p.price5}/${p.unit}. Order here: ${currentUrl}`;
+            // FIX 8: Static Share Link Text
+            const inviteMsg = `Join my squad for ${p.name} on JODO to unlock wholesale price! Order here: ${currentUrl}`;
             const inviteLink = `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
 
             el.innerHTML = `
@@ -922,7 +981,8 @@
                                 return Array(totalSlots).fill(0).map((_, i) => {
                                     const member = members[i];
                                     if (member) {
-                                        const isMe = (state.user.phone && member.phone === state.user.phone);
+                                        // FIX 4: Identity logic strictly tied to phone number
+                                        const isMe = JOIN_SESSION_PHONE === member.phone;
                                         const t1 = Math.round(member.quantity * p.price1);
                                         const t5 = Math.round(member.quantity * p.price5);
                                         
@@ -956,8 +1016,8 @@
                     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-jodo-border p-4 pb-safe z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                         <div class="max-w-md mx-auto pt-2 pb-2">
                             ${count < 3 ? `
-                                ${!currentUserMember && !isExpired ? `
-                                <button onclick="openStartModal('${p.id}', '${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-3 btn-press">
+                                ${!isExpired && !hasJoinedThisGroup ? `
+                                <button onclick="openJoinFlow('${p.id}', '${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-3 btn-press">
                                     <i data-lucide="user-plus" size="24"></i>
                                     <span>Join This Squad</span>
                                 </button>
@@ -1006,11 +1066,7 @@
                         timerEl.classList.add('text-gray-400'); 
                         if (headerTimerEl) headerTimerEl.classList.add('text-gray-400'); 
                         
-                        if (g.status !== 'closed' && window.fs && window.db) {
-                            const groupRef = window.fs.doc(window.db, "groups", g.id);
-                            window.fs.updateDoc(groupRef, { status: 'closed' }).catch(e => console.log("Auto-close err", e));
-                        }
-                        
+                        // FIX 1: Removed client side status update
                         clearInterval(state.timerInterval); 
                         state.timerInterval = null; 
                     }
@@ -1050,7 +1106,9 @@
             const unsubM = window.fs.onSnapshot(
                 window.fs.collection(window.db, "groups", gid, "members"),
                 (snap) => {
-                    const m = []; snap.forEach(d => m.push(d.data()));
+                    const m = []; 
+                    snap.forEach(d => m.push({ ...d.data(), id: d.id })); // FIX 1: Canonical shape
+                    m.sort((a, b) => a.joinedAt - b.joinedAt); // FIX 3: Consistent order
                     state.members[gid] = m;
                     safeRender();
                 }
@@ -1111,6 +1169,7 @@
                             // 🔑 CAPTURE UNIQUE ID so we can edit later
                             members.push({ ...data, id: doc.id });
                         });
+                        members.sort((a, b) => a.joinedAt - b.joinedAt); // FIX 3: Consistent order
                         state.members[gid] = members;
                         safeRender();
                     },
@@ -1151,9 +1210,21 @@
                 const params = new URLSearchParams(window.location.search);
                 const gid = params.get('group');
                 
+                // FIX 2: FORCE FRESH IDENTITY ON JOIN LINK
                 if (gid) {
+                    IS_JOIN_LINK = true;
+                    // Wipe local state identity fields but preserve joinedGroupIds
+                    // This prevents re-joining logic issues while still forcing fresh entry
+                    state.user = { 
+                        name: '', 
+                        phone: '', 
+                        ward: '', 
+                        joinedGroupIds: state.user.joinedGroupIds || [] // FIX 1
+                    };
+                    JOIN_SESSION_PHONE = null;
                     window.openGroup(gid);
                 } else {
+                    IS_JOIN_LINK = false;
                     state.view = 'home';
                     safeRender();
                     startTicker();
