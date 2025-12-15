@@ -1015,28 +1015,31 @@
 
                     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-jodo-border p-4 pb-safe z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                         <div class="max-w-md mx-auto pt-2 pb-2">
+                            ${count >= 3 ? `
+                                <div class="text-center text-green-700 bg-green-50 p-2 rounded-lg border border-green-200 font-bold mb-3 shadow-sm flex items-center justify-center gap-2 text-sm">
+                                  <i data-lucide="check-circle" size="16"></i>
+                                  🎉 Lowest Price Unlocked!
+                                </div>
+                            ` : ''}
+
+                            ${!isExpired && !hasJoinedThisGroup ? `
+                            <button onclick="openJoinFlow('${p.id}', '${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-3 btn-press">
+                                <i data-lucide="user-plus" size="24"></i>
+                                <span>Join This Squad</span>
+                            </button>
+                            ` : ''}
+                            
+                            <a href="${inviteLink}" target="_blank" class="block w-full bg-[#25D366] text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2 transition-all hover:bg-[#1ebc57]">
+                                <i data-lucide="share-2" size="24"></i>
+                                <span>Share Invite Link</span>
+                            </a>
+                            
                             ${count < 3 ? `
-                                ${!isExpired && !hasJoinedThisGroup ? `
-                                <button onclick="openJoinFlow('${p.id}', '${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-3 btn-press">
-                                    <i data-lucide="user-plus" size="24"></i>
-                                    <span>Join This Squad</span>
-                                </button>
-                                ` : ''}
-                                <a href="${inviteLink}" target="_blank" class="block w-full bg-[#25D366] text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-lg btn-press gap-2 transition-all hover:bg-[#1ebc57]">
-                                    <i data-lucide="share-2" size="24"></i>
-                                    <span>Share Invite Link</span>
-                                </a>
-                                <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs font-medium text-jodo-textSecondary">
-                                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                    <span>${needed} spots left to unlock ₹${p.price5}</span>
-                                </div>
-                            ` : `
-                                <div class="text-center text-green-700 bg-green-50 p-3 rounded-lg border border-green-200 font-bold mb-3 shadow-sm flex items-center justify-center gap-2">
-                                  <i data-lucide="lock" size="18"></i>
-                                  🎉 Lowest Price Unlocked! Order Locked.
-                                </div>
-                                <div class="text-center text-xs text-gray-400 font-medium">Admin will process delivery soon.</div>
-                            `}
+                            <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs font-medium text-jodo-textSecondary">
+                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                <span>${needed} spots left to unlock ₹${p.price5}</span>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
