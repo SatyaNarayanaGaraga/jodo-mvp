@@ -14,20 +14,20 @@
                     colors: {
                         jodo: {
                             base: '#FFFFFF',
-                            textPrimary: '#111827', // Gray-900 (High contrast, safe)
-                            textSecondary: '#4B5563', // Gray-600 (Neutral)
-                            priceFinal: '#15803D', // Green-700 (Trust Green)
-                            priceCut: '#9CA3AF',    // Gray-400 (Neutral strike)
-                            priceOld: '#9CA3AF',    
-                            ctaPrimary: '#15803D', // Green-700 (Trust Green)
+                            textPrimary: '#111827', // Gray-900
+                            textSecondary: '#4B5563', // Gray-600
+                            priceFinal: '#15803D', // Green-700
+                            priceCut: '#9CA3AF',   // Gray-400
+                            priceOld: '#9CA3AF',   
+                            ctaPrimary: '#15803D', // Green-700
                             ctaSuccess: '#15803D', 
-                            progress: '#15803D',    
+                            progress: '#15803D',   
                             progressBg: '#E5E7EB', // Gray-200
-                            bonus: '#F3F4F6',       // Gray-100 (Boring badge)
+                            bonus: '#F3F4F6',      // Gray-100
                             bonusText: '#374151',  // Gray-700
-                            urgency: '#4B5563',     // Gray-600 (No red urgency)
-                            border: '#E5E7EB',      
-                            error: '#DC2626',       // Red-600 (Strictly errors)
+                            urgency: '#4B5563',    // Gray-600
+                            border: '#E5E7EB',     
+                            error: '#DC2626',      // Red-600
                         }
                     },
                     fontFamily: {
@@ -87,14 +87,13 @@
           getFirestore,
           doc,
           setDoc,
-          addDoc, // Import addDoc for auto-IDs
           getDoc, 
           getDocs, 
           updateDoc,
           onSnapshot,
           collection
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-       
+      
         const firebaseConfig = {
           apiKey: "AIzaSyBPqMkzfPjPzKIFSCYPipocH97TmPn2NLI",
           authDomain: "jodo-prod-e7788.firebaseapp.com",
@@ -103,15 +102,14 @@
           messagingSenderId: "535883967600",
           appId: "1:535883967600:web:aa0b73a70ca506ad4fd8b5"
         };
-       
+      
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-       
+      
         window.db = db;
-        window.fs = { doc, setDoc, addDoc, getDoc, getDocs, updateDoc, onSnapshot, collection };
+        window.fs = { doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, collection };
         
         console.log("🔥 FIREBASE PROJECT:", window.db._databaseId ? window.db._databaseId.projectId : "Unknown");
-        console.log("🚀 JODO v4.0 ARCHITECTURE FIX - AUTO IDs + CLIENT ID");
 
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
@@ -120,7 +118,7 @@
         // --- CONSTANTS & CONFIG ---
         const COMPANY_PHONE = "918500742671"; 
         const BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp';
-        const MAX_GROUP_MEMBERS = 999; // ⬆️ INCREASED TO PREVENT FALSE FULL ERRORS
+        const MAX_GROUP_MEMBERS = 20; 
         
         const PRODUCTS = [
             { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '1kg', baseWeight: 1, weightUnit: 'kg', price1: 25, price5: 20, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-gray-100 text-gray-600', location: 'Duvva Fields', imageSrc: 'https://images.unsplash.com/photo-1620574387735-3624d75b2dbc?auto=format&fit=crop&w=600&q=80' }
@@ -129,13 +127,30 @@
         const HABIT_KEY = 'jodo_habit_v1';
         const GROUPS_KEY = 'jodo_groups_joined_v1';
         
-        // 🔑 IDENTITY SYSTEM
-        let CLIENT_ID = localStorage.getItem('jodo_client_id');
-        if (!CLIENT_ID) {
-            CLIENT_ID = crypto.randomUUID();
-            localStorage.setItem('jodo_client_id', CLIENT_ID);
+        const DELIVERY_DAYS = [3, 6]; 
+        const CUTOFF_HOUR = 25; // TEMPORARILY CHANGED FROM 12 FOR TESTING
+
+        function getNextDeliveryDate() {
+            const now = new Date();
+            for (let i = 0; i < 7; i++) {
+                const d = new Date();
+                d.setDate(now.getDate() + i);
+                if (DELIVERY_DAYS.includes(d.getDay())) {
+                    if (i === 0 && now.getHours() >= CUTOFF_HOUR) continue;
+                    return d;
+                }
+            }
+            const d = new Date(); 
+            d.setDate(d.getDate() + 1);
+            return d;
         }
-        console.log("🆔 CLIENT ID:", CLIENT_ID);
+
+        // --- NEW HELPER FOR CUTOFF ---
+        function getTodayCutoffTimestamp() {
+          const now = new Date();
+          // CHANGED: Always return 24 hours in future for testing (Unlimited)
+          return Date.now() + 86400000;
+        }
 
         const state = { 
             view: 'home', 
@@ -155,22 +170,37 @@
         let JODO_INITIALIZED = false;
         let renderScheduled = false;
         let IS_JOIN_LINK = false;
+        let JOIN_SESSION_PHONE = null;
         let AUTO_JOIN_TRIGGERED = false;
 
         function loadData() {
             try {
                 state.user.name = localStorage.getItem('jodo_user_name') || '';
                 state.user.phone = localStorage.getItem('jodo_user_phone') || '';
+                // Removed area load
                 const savedGroups = localStorage.getItem(GROUPS_KEY);
                 state.user.joinedGroupIds = savedGroups ? JSON.parse(savedGroups) : [];
+                
+                if (state.user.phone) JOIN_SESSION_PHONE = state.user.phone;
             } catch(e) { console.error("Load Error", e); }
         }
 
-        function saveUser(name, phone) {
+        function saveUser(name, phone) { // Removed area param
             state.user.name = name;
             state.user.phone = phone;
             localStorage.setItem('jodo_user_name', name);
             localStorage.setItem('jodo_user_phone', phone);
+            // Removed area save
+            JOIN_SESSION_PHONE = phone;
+        }
+
+        // New Logout Function
+        window.logout = function() {
+            localStorage.removeItem('jodo_user_name');
+            localStorage.removeItem('jodo_user_phone');
+            state.user = { name: '', phone: '', area: '', joinedGroupIds: [] };
+            JOIN_SESSION_PHONE = null;
+            window.location.reload();
         }
 
         function saveJoinedGroup(gid) {
@@ -220,6 +250,10 @@
             t.classList.remove('hidden'); 
             if(window.lucide) window.lucide.createIcons(); 
             setTimeout(() => t.classList.add('hidden'), 3000); 
+        }
+
+        function triggerConfetti() { 
+            // Confetti removed
         }
 
         function triggerVibration() { 
@@ -289,24 +323,48 @@
             });
         }
 
+        // Guide removed
+        // window.openLiveGuide = function() { ... };
+
         window.openSupportOptions = function() {
             window.open("https://wa.me/" + COMPANY_PHONE, "_blank");
         };
 
+        // Full feed logic removed from UI
         window.openFullFeed = function(productId) {
             // No-op or removed
         };
 
+        // --- FIX 3: UX CLARITY (Confirmation Flow) ---
         window.openJoinFlow = function(pid, gid) {
-            // NOTE: We do NOT wipe state here anymore. 
-            // We just prompt. If user changes info, they update.
+             // 🔥 Shared link = force fresh join
+            if (IS_JOIN_LINK) {
+                // FIX 1: Join link logic - preserve joinedGroupIds, only wipe identity
+                state.user.name = '';
+                state.user.phone = '';
+                // Removed area wipe
+                // Do NOT wipe joinedGroupIds here
+                JOIN_SESSION_PHONE = null; // Prevent persistence pollution on fresh join
+            } else if (state.user.phone) {
+                const ok = confirm(
+                `You are identified as ${state.user.phone}.\nContinue or cancel to enter new details.`
+                );
+                if (!ok) {
+                    state.user.name = '';
+                    state.user.phone = '';
+                    // Removed area wipe
+                }
+            }
+            
             window.openStartModal(pid, gid);
         };
 
         window.openStartModal = function(pid, joinGroupId = null) {
             const p = PRODUCTS.find(x => x.id === pid);
             const user = state.user;
-            let qty = 1; let isGroupMode = true; 
+            let qty = 1; let isGroupMode = true; // CHANGED: Default qty 1
+            
+            const nextDelivery = getNextDeliveryDate();
             
             const title = joinGroupId ? "Join Order" : "Start Order";
             const btnText = joinGroupId ? "Confirm Join" : "Confirm Order";
@@ -323,7 +381,7 @@
                             <div class="flex-1 flex flex-col justify-center"><h4 class="font-bold text-lg text-gray-900 leading-none mb-1">${p.name}</h4><div class="text-sm text-gray-500">${p.nameTe}</div><div class="mt-1 text-xs text-green-700 font-medium">In Stock</div></div>
                         </div>
                         <div class="bg-gray-50 border border-gray-100 p-3 rounded-lg mb-6 text-xs text-gray-600">
-                            Delivery scheduled for <strong>tomorrow morning</strong>.
+                            Pickup: <strong>Next day morning</strong>
                         </div>
                         
                         ${!joinGroupId ? `
@@ -339,6 +397,7 @@
                         <div class="space-y-4 mb-8">
                             <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Your Name"></div>
                             <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Mobile Number"></div>
+                            <!-- Removed Area Input -->
                         </div>
                     </div>
                     <div class="bg-white border-t border-gray-100 p-4 shrink-0 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
@@ -386,13 +445,14 @@
                 modeGroupEl.onclick = () => { isGroupMode = true; renderMode(); };
             }
             
-            const btnMinus = node.querySelector('#btn-minus'); if (btnMinus) btnMinus.onclick = () => { if (qty > 1) { qty--; renderMode(); } else { toast("Min quantity reached", 'alert-triangle'); triggerVibration(); } }; 
+            const btnMinus = node.querySelector('#btn-minus'); if (btnMinus) btnMinus.onclick = () => { if (qty > 1) { qty--; renderMode(); } else { toast("Min quantity reached", 'alert-triangle'); triggerVibration(); } }; // CHANGED: Min 1
             const btnPlus = node.querySelector('#btn-plus'); if (btnPlus) btnPlus.onclick = () => { if (qty < 20) { qty++; renderMode(); } };
             renderMode(); 
             node.querySelector('#close-modal').addEventListener('click', window.closeModal);
             
             // --- SUBMIT ACTION ---
             const triggerAction = async () => {
+                // FIX 5: Handle Offline
                 if (!navigator.onLine) {
                     toast("No internet connection", "wifi-off");
                     return;
@@ -406,59 +466,119 @@
                 
                 const name = safeVal(node.querySelector('#inp-name')); 
                 const phone = safeVal(node.querySelector('#inp-phone')); 
+                // Removed area val
                 
                 if (!name || !/^[6-9]\d{9}$/.test(phone)) { 
-                    resetActionButton(actionBtn, originalText); 
+                    resetActionButton(actionBtn, originalText); // FIX 6: Reset on validation
                     toast('Please enter name and mobile number', 'alert-circle'); 
                     return; 
                 }
                 
                 triggerVibration(); 
-                saveUser(name, phone);
+                saveUser(name, phone); // Removed area save
                 
                 const gid = joinGroupId || ('g-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
 
                 if (!window.fs || !window.db) {
-                      toast("Connecting...", "wifi");
-                      await new Promise(r => setTimeout(r, 1000));
+                     toast("Connecting...", "wifi");
+                     await new Promise(r => setTimeout(r, 1000));
                 }
+
+                // 1. EXPIRY & STATUS CHECK
+                let groupExpiryTime = getTodayCutoffTimestamp(); // Corrected logic
+
+                // 12 PM Hard Stop Logic for Creation - Client Side Guard
+                // CHANGED: Removed cutoff check
+                /*
+                if (Date.now() > groupExpiryTime) {
+                     toast("Orders closed for today", "clock");
+                     resetActionButton(actionBtn, originalText);
+                     return;
+                }
+                */
+                
+                // FIX 2: MEMBER ID = PHONE ONLY
+                const memberId = phone; 
                 
                 if (joinGroupId) {
                     try {
-                        const mCol = window.fs.collection(window.db, "groups", joinGroupId, "members");
-                        // OPTIONAL: Basic soft check for UI, but high limit prevents issues
-                        const mSnap = await window.fs.getDocs(mCol);
-                        if (mSnap.size >= MAX_GROUP_MEMBERS) {
-                            toast("Group full", "users");
-                            resetActionButton(actionBtn, originalText);
-                            return;
+                        const gRef = window.fs.doc(window.db, "groups", joinGroupId);
+                        // FIX 3: Atomic-like Pre-Write Checks
+                        const gSnap = await window.fs.getDoc(gRef);
+                        
+                        if (gSnap.exists()) {
+                            const gData = gSnap.data();
+                            
+                            // FIX 1: Remove group.status check completely
+                            // Check existence of expiresAt
+                            if (!gData.expiresAt) {
+                                toast("Invalid group data", "alert-circle");
+                                resetActionButton(actionBtn, originalText);
+                                return;
+                            }
+                            
+                            // Only check time
+                            // CHANGED: Removed expiry check
+                            /*
+                            if (gData.expiresAt < Date.now()) {
+                                toast("Group expired", "clock");
+                                resetActionButton(actionBtn, originalText); // FIX 6
+                                return;
+                            }
+                            */
+
+                            // CHECK 3: Max Members - RE-READ to be safe
+                            const mCol = window.fs.collection(window.db, "groups", joinGroupId, "members");
+                            const mSnap = await window.fs.getDocs(mCol);
+                            // Soft limit to avoid race conditions
+                            if (mSnap.size >= MAX_GROUP_MEMBERS + 2) {
+                                toast("Group full", "users");
+                                resetActionButton(actionBtn, originalText); // FIX 6
+                                return;
+                            }
+                            
+                            // FIX 2: DUPLICATE CHECK - DIRECT LOOKUP BY ID
+                            const mRef = window.fs.doc(window.db, "groups", joinGroupId, "members", phone);
+                            const mDocSnap = await window.fs.getDoc(mRef);
+
+                            if (mDocSnap.exists()) {
+                                toast("Already joined", "check-circle");
+                                saveJoinedGroup(joinGroupId); 
+                                window.closeModal();
+                                window.openGroup(joinGroupId);
+                                return;
+                            }
+
+                            groupExpiryTime = gData.expiresAt;
                         }
-                    } catch(e) { console.error("Check error", e); }
+                    } catch(e) { console.error("Validation error", e); }
                 }
 
                 const group = { 
                     id: gid, 
                     productId: pid, 
                     ownerName: name, 
+                    // Removed ownerArea
+                    expiresAt: groupExpiryTime, 
+                    deliveryDay: groupExpiryTime, 
                     createdAt: Date.now(), 
                     type: isGroupMode ? 'group' : 'solo'
+                    // FIX 1: Removed status
                 };
                 
-                // ⚠️ CRITICAL ARCHITECTURE FIX: ID != PHONE
-                // We let Firestore generate the ID to allow duplicates/re-joins/same-device-testing
-                // And use CLIENT_ID to identify "Me"
                 const member = { 
-                    clientId: CLIENT_ID, // Identity Source of Truth
+                    memberId, // Store ID in doc
                     groupId: gid, 
                     name, 
-                    phone, // Just data
+                    phone, 
+                    // Removed area
                     isLeader: !joinGroupId, 
-                    quantity: Math.max(1, qty),
+                    quantity: Math.max(1, qty), // CHANGED: Min 1
                     joinedAt: Date.now() 
                 };
                 
                 try {
-                    // Create group if needed (Atomic-like check)
+                    // CHANGE 2: FORCE GROUP DOC CREATION (Atomic-like)
                     const groupRef = window.fs.doc(window.db, "groups", gid);
                     const groupDocSnap = await window.fs.getDoc(groupRef);
                     if (!groupDocSnap.exists()) {
@@ -466,31 +586,71 @@
                         console.log("✅ GROUP CREATED", gid);
                     }
                     
-                    // ⚠️ USE AUTO-ID (addDoc equivalent) to prevent overwrites
-                    // const memberRef = doc(collection(db, ...)) -> generates ID locally
-                    const memberRef = window.fs.doc(window.fs.collection(window.db, "groups", gid, "members"));
+                    // CHANGE 1: HARD PROOF LOGS for Member Write
+                    console.log("👉 TRYING TO WRITE MEMBER", { gid, memberId, member });
                     
-                    console.log("👉 WRITING MEMBER AUTO-ID", memberRef.id);
-                    
-                    await window.fs.setDoc(memberRef, member);
+                    await window.fs.setDoc(
+                        window.fs.doc(window.db, "groups", gid, "members", memberId),
+                        member
+                    );
                     
                     console.log("✅ MEMBER WRITE SUCCESS");
                     
                     saveJoinedGroup(gid);
                     markOrderHabit(); 
                     
-                    setTimeout(() => { 
-                        window.closeModal(); 
-                        if (isGroupMode) window.openGroup(gid); 
-                        else { 
-                            toast("Order Confirmed", "check-circle"); 
-                            render(); 
-                        } 
-                    }, 500); 
+                    JOIN_SESSION_PHONE = phone;
+                    console.log("[ADMIN] JOINED:", gid, phone, qty);
+                    
+                    // alert("GROUP ID: " + gid);
+
+                    // 1️⃣ WHEN TO TRIGGER: Only for joiners, not creators
+                    if (joinGroupId) {
+                        // FIX 1: STOP UI FREEZE
+                        resetActionButton(actionBtn, originalText);
+
+                        // 🔥 HARD STOP AUTO-JOIN AFTER SUCCESS
+                        IS_JOIN_LINK = false;
+                        AUTO_JOIN_TRIGGERED = true;
+
+                        // Show success view inside the modal instead of closing
+                        const currentUrl = `${BASE_URL}?group=${gid}`;
+                        // Replace form with success message
+                        const modalContent = document.getElementById('modal-content');
+                        modalContent.innerHTML = `
+                             <div class="flex flex-col bg-white w-full h-auto p-6 text-center font-sans items-center justify-center min-h-[300px]">
+                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 text-green-600">
+                                    <i data-lucide="check" size="32"></i>
+                                </div>
+                                <div class="text-xl font-bold text-gray-900 mb-2">You have joined the group</div>
+                                <div class="text-sm text-gray-600 mb-1">${p.name} • ${(qty * p.baseWeight).toFixed(1)}${p.weightUnit}</div>
+                                <div class="text-sm text-gray-500">Pickup tomorrow morning</div>
+                            </div>
+                        `;
+                        if(window.lucide) window.lucide.createIcons();
+
+                        // Auto-navigate after 2 seconds
+                        setTimeout(() => {
+                            window.closeModal();
+                            window.openGroup(gid);
+                        }, 2000);
+                        
+                        return; // STOP execution
+                    } else {
+                        // Creator flow - standard behavior
+                        setTimeout(() => { 
+                            window.closeModal(); 
+                            if (isGroupMode) window.openGroup(gid); 
+                            else { 
+                                toast("Order Confirmed", "check-circle"); 
+                                render(); 
+                            } 
+                        }, 500);
+                    }
                 } catch (e) {
                     console.error(e);
-                    resetActionButton(actionBtn, originalText); 
-                    toast("Connection/Permission error", "wifi-off");
+                    resetActionButton(actionBtn, originalText); // FIX 6
+                    toast("Connection error", "wifi-off");
                 }
             };
             actionBtn.onclick = triggerAction;
@@ -503,16 +663,15 @@
             if (!Array.isArray(members) || !members[memberIndex]) return;
             const member = members[memberIndex];
             
-            // 🔒 SECURITY: Identity check via CLIENT_ID
-            // Fallback to phone for legacy records if needed, but prefer ClientID
-            const isMe = (member.clientId === CLIENT_ID) || (member.phone === state.user.phone);
-            
-            if (!isMe) {
+            // FIX 7: Edit security - session phone check
+            if (!JOIN_SESSION_PHONE || member.phone !== JOIN_SESSION_PHONE) {
                 toast("Edit your own order only", "lock");
                 return;
             }
 
             const p = PRODUCTS.find(x => x.id === group.productId);
+            // FIX 7: Edit security - expiry check
+            const isExpired = new Date().getHours() >= CUTOFF_HOUR;
 
             const node = createNodeFromHTML(`
                 <div class="flex flex-col h-[85vh] bg-white transition-all duration-300 relative rounded-t-[1.5rem] overflow-hidden font-sans">
@@ -534,25 +693,29 @@
                                 <div class="text-[10px] text-gray-400 font-medium">Increments of ${p.unit}</div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-300 text-gray-500 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer"><i data-lucide="minus" size="18"></i></button>
+                                <button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-300 text-gray-500 flex items-center justify-center shadow-sm active:scale-95 transition-transform cursor-pointer" ${isExpired ? 'disabled' : ''}><i data-lucide="minus" size="18"></i></button>
                                 <span id="qty-display" class="font-bold text-xl w-20 text-center text-gray-900 tabular-nums">...</span>
-                                <button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-md flex items-center justify-center active:scale-95 transition-transform cursor-pointer"><i data-lucide="plus" size="18"></i></button>
+                                <button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-md flex items-center justify-center active:scale-95 transition-transform cursor-pointer" ${isExpired ? 'disabled' : ''}><i data-lucide="plus" size="18"></i></button>
                             </div>
                         </div>
                         <div class="space-y-4 mb-6">
-                            <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-gray-900 text-base outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all"></div>
+                            <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Name</label><input id="m-name" value="${member.name}" class="w-full bg-white border border-gray-300 p-3.5 rounded-lg font-bold text-gray-900 text-base outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all" ${isExpired ? 'disabled' : ''}></div>
                             <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Mobile</label><input id="m-phone" value="${member.phone}" type="tel" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-lg font-bold text-jodo-textSecondary text-base outline-none cursor-not-allowed" disabled></div>
+                            <!-- Removed Area Input -->
                         </div>
                     </div>
                     <div class="bg-white border-t border-gray-100 p-4 shrink-0 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
-                        <button id="save-btn" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-sm btn-press flex items-center justify-center gap-2 cursor-pointer">Save Changes</button>
+                        ${isExpired 
+                            ? '<div class="text-center text-gray-500 font-bold mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">Order Locked (Expired)</div>' 
+                            : '<button id="save-btn" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-sm btn-press flex items-center justify-center gap-2 cursor-pointer">Save Changes</button>'
+                        }
                     </div>
                 </div>
             `);
             showModalNode(node);
             
-            let qty = member.quantity || 1; 
-            if (qty < 1) qty = 1; const minQty = 1; 
+            let qty = member.quantity || 1; // CHANGED: Default 1
+            if (qty < 1) qty = 1; const minQty = 1; // CHANGED: Min 1
             const updateEditDisplay = () => {
                 const totalWeight = qty * p.baseWeight;
                 node.querySelector('#qty-display').innerText = `${totalWeight.toFixed(2)} ${p.weightUnit}`;
@@ -560,6 +723,7 @@
                 const soloTotal = Math.round(p.price1 * qty);
                 const savings = soloTotal - total;
                 node.querySelector('#live-total').innerText = `₹${total}`;
+                // node.querySelector('#live-savings').innerText = `${savings}`;
                 node.querySelector('#live-rate').innerText = `@ ₹${p.price5}/${p.unit}`;
             };
             const btnMinus = node.querySelector('#btn-minus');
@@ -570,30 +734,40 @@
             node.querySelector('#close-modal').addEventListener('click', window.closeModal);
             
             const saveBtn = node.querySelector('#save-btn');
-            if (saveBtn) {
+            if (saveBtn && !isExpired) {
                 saveBtn.onclick = async () => { 
+                    // FIX 5: Offline handle
                     if (!navigator.onLine) {
                         toast("No internet", "wifi-off");
                         return;
                     }
 
                     const name = safeVal(node.querySelector('#m-name')); 
+                    const phone = member.phone; 
+                    // Removed area val
                     
                     if (!name) return toast('Name required', 'alert-circle'); 
+                    
+                    // 🔒 SECURITY: Re-check expiry
+                    if (group.expiresAt < Date.now()) {
+                        toast("Expired", "clock");
+                        window.closeModal();
+                        return;
+                    }
 
-                    const updatedMember = { ...member, name, quantity: qty, updatedAt: Date.now() }; 
+                    // FIX 3: Edit Flow Bug - removed id check (firestore id is trustworthy)
+
+                    const updatedMember = { ...member, name, quantity: qty, updatedAt: Date.now() }; // Removed area
                     
                     try {
                         saveBtn.disabled = true;
                         saveBtn.innerHTML = 'Saving...';
                         
-                        // ⚠️ CRITICAL FIX: Use FIRESTORE ID (member.id), NOT PHONE
                         await window.fs.setDoc(
                             window.fs.doc(window.db, "groups", gid, "members", member.id),
                             updatedMember
                         );
-                        // Update local cache of name/phone
-                        saveUser(name, member.phone); 
+                        saveUser(name, phone); // Removed area
                         window.closeModal(); 
                         toast('Updated', 'check-circle'); 
                     } catch(e) {
@@ -605,6 +779,13 @@
                 };
             }
         };
+
+        // --- POST-JOIN SUCCESS VIEW ---
+        // (Not used in this version since we do inline success replacement, 
+        //  but kept for potential future use or if we revert to manual close)
+        function showJoinSuccessView(p, currentUrl, gid) { 
+            // .. unused in this flow ..
+        }
 
         function renderHome(el) {
             const activeUserGroups = [];
@@ -630,10 +811,12 @@
                     const p = PRODUCTS.find(x => x.id === g.productId); if (!p) return '';
                     const members = state.members[g.id] || []; 
                     const count = members.length;
+                    const progress = Math.min(100, (count / 3) * 100);
                     const needed = Math.max(0, 3 - count); 
                     const isUnlocked = count >= 3;
                     const statusLabel = isUnlocked ? 'Active' : `${needed} more`;
                     const statusClass = isUnlocked ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-gray-50 border-gray-200';
+                    const barClass = isUnlocked ? 'bg-jodo-ctaSuccess' : 'bg-gray-300';
                     
                     return `<div onclick="openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
                         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 relative overflow-hidden h-full flex flex-col justify-between">
@@ -660,19 +843,17 @@
                                 <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Daily Delivery</span>
                             </div>
                             <div class="flex flex-col items-end justify-end h-full">
-                                <div class="text-right">
-                                    <div class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100">Orders open 24/7</div>
-                                </div>
+                                <button onclick="openSupportOptions()" class="group flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full active:bg-gray-100 transition-all">
+                                    <i data-lucide="headset" size="14" class="text-gray-600"></i>
+                                    <span class="text-xs font-bold text-gray-600 tracking-wide">Support</span>
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <div class="px-4 mt-4">
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-2.5 flex items-center gap-2 text-[10px] font-medium text-gray-600 shadow-sm">
-                            <span class="relative flex h-2 w-2">
-                              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                            </span>
-                            Orders delivered regularly in this area
+                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center">
+                             <div class="font-bold text-blue-800 text-sm">Start an order or join a neighbor's group</div>
                         </div>
                     </div>
                     
@@ -681,14 +862,15 @@
                     <div class="px-4 space-y-3 mt-2 pb-32">
                         <div class="flex items-center justify-between mb-2 mt-6">
                             <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Open Orders</h2>
-                            <div class="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100">Order anytime</div>
+                            <div class="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100">Order by 12 PM</div>
                         </div>
                         
                         ${sortedProducts.map(p => {
                             const activeGid = userActiveGroupIds[p.id];
+                            const savings = p.price1 - p.price5;
+                            const actionAttr = activeGid ? `onclick="openGroup('${activeGid}')"` : `onclick="openStartModal('${p.id}')"`;
                             const btnText = activeGid ? 'View' : 'Add';
                             const btnClass = activeGid ? 'bg-white border border-gray-200 text-gray-700' : 'bg-jodo-ctaPrimary text-white border border-transparent';
-                            const actionAttr = activeGid ? `onclick="openGroup('${activeGid}')"` : `onclick="openStartModal('${p.id}')"`;
                             
                             return `
                             <div class="bg-white p-3 rounded-2xl flex gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden active:scale-[0.99] transition-all duration-200 group-card" ${actionAttr}>
@@ -720,6 +902,9 @@
         }
 
         function renderGroup(el) {
+            // 🚨 DEBUG LOG (To confirm render start)
+            console.log("🔥 renderGroup called", state.currentGroupId, state.groups ? state.groups[state.currentGroupId] : "No Groups");
+
             if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
             
             const g = state.groups[state.currentGroupId]; 
@@ -736,26 +921,77 @@
                 </div>`;
                 return;
             }
+
+            // 🔥 REQUIRED — DEFINE BEFORE ANY USE
+            const expiryDate = new Date(g.expiresAt);
+            const now = new Date();
             
             const p = PRODUCTS.find(x => x.id === g.productId); 
             if (!p) { toast('Product unavailable', 'alert-circle'); return goHome(); }
+            
+            // isExpired check (using 24h logic from previous step, effectively always open for now)
+            const isExpired = g.expiresAt < now.getTime();
+
+            const members = state.members[g.id] || []; 
+            const count = members.length;
+            const needed = Math.max(0, 3 - count);
+            
+            // FIX 5: Join Button Visibility - use session phone check
+            // 🔥 FIXED: If IS_JOIN_LINK is true, hasJoined is forced to false so button shows
+            const hasJoinedThisGroup = !IS_JOIN_LINK && JOIN_SESSION_PHONE && members.some(m => m.phone === JOIN_SESSION_PHONE);
+            
+            // FIX 7: Auto-Confetti - removed client-side logic to rely on explicit trigger
+            // if (count >= 3 && count !== state.lastMemberCount && state.lastMemberCount !== 0) { triggerConfetti(); }
+            state.lastMemberCount = count;
+
+            // 4️⃣ USE REAL-WORLD TIME
+            // FIX: Declare variables in function scope to avoid ReferenceError
+            let closeText = "Orders open until midnight";
+            let deliveryText = "Pickup: Next day morning";
+            let headerText = "Order Anytime";
+
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const expiryDay = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
+            const diffDays = Math.round((expiryDay - today) / (1000 * 60 * 60 * 24));
+
+            const deliveryDate = new Date(expiryDate);
+            deliveryDate.setDate(deliveryDate.getDate() + 1); // Delivery is morning after cutoff
+
+            if (diffDays <= 0) {
+                closeText = "Orders close today evening";
+                headerText = "Closes today";
+                deliveryText = "Delivery Tomorrow morning";
+            } else if (diffDays === 1) {
+                closeText = "Orders close tomorrow evening";
+                headerText = "Closes tomorrow";
+                deliveryText = "Delivery " + deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }) + " morning";
+            } else {
+                const dayName = expiryDate.toLocaleDateString('en-US', { weekday: 'long' });
+                closeText = "Orders close " + dayName + " evening";
+                headerText = "Closes " + dayName;
+                deliveryText = "Delivery " + deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }) + " morning";
+            }
 
             const currentUrl = `${BASE_URL}?group=${g.id}`;
-            const inviteMsg = `నేను ఈరోజు ఉల్లిపాయలు ఆర్డర్ చేస్తున్నాను.
+            // FIX 8: Static Share Link Text
+            const inviteMsg = `నేను ఈరోజు రైతు దగ్గర నుంచి ${p.nameTe} ఆర్డర్ చేస్తున్నాను.
 
-ధర: ₹20/kg  
+ధర: ₹${p.price5}/kg  
+ఉదయం 12 గంటల వరకు ఆర్డర్.  
+ఆర్డర్ వచ్చిన తర్వాతే రైతు పంట కోస్తాడు.  
 రేపు ఉదయం పికప్ ఉంటుంది.
 
 కావాలంటే ఇక్కడ చేర్చుకోండి:
 ${currentUrl}`;
             const inviteLink = `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
             
-            const members = state.members[g.id] || [];
-            const count = members.length;
-            const needed = Math.max(0, 3 - count);
-            
-            // ⚠️ CRITICAL IDENTITY CHECK: Use CLIENT_ID or Fallback Phone
-            const hasJoinedThisGroup = members.some(m => (m.clientId === CLIENT_ID) || (m.phone === state.user.phone && state.user.phone));
+            // Status Logic Simplification
+            let statusHtml = '';
+            if (count < 3) {
+                 statusHtml = `<div class="text-center mt-3 text-sm font-medium text-gray-600">Invite ${needed} more people to unlock ₹${p.price5}/kg</div>`;
+            } else {
+                 statusHtml = `<div class="text-center mt-3 text-sm font-bold text-green-700">✅ Group price unlocked: ₹${p.price5}/kg</div>`;
+            }
 
             el.innerHTML = `
                 <div class="fade-in bg-white min-h-screen pb-40 font-sans">
@@ -764,8 +1000,14 @@ ${currentUrl}`;
                             <i data-lucide="arrow-left" size="24" class="text-gray-700"></i>
                             <span class="font-bold text-base tracking-wide text-gray-800">Back</span>
                         </div>
-                        <div class="text-xs font-medium text-gray-500 pt-safe">Open Order</div>
+                        <div class="text-xs font-medium text-gray-500 pt-safe">${headerText}</div>
                     </div>
+                    
+                    ${JOIN_SESSION_PHONE ? `
+                    <div class="bg-blue-50 px-4 py-2 text-xs flex justify-between items-center text-blue-800 font-medium border-b border-blue-100">
+                        <span>Ordering as: ${JOIN_SESSION_PHONE}</span>
+                        <button onclick="logout()" class="underline">Change</button>
+                    </div>` : ''}
 
                     <div class="p-4">
                         <div class="flex flex-col items-center mb-6 mt-6 animate-in fade-in-up duration-300">
@@ -777,25 +1019,40 @@ ${currentUrl}`;
                             </div>
                         </div>
 
+                        ${isExpired ? `
+                        <div class="bg-gray-100 text-gray-600 p-4 mb-6 rounded-xl text-center border border-gray-200 flex items-center justify-center gap-2">
+                            <i data-lucide="clock" size="20"></i>
+                            <div class="font-bold text-sm uppercase">Order Closed</div>
+                        </div>` : ''}
+
                         <div class="text-center mb-8 px-6">
-                            <h2 class="text-lg font-bold text-gray-800 mb-1">Delivery Next Morning</h2>
+                            <h2 class="text-lg font-bold text-gray-800 mb-1">${deliveryText}</h2>
+                            <p class="text-xs text-gray-400">${closeText}</p>
+                        </div>
+                        
+                        <div class="mx-4 mb-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                            <h3 class="font-bold text-gray-900 text-sm mb-2">What happens next?</h3>
+                            <ul class="text-xs text-gray-600 space-y-1.5 list-disc pl-4">
+                                <li>Orders close tonight</li>
+                                <li>Farmer harvests after orders close</li>
+                                <li>Pickup tomorrow morning</li>
+                                <li>Pay at pickup</li>
+                            </ul>
                         </div>
 
                         <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
                             <div class="space-y-4 mb-6">
                                 <div class="flex justify-between items-center ${count < 3 ? 'opacity-100' : 'opacity-40 grayscale'} transition-all">
-                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">1</div><span class="text-sm font-bold text-gray-500">Single</span></div>
-                                    <span class="text-base font-bold text-gray-400 line-through decoration-gray-300">₹${p.price1}</span>
+                                    <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">1</div><span class="text-sm font-bold text-jodo-textSecondary">Solo Price</span></div>
+                                    <span class="text-base font-bold text-jodo-priceOld line-through">₹${p.price1}</span>
                                 </div>
                                 <div class="flex justify-between items-center ${count >= 3 ? 'scale-100' : ''} transition-all p-3 -mx-3 rounded-lg ${count >= 3 ? 'bg-green-50 border border-green-100' : ''}">
                                     <div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full ${count >= 3 ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-500'} flex items-center justify-center text-xs font-bold">3+</div><span class="text-sm font-bold ${count >= 3 ? 'text-green-800' : 'text-gray-500'}">Group</span></div>
                                     <span class="text-2xl font-bold ${count >= 3 ? 'text-green-700' : 'text-gray-400'}">₹${p.price5}</span>
                                 </div>
                             </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-black text-gray-900 mb-1">${count} <span class="text-gray-300 text-xl font-normal">joined</span></div>
-                                <div class="text-sm font-medium ${count < 3 ? 'text-gray-500' : 'text-green-600'}">${count < 3 ? `${needed} more for group price` : 'Group price active'}</div>
-                            </div>
+                            
+                            ${statusHtml}
                         </div>
 
                         <div class="space-y-3 mb-8">
@@ -805,8 +1062,9 @@ ${currentUrl}`;
                                 return Array(totalSlots).fill(0).map((_, i) => {
                                     const member = members[i];
                                     if (member) {
-                                        // ⚠️ CRITICAL: Identity logic tied to CLIENT_ID
-                                        const isMe = (member.clientId === CLIENT_ID) || (member.phone === state.user.phone && state.user.phone);
+                                        // FIX 4: Identity logic strictly tied to phone number & join link state
+                                        // 🔥 FIXED: Shared link visitors see everyone as anonymous
+                                        const isMe = !IS_JOIN_LINK && JOIN_SESSION_PHONE === member.phone;
                                         const t1 = Math.round(member.quantity * p.price1);
                                         const t5 = Math.round(member.quantity * p.price5);
                                         
@@ -838,34 +1096,23 @@ ${currentUrl}`;
 
                     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
                         <div class="max-w-md mx-auto pt-2 pb-2">
-                            ${count >= 3 ? `
-                                <div class="text-center text-green-700 bg-green-50 p-2 rounded-lg border border-green-100 font-bold mb-3 flex items-center justify-center gap-2 text-sm">
-                                  <i data-lucide="check" size="16"></i>
-                                  Group Active
-                                </div>
-                            ` : ''}
-
-                            ${!hasJoinedThisGroup && count < MAX_GROUP_MEMBERS ? `
+                            ${!isExpired && !hasJoinedThisGroup && count < MAX_GROUP_MEMBERS ? `
                             <div class="text-center text-[11px] text-gray-500 font-medium mb-2">No payment now • Pay on delivery</div>
                             <button onclick="openJoinFlow('${p.id}', '${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 mb-3 btn-press">
                                 <span>Join Order</span>
                             </button>
                             ` : ''}
                             
+                            <div class="text-center text-[10px] text-gray-400 font-medium mb-1">Sharing helps unlock lower price for everyone</div>
                             <a href="${inviteLink}" target="_blank" class="block w-full bg-white border border-gray-300 text-gray-700 h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2 transition-all hover:bg-gray-50">
                                 <i data-lucide="share-2" size="20"></i>
                                 <span>Share Link</span>
                             </a>
-                            
-                            ${count < 3 ? `
-                            <div class="text-center mt-3 text-xs font-medium text-gray-400">
-                                ${needed} more needed for group price
-                            </div>
-                            ` : ''}
                         </div>
                     </div>
                 </div>
             `;
+            // Removed ticking timer logic
         }
 
         function render() {
@@ -919,7 +1166,7 @@ ${currentUrl}`;
 
         window.openGroup = function(gid) { 
             if (!gid || typeof gid !== 'string') {
-                toast('Invalid link', 'alert-circle');
+                toast('Invalid group link', 'alert-circle');
                 window.goHome();
                 return;
             }
@@ -946,7 +1193,7 @@ ${currentUrl}`;
                             state.groups[gid] = doc.data();
                             safeRender();
                         } else {
-                            toast("Order not found", 'alert-circle');
+                            toast("Squad not found", "alert-circle");
                             window.goHome();
                         }
                     },
@@ -966,26 +1213,7 @@ ${currentUrl}`;
                         state.members[gid] = members;
                         safeRender();
 
-                        // 🔥 AUTO JOIN TRIGGER (ONLY ONCE)
-                        if (
-                            IS_JOIN_LINK &&
-                            !AUTO_JOIN_TRIGGERED &&
-                            !state.user.phone && // Simple check if local identity exists
-                            members.length < MAX_GROUP_MEMBERS
-                        ) {
-                            AUTO_JOIN_TRIGGERED = true;
-
-                            const g = state.groups[gid];
-                            if (!g) return;
-
-                            const p = PRODUCTS.find(x => x.id === g.productId);
-                            if (!p) return;
-
-                            // delay to avoid render/modal clash
-                            setTimeout(() => {
-                                window.openJoinFlow(p.id, gid);
-                            }, 300);
-                        }
+                        // Removed Auto-Join Magic
                     },
                      (error) => { console.error("Member Listen Error:", error); }
                 );
@@ -1018,27 +1246,43 @@ ${currentUrl}`;
             if (JODO_INITIALIZED) return; 
             JODO_INITIALIZED = true;
             
-            console.log("🔥 JODO VERSION v4.0 RUNNING");
-            toast("JODO v4 loaded", "check-circle");
-            
-            loadData(); 
-            loadHabit(); 
+            // 🔥 CHECK URL FIRST (Source of Truth)
+            const params = new URLSearchParams(window.location.search);
+            const gid = params.get('group');
+
+            if (gid) {
+                // JOIN LINK FLOW - Force Fresh Identity
+                IS_JOIN_LINK = true;
+                
+                // Do NOT call loadData() here. We want a clean slate.
+                state.user = { 
+                    name: '', 
+                    phone: '', 
+                    area: '', 
+                    joinedGroupIds: [] 
+                };
+                JOIN_SESSION_PHONE = null;
+
+                // Force View immediately
+                state.view = 'group';
+                state.currentGroupId = gid;
+            } else {
+                // NORMAL FLOW
+                loadData(); 
+                loadHabit(); 
+                IS_JOIN_LINK = false;
+                state.view = 'home';
+            }
             
             const startApp = () => {
-                initHomeListeners(); 
-                
-                const params = new URLSearchParams(window.location.search);
-                const gid = params.get('group');
-                
-                // FIX 2: FORCE FRESH IDENTITY ON JOIN LINK logic updated to NOT wipe state automatically
-                if (gid) {
-                    IS_JOIN_LINK = true;
-                    // We do NOT wipe user state here. We respect existing localStorage.
-                    // This allows re-opening links without losing identity.
-                    window.openGroup(gid);
+                if (IS_JOIN_LINK && state.currentGroupId) {
+                     // Render skeleton immediately for join link
+                    safeRender();
+                    // Attach listeners
+                    window.openGroup(state.currentGroupId);
                 } else {
-                    IS_JOIN_LINK = false;
-                    state.view = 'home';
+                    // Normal home flow
+                    initHomeListeners(); 
                     safeRender();
                     startTicker();
                 }
