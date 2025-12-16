@@ -510,11 +510,19 @@
                             const gData = gSnap.data();
                             
                             // FIX 1: Remove group.status check completely
-                            // Check existence of expiresAt
+                            // Check existence of expiresAt - Auto-fix for legacy docs
                             if (!gData.expiresAt) {
-                                toast("Invalid group data", "alert-circle");
-                                resetActionButton(actionBtn, originalText);
-                                return;
+                                console.warn("Missing expiresAt. Auto-fixing.");
+                                const fallbackExpiry = Date.now() + 86400000; // +24h
+                                
+                                // Auto-repair the document
+                                await window.fs.updateDoc(gRef, {
+                                    expiresAt: fallbackExpiry,
+                                    deliveryDay: fallbackExpiry
+                                });
+                                
+                                // Update local data to proceed
+                                gData.expiresAt = fallbackExpiry;
                             }
                             
                             // Only check time
