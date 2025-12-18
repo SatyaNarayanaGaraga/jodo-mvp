@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
     <title>JODO</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script>
@@ -116,17 +116,37 @@
         // 🔥 LOGIC: STRICT INVENTORY (From Block 2)
         const HARD_LIMIT_KG = 5; 
         
-        // 🔥 DATA: RED ONIONS (Matches User Prompt)
+        // 🔥 DATA: TOMATOES (Updated per Spec)
         const PRODUCTS = [
-            { id: 'onion', name: 'Red Onions', nameTe: 'ఎర్ర ఉల్లిపాయలు', unit: '1kg', baseWeight: 1, weightUnit: 'kg', price1: 25, price5: 20, mandiPrice: 32, remainingStock: 14, icon: 'layers', imageColor: 'bg-gray-100 text-gray-600', location: 'Duvva Fields', imageSrc: 'https://images.unsplash.com/photo-1620574387735-3624d75b2dbc?auto=format&fit=crop&w=600&q=80' }
+            { 
+                id: 'tomato', 
+                name: 'Fresh Tomatoes', 
+                nameTe: 'టమాటాలు', 
+                unit: '1kg', 
+                baseWeight: 1, 
+                weightUnit: 'kg', 
+                price1: 30, // Solo Price
+                price5: 20, // Group Price (Spec)
+                mandiPrice: 35, 
+                remainingStock: 50, 
+                icon: 'circle-dot', 
+                imageColor: 'bg-red-50 text-red-600', 
+                location: 'Duvva Fields', 
+                imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=600&q=80' 
+            }
         ];
 
         const GROUPS_KEY = 'jodo_groups_joined_v1';
         
-        // --- HELPER FOR CUTOFF ---
+        // --- HELPER FOR CUTOFF (9 PM TODAY) ---
         function getTodayCutoffTimestamp() {
           const now = new Date();
-          return Date.now() + 86400000;
+          now.setHours(21, 0, 0, 0); // Hard set to 9:00 PM
+          return now.getTime();
+        }
+        
+        function isPastCutoff() {
+            return Date.now() > getTodayCutoffTimestamp();
         }
 
         const state = { 
@@ -309,13 +329,25 @@
                 toast("Loading order details...", "loader");
                 return;
             }
+            
+            // 4. Time Check
+            if (isPastCutoff()) {
+                toast("Orders closed for today", "clock");
+                return;
+            }
 
-            // 4. Pass Product ID and Group ID
+            // 5. Pass Product ID and Group ID
             window.openStartModal(g.productId, gid);
         };
 
         // 🔥 FIXED MODAL: Handles both ID (String) and Snapshot (Object)
         window.openStartModal = function(productOrId, joinGroupId = null) {
+            
+            // 🔥 TIME CHECK - GLOBAL BLOCK
+            if (isPastCutoff()) {
+                toast("Orders closed. Please try tomorrow.", "clock");
+                return;
+            }
             
             let p;
             
@@ -333,8 +365,8 @@
             const pid = p.id;
             const user = state.user;
             
-            // 🔥 QUANTITY LOGIC: 1kg Steps for Onions
-            let qty = 1;
+            // 🔥 QUANTITY LOGIC: Steps: 250g, 500g, 1kg, 1.5kg, 2kg...
+            let qty = 0.25;
             let isGroupMode = true;
             
             // 🔥 LOGIC: Calculate remaining stock visually
@@ -391,8 +423,8 @@
                         ` : ''}
 
                         <div class="bg-white p-3 rounded-xl border border-gray-200 mb-6 flex items-center justify-between">
-                            <div class="pl-1"><div class="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity</div><div class="text-[10px] text-gray-400">Min 1 ${p.weightUnit}</div></div>
-                            <div class="flex items-center gap-3 bg-gray-50 p-1 rounded-lg border border-gray-200"><button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-200 text-gray-500 flex items-center justify-center active:scale-90 transition-all"><i data-lucide="minus" size="18"></i></button><div class="text-lg font-bold text-gray-800 w-20 text-center leading-none tabular-nums" id="qty-display">1 kg</div><button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-sm flex items-center justify-center active:scale-90 transition-all"><i data-lucide="plus" size="18"></i></button></div>
+                            <div class="pl-1"><div class="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity</div><div class="text-[10px] text-gray-400">Min 250 g</div></div>
+                            <div class="flex items-center gap-3 bg-gray-50 p-1 rounded-lg border border-gray-200"><button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-200 text-gray-500 flex items-center justify-center active:scale-90 transition-all"><i data-lucide="minus" size="18"></i></button><div class="text-lg font-bold text-gray-800 w-20 text-center leading-none tabular-nums" id="qty-display">250 g</div><button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-sm flex items-center justify-center active:scale-90 transition-all"><i data-lucide="plus" size="18"></i></button></div>
                         </div>
                         <div class="space-y-4 mb-8">
                             <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Your Name"></div>
@@ -430,7 +462,12 @@
                 }
 
                 // Format quantity
-                const qtyText = (qty * p.baseWeight).toFixed(0) + ' ' + p.weightUnit;
+                let qtyText;
+                if (qty < 1) {
+                    qtyText = (qty * 1000).toFixed(0) + ' g';
+                } else {
+                    qtyText = qty + ' kg';
+                }
                 node.querySelector('#qty-display').innerText = qtyText;
                 
                 const total = Math.round((isGroupMode ? p.price5 : p.price1) * qty);
@@ -450,36 +487,44 @@
             
             const btnMinus = node.querySelector('#btn-minus'); 
             if (btnMinus) btnMinus.onclick = () => { 
-                if (qty > 1) { 
-                    qty--; 
-                    renderMode(); 
-                } else { 
+                if (qty <= 0.25) { 
                     toast("Minimum quantity reached", 'alert-triangle'); 
                     triggerVibration(); 
-                } 
+                    return;
+                }
+                
+                if (qty <= 0.5) qty = 0.25;
+                else if (qty <= 1.0) qty = 0.5;
+                else qty -= 0.5;
+
+                renderMode(); 
             }; 
             
             const btnPlus = node.querySelector('#btn-plus'); 
             if (btnPlus) btnPlus.onclick = () => { 
+                let nextQty;
+                if (qty < 0.5) nextQty = 0.5;
+                else if (qty < 1.0) nextQty = 1.0;
+                else nextQty = qty + 0.5;
+
+                // CHECK LIMITS
                 // CASE 1: CREATING
                 if (!joinGroupId) {
-                    if ((qty + 1) * p.baseWeight > HARD_LIMIT_KG) {
+                    if (nextQty * p.baseWeight > HARD_LIMIT_KG) {
                          toast("Max order size is " + HARD_LIMIT_KG + "kg", "alert-circle");
                          return;
                     }
                 } 
                 // CASE 2: JOINING (Strict visual check, real check in transaction)
                 else {
-                    if ((qty + 1) * p.baseWeight > remainingKg) {
+                    if (nextQty * p.baseWeight > remainingKg) {
                          toast("Max available stock reached", "alert-circle");
                          return;
                     }
                 }
                 
-                if (qty < 20) { 
-                    qty++; 
-                    renderMode(); 
-                }
+                qty = nextQty;
+                renderMode(); 
             };
 
             renderMode(); 
@@ -489,6 +534,13 @@
             const triggerAction = async () => {
                 if (!navigator.onLine) {
                     toast("No internet connection", "wifi-off");
+                    return;
+                }
+                
+                // 🔥 DOUBLE CHECK TIME
+                if (isPastCutoff()) {
+                    toast("Order time ended (9 PM cutoff)", "clock");
+                    window.location.reload();
                     return;
                 }
 
@@ -731,6 +783,9 @@
                 }).join('');
                 heroContent = `<div class="mt-6 mb-4"><div class="px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">${cardsHtml}</div></div>`;
             }
+            
+            // Check global time lockout for HOME
+            const isClosedGlobally = isPastCutoff();
 
             el.innerHTML = `
                 <div class="pb-safe fade-in bg-white">
@@ -765,16 +820,22 @@
                         
                         ${sortedProducts.map(p => {
                             const activeGid = userActiveGroupIds[p.id];
-                            const actionAttr = activeGid ? `onclick="openGroup('${activeGid}')"` : `onclick="openStartModal('${p.id}')"`;
                             
-                            // Visual calc
+                            // If globally closed, disable action or show closed toast
+                            const actionAttr = activeGid 
+                                ? `onclick="openGroup('${activeGid}')"` 
+                                : `onclick="openStartModal('${p.id}')"`;
+                            
                             const price5_1kg = Math.round(p.price5);
 
                             return `
-                            <div class="bg-white p-3 rounded-2xl flex gap-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden active:scale-[0.99] transition-all duration-200 cursor-pointer" ${actionAttr}>
+                            <div class="bg-white p-3 rounded-2xl flex gap-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden active:scale-[0.99] transition-all duration-200 cursor-pointer ${isClosedGlobally ? 'opacity-70 grayscale-[0.5]' : ''}" ${actionAttr}>
                                 <div class="w-28 h-28 bg-gray-50 rounded-xl shrink-0 relative overflow-hidden border border-gray-100">
                                     <img src="${p.imageSrc}" class="w-full h-full object-cover" alt="${p.name}" loading="lazy">
-                                    <div class="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm p-1 border-t border-gray-100"><div class="text-gray-800 text-[9px] font-bold text-center leading-none">Fresh Stock</div></div>
+                                    ${isClosedGlobally 
+                                      ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="text-white font-bold text-xs bg-black/50 px-2 py-1 rounded">CLOSED</span></div>' 
+                                      : '<div class="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm p-1 border-t border-gray-100"><div class="text-gray-800 text-[9px] font-bold text-center leading-none">Fresh Stock</div></div>'
+                                    }
                                 </div>
 
                                 <div class="flex-1 flex flex-col justify-between py-0.5 min-w-0">
@@ -828,7 +889,9 @@
                 return;
             }
             
-            const isExpired = g.expiresAt < Date.now();
+            // 🔥 STRICT EXPIRE CHECK (9 PM TODAY CUTOFF)
+            const isExpired = Date.now() > g.expiresAt || isPastCutoff();
+            
             const members = state.members[g.id] || []; 
             const count = members.length;
             
@@ -842,7 +905,21 @@
             state.lastMemberCount = count;
             
             const currentUrl = `${BASE_URL}?group=${g.id}`;
-            const inviteMsg = `I am ordering ${p.name} from Jodo.\nPrice: ₹${p.price5}/kg\nOrder here:\n${currentUrl}`;
+            
+            // 🔥 MANDATORY TELUGU SHARE MESSAGE (EXACT COPY - NO EMOJIS IN CONTENT)
+            const inviteMsg = `నేను ఈరోజు టమాటాల గ్రూప్ ఆర్డర్ ప్రారంభించాను.
+
+ధర: ₹${p.price5}/kg (గ్రూప్ రేట్)
+ఈరోజు రాత్రి 9 గంటల వరకు మాత్రమే ఆర్డర్
+రేపు ఉదయం పికప్ ఉంటుంది
+
+ఇది అందరికీ కాదు.
+ముందుగా చేర్చుకున్నవారికే ఈ ధర
+గ్రూప్ ఫుల్ అయితే ఆర్డర్లు ఆటోమేటిక్‌గా క్లోజ్
+
+కావాలంటే ఇప్పుడే చేర్చుకోండి
+${currentUrl}`;
+
             const inviteLink = `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
             
             // 🔥 CLEAN LAYOUT - MATCHING CREATOR SCREEN
@@ -871,9 +948,12 @@
                         </div>` : ''}
 
                         ${isExpired ? `
-                        <div class="bg-gray-100 text-gray-600 p-4 mb-6 rounded-xl text-center border border-gray-200 flex items-center justify-center gap-2">
-                            <i data-lucide="clock" size="20"></i>
-                            <div class="font-bold text-sm uppercase">Order Closed</div>
+                        <div class="bg-red-50 text-red-700 p-4 mb-6 rounded-xl text-center border border-red-100 flex flex-col items-center justify-center gap-1">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="lock" size="18"></i>
+                                <div class="font-bold text-sm uppercase">Order Closed</div>
+                            </div>
+                            <div class="text-xs font-medium">ఆర్డర్ క్లోజ్ అయింది – రేపటి గ్రూప్ కోసం వేచి ఉండండి</div>
                         </div>` : ''}
 
                         <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
@@ -898,6 +978,8 @@
                             ${members.map((member) => {
                                 const isMe = JOIN_SESSION_PHONE === member.phone;
                                 const t5 = Math.round(p.price5 * member.quantity);
+                                const weight = member.quantity * p.baseWeight;
+                                const weightLabel = weight < 1 ? (weight * 1000).toFixed(0) + 'g' : weight + 'kg';
 
                                 if (member.isLeader) {
                                     return `<div class="bg-green-50 border border-green-200 p-4 rounded-xl shadow-sm mb-3 transition-all relative overflow-hidden">
@@ -909,7 +991,7 @@
                                                 </div>
                                                 <div>
                                                     <div class="text-sm font-bold text-gray-900 flex items-center gap-2">${isMe ? 'You (Host)' : member.name}</div>
-                                                    <div class="text-xs text-green-700 font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit}</div>
+                                                    <div class="text-xs text-green-700 font-medium">${weightLabel}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -924,7 +1006,7 @@
                                     <div class="flex items-center justify-between mb-2">
                                         <div class="flex items-center gap-3">
                                             <div class="w-8 h-8 rounded-full ${isMe ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'} flex items-center justify-center font-bold text-xs border border-white shadow-sm shrink-0">${member.name[0]}</div>
-                                            <div><div class="text-sm font-bold text-gray-800 flex items-center gap-2">${isMe ? 'You' : member.name}</div><div class="text-xs text-gray-400 font-medium">${(member.quantity * p.baseWeight).toFixed(1)} ${p.weightUnit}</div></div>
+                                            <div><div class="text-sm font-bold text-gray-800 flex items-center gap-2">${isMe ? 'You' : member.name}</div><div class="text-xs text-gray-400 font-medium">${weightLabel}</div></div>
                                         </div>
                                     </div>
                                     <div class="flex justify-between items-center pt-2 border-t border-gray-5">
@@ -944,11 +1026,11 @@
                                     <div class="text-center text-[10px] text-gray-400 font-medium mb-1">Invite More & Unlock Savings</div>
                                     <a href="${inviteLink}" target="_blank" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2 transition-all">
                                         <i data-lucide="share-2" size="20"></i>
-                                        <span>Share Group Link</span>
+                                        <span>Copy & Share</span>
                                     </a>`;
                                 }
 
-                                if (isFull && !hasJoinedThisGroup) {
+                                if (isFull && !hasJoinedThisGroup && !isExpired) {
                                      return `<div class="text-center text-sm text-red-600 font-bold mb-3 border border-red-100 bg-red-50 p-3 rounded-xl">
                                        Group full • Join Waitlist
                                     </div>
@@ -964,12 +1046,22 @@
                                         <span>Join Order</span>
                                     </button>`;
                                 }
+
+                                // Expired View (For everyone)
+                                if (isExpired) {
+                                    return `
+                                    <div class="text-center text-xs text-gray-500 font-medium mb-2">Orders for today are closed</div>
+                                    <button disabled class="block w-full bg-gray-100 text-gray-400 h-[56px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 mb-3 cursor-not-allowed">
+                                        <span>Closed</span>
+                                    </button>
+                                    `;
+                                }
                                 
                                 return `
                                 <div class="text-center text-[10px] text-gray-400 font-medium mb-1">Sharing helps more people get the wholesale price</div>
                                 <a href="${inviteLink}" target="_blank" class="block w-full bg-white border border-gray-300 text-gray-700 h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2 transition-all hover:bg-gray-50">
                                     <i data-lucide="share-2" size="20"></i>
-                                    <span>Share Link</span>
+                                    <span>Copy & Share</span>
                                 </a>`;
                             })()}
                         </div>
