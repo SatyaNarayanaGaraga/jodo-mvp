@@ -27,10 +27,13 @@
                         'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                         'fade-in-up': 'fadeInUp 0.5s ease-out',
                         'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
                     },
                     keyframes: {
                         pop: { '0%': { transform: 'scale(0.95)' }, '100%': { transform: 'scale(1)' } },
-                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        shake: { '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' }, '20%, 80%': { transform: 'translate3d(2px, 0, 0)' }, '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' }, '40%, 60%': { transform: 'translate3d(4px, 0, 0)' } }
                     }
                 }
             }
@@ -58,11 +61,44 @@
         <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[1.5rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden pb-safe"></div>
     </div>
 
+    <!-- 🔴 ISSUE #2 FIX: Force Share Gate (Anti-Bypass) -->
+    <div id="share-gate-overlay" class="fixed inset-0 bg-white/95 hidden z-[70] flex flex-col items-center justify-center backdrop-blur-md text-center px-6">
+        <div class="animate-bounce mb-6">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
+                 <i data-lucide="lock" class="text-green-600" size="40"></i>
+            </div>
+        </div>
+        <h2 class="text-2xl font-black text-gray-900 mb-2">Order Not Sent!</h2>
+        <p class="text-gray-600 font-medium mb-8 max-w-xs">You created the order, but no one knows about it. <br><br><span class="font-bold text-gray-900">Share now to unlock.</span></p>
+        <button id="force-share-btn" class="w-full max-w-sm bg-jodo-ctaPrimary text-white h-[64px] rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all btn-press animate-pulse-slow">
+            <i data-lucide="share-2" size="24"></i>
+            Share on WhatsApp
+        </button>
+        <div class="mt-4 text-[10px] text-gray-400 font-medium uppercase tracking-widest">Step 1 of 2</div>
+    </div>
+
+    <!-- 🔴 ISSUE #3 FIX: Panic Mode Overlay (Interruptive) -->
+    <div id="panic-overlay" class="fixed inset-0 bg-red-600 hidden z-[80] flex flex-col items-center justify-center text-center px-6 text-white animate-shake">
+        <div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-20"></div>
+        <div class="relative z-10 flex flex-col items-center">
+            <i data-lucide="alert-triangle" size="64" class="mb-4 text-white animate-pulse"></i>
+            <h1 class="text-4xl font-black uppercase tracking-tighter mb-2">Order Failing</h1>
+            <p class="text-white/90 text-lg font-medium mb-8 max-w-xs leading-tight">30 minutes left.<br>If no one joins, this dies.</p>
+            
+            <button id="panic-share-btn" class="w-full max-w-sm bg-white text-red-600 h-[64px] rounded-2xl font-bold text-xl shadow-2xl flex items-center justify-center gap-2 active:scale-95 transition-all">
+                Send Final Warning
+            </button>
+            <button onclick="document.getElementById('panic-overlay').classList.add('hidden')" class="mt-6 text-white/60 text-sm font-medium underline decoration-white/40">
+                Dismiss (Risk it)
+            </button>
+        </div>
+    </div>
+
     <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe text-center w-max max-w-[90%]"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, getDocs, onSnapshot, collection, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, onSnapshot, collection, runTransaction, serverTimestamp, updateDoc, deleteDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "",
@@ -77,26 +113,16 @@
         const db = getFirestore(app);
         
         window.db = db;
-        window.fs = { doc, getDoc, getDocs, onSnapshot, collection, runTransaction, serverTimestamp };
+        window.fs = { doc, getDoc, getDocs, onSnapshot, collection, runTransaction, serverTimestamp, updateDoc, deleteDoc, deleteField };
         
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
     
     <script>
-        /**
-         * 🔴 PRICING & VIRALITY FREEZE DIRECTIVE 🔴
-         * * 1. _unlockPrice must NEVER be rendered before status === UNLOCKED.
-         * 2. Reward / wholesale price must NEVER appear alongside penalty price.
-         * 3. Penalty price may be shown ONLY as text ("shop price applies") except inside the creator flow.
-         * 4. Invite messages must NEVER include numbers (₹).
-         * 5. Join-gate must focus on helping the host, not saving money.
-         * * Any future UI change that shows two prices together is a hard revert.
-         * This system is behavior-complete. Do not optimize, clarify, or "improve UX".
-         */
-
         const BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp';
-        const MIN_GROUP_SIZE = 2; // ⚠️ LOGIC: Keep 2 for test. Change to 3 ONLY after data validation.
+        const IS_TEST_MODE = true; 
 
+        // 🔴 CHANGE: Dynamic Min Size
         const PRODUCTS = [
             { 
                 id: 'tomato', 
@@ -104,15 +130,14 @@
                 nameTe: 'టమాటాలు', 
                 unit: '1kg', 
                 weightUnit: 'kg', 
-                price1: 40, // Shop Price (Penalty Reference)
-                // ⚠️ SECURITY NOTE: In a real backend, this stays on server. 
-                // DO NOT RENDER THIS VALUE IN CLIENT UI. Treat as write-only for transaction.
+                price1: 40, 
                 _unlockPrice: 20, 
                 mandiPrice: 35, 
                 icon: 'circle-dot', 
                 imageColor: 'bg-red-50 text-red-600', 
                 location: 'Duvva Fields', 
-                imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80' 
+                imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80',
+                minSize: 2 
             }
         ];
 
@@ -122,11 +147,11 @@
           return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
         }
 
-        function isOrderWindowOpen() { return true; } // TEST MODE: Always Open
-
-        // 🔥 LOGIC CHANGE: Expiry is 3 hours to force the pressure timer to be visible and scary
-        function getTodayCutoffTimestamp() {
-            return Date.now() + 1000 * 60 * 60 * 3; 
+        function isOrderWindowOpen() {
+            if (IS_TEST_MODE) return true;
+            const now = getISTNow();
+            const hours = now.getHours();
+            return hours >= 6 && hours < 8; 
         }
 
         const state = { 
@@ -139,7 +164,8 @@
             lastMemberCount: 0,
             unsubGroup: null,
             unsubMembers: null,
-            homeListeners: []
+            homeListeners: [],
+            isFirstLoadAfterCreation: false 
         };
 
         let JODO_INITIALIZED = false;
@@ -148,8 +174,11 @@
         let JOIN_SESSION_PHONE = null;
         let AUTO_JOIN_TRIGGERED = false;
 
+        // 🔴 ISSUE #2 FIX: Anti-Bypass Variables
+        let shareClickedTime = 0;
+        let pendingShareGroupId = null;
+
         function logEvent(name, params) {
-            // 📊 SILENT ANALYTICS
             console.log(`[JODO_ANALYTICS] ${name}`, params || {});
         }
 
@@ -191,52 +220,103 @@
         function startPenaltyTimer() {
             if (state.timerInterval) clearInterval(state.timerInterval);
             state.timerInterval = setInterval(() => {
-                // Timer runs on both 'group' and specific join landing
                 if (state.view !== 'group') return; 
                 
                 const g = state.groups[state.currentGroupId];
                 const members = state.members[state.currentGroupId] || [];
-                const isUnlocked = members.length >= MIN_GROUP_SIZE;
+                const requiredSize = g.minSize || 2;
+                const isUnlocked = members.length >= requiredSize;
                 
-                if (!g || isUnlocked) {
-                     clearInterval(state.timerInterval);
-                     return;
+                // If group data isn't fully loaded or expiry is missing (waiting for "server"), skip
+                if (!g || !g.expiresAt) return;
+
+                if (isUnlocked) {
+                      clearInterval(state.timerInterval);
+                      return;
                 }
 
                 const left = g.expiresAt - Date.now();
                 const formatted = formatTimeLeft(left);
 
-                // Update Top Timer (standard group view)
+                // Update Timers
                 const elTop = document.getElementById('penalty-timer-top');
                 if (elTop) elTop.innerText = formatted;
-
-                // Update Creator Card Timer (standard group view)
-                const elCard = document.getElementById('penalty-timer-card');
-                if (elCard) elCard.innerText = "⏳ " + formatted + " remaining";
                 
-                // Update Join Gate Timer (new focused landing)
                 const elGate = document.getElementById('gate-timer');
                 if (elGate) elGate.innerText = formatted;
 
+                // 🔴 ISSUE #3 FIX: Panic Mode Logic
+                // If Creator, Time < 30m, and hasn't seen panic yet
+                const isCreator = JOIN_SESSION_PHONE && g.ownerName && members.some(m => m.phone === JOIN_SESSION_PHONE && m.isLeader === true);
+                if (isCreator && left < 30 * 60 * 1000 && left > 0) {
+                     const reminderKey = `panic_shown_${g.id}`;
+                     if (!localStorage.getItem(reminderKey)) {
+                         localStorage.setItem(reminderKey, 'true');
+                         triggerPanicMode(g);
+                     }
+                }
+
                 if (left <= 0) {
                     clearInterval(state.timerInterval);
-                    safeRender(); // Trigger re-render to show expired state if needed
+                    safeRender(); 
                 }
             }, 1000);
         }
 
-        // 🔥 HELPER: Get members who joined in the last X seconds
-        function getRecentJoins(members, seconds = 30) {
-            const now = Date.now();
-            return members.filter(m => {
-                // Handle potential missing timestamp (local pending write) -> treat as now
-                const joinedTime = m.joinedAt ? (m.joinedAt.toMillis ? m.joinedAt.toMillis() : (m.joinedAt.seconds ? m.joinedAt.seconds * 1000 : m.joinedAt)) : now;
-                return (now - joinedTime) <= seconds * 1000;
-            });
+        // 🔴 ISSUE #3 FIX: Panic Mode Implementation
+        function triggerPanicMode(g) {
+            const inviteLink = generateInviteLink(g.id, false);
+            const overlay = document.getElementById('panic-overlay');
+            const btn = document.getElementById('panic-share-btn');
+            
+            if (overlay && btn) {
+                // Prepare button
+                btn.onclick = () => {
+                    window.open(inviteLink, '_blank');
+                    overlay.classList.add('hidden');
+                };
+                
+                // Trigger UI
+                overlay.classList.remove('hidden');
+                triggerVibration();
+                // Double vibration for urgency
+                setTimeout(triggerVibration, 200);
+            }
         }
 
+        // 🔴 ISSUE #2 FIX: Anti-Bypass Visibility Logic
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && shareClickedTime > 0 && pendingShareGroupId) {
+                const elapsed = Date.now() - shareClickedTime;
+                
+                // Require at least 2.5 seconds away from app
+                if (elapsed > 2500) {
+                    // Success: Unlock
+                    localStorage.setItem(`has_shared_${pendingShareGroupId}`, 'true');
+                    const gate = document.getElementById('share-gate-overlay');
+                    if (gate && !gate.classList.contains('hidden')) {
+                         gate.classList.add('hidden');
+                         toast("Unlocked!", "unlock");
+                    }
+                    
+                    // Cleanup
+                    shareClickedTime = 0;
+                    pendingShareGroupId = null;
+                } else {
+                    // Failed: Too fast
+                    toast("You didn't share. Try again.", "alert-circle");
+                    shareClickedTime = 0; 
+                    // Keep pendingShareGroupId set so they can try again
+                }
+            }
+        });
+
+        // Modified logShare to initiate the timer
         window.logShare = function(gid) {
             logEvent('share_clicked', { groupId: gid });
+            // Set tracking variables
+            shareClickedTime = Date.now();
+            pendingShareGroupId = gid;
         };
 
         function toast(msg, icon) { 
@@ -253,7 +333,7 @@
             setTimeout(() => t.classList.add('hidden'), 4000); 
         }
 
-        function triggerVibration() { if (navigator.vibrate) navigator.vibrate(10); }
+        function triggerVibration() { if (navigator.vibrate) navigator.vibrate([15, 50, 15]); }
 
         function createNodeFromHTML(html) { 
             const t = document.createElement('template'); 
@@ -294,7 +374,7 @@
                 overlay.classList.add('hidden');
                 overlay.style.display = 'none';
                 overlay.style.pointerEvents = 'none';
-                overlay.className = "fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300"; // Reset classes
+                overlay.className = "fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300"; 
             }
             if (content) content.innerHTML = '';
             document.body.style.overflow = '';
@@ -328,16 +408,15 @@
             const currentUrl = `${BASE_URL}?group=${groupId}`;
             let inviteMsg;
             if (!isUnlocked) {
-                // 🔐 VIRAL STRATEGY: RUTHLESS PRESSURE
-                inviteMsg = `I started today’s tomato order.
+                // 🔴 ISSUE #4 FIX: Brutal Copy
+                inviteMsg = `I started today’s Duvva tomato order.
 
-If no one joins,
-I’ll have to buy at shop price.
+One more person needed.
+If no one joins, order fails.
 
-Join here so the group confirms:
+Join here:
 ${currentUrl}`;
             } else {
-                // 🔓 UNLOCKED
                 inviteMsg = `Order confirmed ✅. Join here: ${currentUrl}`;
             }
             return `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
@@ -351,12 +430,18 @@ ${currentUrl}`;
             }
             const g = state.groups[gid];
             if (!g) { toast("Loading order details...", "loader"); return; }
-            if (!isOrderWindowOpen()) { toast("Orders open only 6 AM – 8:30 AM IST", "clock"); return; }
+            if (!isOrderWindowOpen()) { 
+                toast("Orders closed", "clock"); 
+                return; 
+            }
             window.openStartModal(g.productId, gid);
         };
 
         window.openStartModal = function(productOrId, joinGroupId = null) {
-            if (!isOrderWindowOpen()) { toast("Orders open only 6 AM – 8:30 AM IST", "clock"); return; }
+            if (!isOrderWindowOpen()) { 
+                toast("Orders closed", "clock"); 
+                return; 
+            }
             
             let p = typeof productOrId === 'string' ? PRODUCTS.find(x => x.id === productOrId) : productOrId;
             if (!p) { toast("Product Unavailable", "alert-circle"); return; }
@@ -367,43 +452,22 @@ ${currentUrl}`;
             const title = joinGroupId ? "Join Order" : "Start today’s order";
             const btnText = joinGroupId ? "Join & Confirm" : "Start & Commit"; 
 
-            // 🔥 RULE: Price is ALWAYS hidden/locked in the modal
-            // User commits blindly to the wholesale price concept
-            
-            // 🔥 RULE: Close button must NOT exist for creator (Prison Entry)
             const closeBtnHtml = joinGroupId 
                 ? `<button id="close-modal" class="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"><i data-lucide="x" size="20"></i></button>`
                 : ``;
 
-            // 🔥 VIRAL STRATEGY: WARNING
-            // Shown to creator before starting
-            const warningHtml = !joinGroupId 
-                ? `<div class="bg-red-50 border border-red-100 rounded-lg p-3 mb-3 flex gap-2 items-start">
-                      <span class="text-red-600 mt-0.5">⚠️</span>
-                      <div class="text-xs font-bold text-red-700 leading-tight">
-                        If no one joins, shop price applies.<br>
-                        <span class="font-normal opacity-90 text-[10px]">(మరెవరూ రాకపోతే shop రేటు వర్తిస్తుంది)</span>
-                      </div>
+            // 🔴 ISSUE #4 FIX: Brutal Copy
+            const importantRulesHtml = !joinGroupId 
+                ? `<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 text-center">
+                        <div class="text-red-600 font-bold text-sm mb-1">If no one joins, order fails.</div>
+                        <div class="text-[10px] text-gray-500 font-medium">After 8:00 AM → Order Dies</div>
                     </div>`
                 : ``;
 
-            // 🔥 DELIVERY WARNING (CREATOR ONLY)
-            const deliveryHtml = !joinGroupId 
-                ? `<div class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-3 flex gap-2 items-start">
-                      <span class="text-blue-600 mt-0.5">📦</span>
-                      <div class="text-xs font-bold text-blue-700 leading-tight">
-                        📦 Delivery: Tuesday & Saturday
-                      </div>
-                    </div>`
-                : ``;
-
-            // 🔥 CRITICAL FIX #2: CREATOR MODAL TAKEOVER
-            // If creator (!joinGroupId), make background opaque/solid to prevent escape
             const overlay = document.getElementById('modal-overlay');
             if (!joinGroupId && overlay) {
                 overlay.className = "fixed inset-0 bg-gray-900/95 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300";
             } else if (overlay) {
-                // Reset for joiners
                 overlay.className = "fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300";
             }
 
@@ -418,15 +482,14 @@ ${currentUrl}`;
                             <div class="w-24 h-24 rounded-xl bg-gray-50 border border-gray-100 relative overflow-hidden shrink-0 shadow-sm">
                                 <img src="${p.imageSrc}" class="w-full h-full object-cover" alt="${p.name}">
                             </div>
-                            <div class="flex-1 flex flex-col justify-center"><h4 class="font-bold text-2xl text-gray-900 leading-none mb-1">${p.name}</h4><div class="text-base text-gray-500 mb-1">${p.nameTe}</div>
-                            <!-- 🔥 SCARCITY FIX -->
-                            <div class="text-xs text-orange-800 font-bold bg-orange-50 px-2 py-1 rounded-full w-fit">Limited quantity today</div>
+                            <div class="flex-1 flex flex-col justify-center">
+                                <h4 class="font-bold text-2xl text-gray-900 leading-none mb-1">${p.name}</h4>
+                                <div class="text-base text-gray-500 mb-1">${p.nameTe}</div>
+                                <div class="text-[11px] text-gray-400 font-medium">Duvva group order</div>
                             </div>
                         </div>
                         
-                        <!-- Warnings Moved Here (RISK BEFORE CHOICE) -->
-                        ${warningHtml}
-                        ${deliveryHtml}
+                        ${importantRulesHtml}
 
                         <div class="bg-white p-3 rounded-xl border border-gray-200 mb-6 flex items-center justify-between">
                             <div class="pl-1"><div class="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity</div><div class="text-[10px] text-gray-400">Min 250 g</div></div>
@@ -439,7 +502,6 @@ ${currentUrl}`;
                     </div>
                     <div class="bg-gray-50 border-t-2 border-gray-200 p-4 shrink-0 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
                         <div class="flex justify-between items-end mb-3 px-1"><div><div class="text-[10px] text-gray-500 font-bold uppercase">Total</div><div class="text-3xl font-bold text-gray-900 leading-none" id="footer-total"><span class="text-gray-400 text-xl flex items-center gap-1"><i data-lucide="lock" size="18"></i> Locked</span></div></div></div>
-                        <div class="text-center text-[11px] text-gray-500 font-medium mb-2">No payment now • Pay on delivery</div>
                         <button id="action-btn" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] transition-all btn-press">
                             <span id="btn-text-action">${btnText}</span>
                         </button>
@@ -454,7 +516,6 @@ ${currentUrl}`;
             const renderMode = () => {
                 let qtyText = qty < 1 ? (qty * 1000).toFixed(0) + ' g' : qty + ' kg';
                 node.querySelector('#qty-display').innerText = qtyText;
-                // Price always locked/hidden in modal
                 footerTotalEl.innerHTML = `<span class="text-gray-400 text-xl flex items-center gap-1"><i data-lucide="lock" size="18"></i> Locked</span>`;
             };
             
@@ -472,7 +533,7 @@ ${currentUrl}`;
             };
 
             renderMode(); 
-            // 🔥 CRITICAL FIX #3: Joiner Confirmation Check
+            
             if (joinGroupId) {
                 node.querySelector('#close-modal').addEventListener('click', () => {
                     if (confirm("If you leave, this order may fail. Continue?")) {
@@ -507,7 +568,7 @@ ${currentUrl}`;
                       const g = state.groups[joinGroupId];
                       const hostName = g ? g.ownerName : "Host";
                       const modalContent = node.querySelector('.p-5'); 
-                      const footer = node.querySelector('.bg-gray-50.border-t-2'); // Updated selector
+                      const footer = node.querySelector('.bg-gray-50.border-t-2'); 
                       modalContent.innerHTML = `
                         <div class="flex flex-col items-center justify-center h-full pt-10 text-center space-y-4 animate-in fade-in zoom-in duration-300">
                             <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center animate-bounce">
@@ -530,19 +591,20 @@ ${currentUrl}`;
                 if (!window.fs || !window.db) { toast("Connecting...", "wifi"); await new Promise(r => setTimeout(r, 1000)); }
 
                 try {
-                    const requestedKg = qty; // FIX 4: Simplified math
+                    const requestedKg = qty; 
                     let didUnlock = false;
-                    
-                    // FIX 1: Strip sensitive fields before saving
                     const { _unlockPrice, mandiPrice, ...safeProduct } = p;
 
                     await window.fs.runTransaction(window.db, async (transaction) => {
                         if (!joinGroupId) {
+                            // 🔴 ISSUE #1 FIX: SERVER TIME ARCHITECTURE
+                            // We do NOT set expiresAt here. We let the server (or simulated server) do it.
                             const groupData = { 
                                 id: finalGroupId, productId: pid = p.id, productSnapshot: safeProduct, ownerName: name, 
-                                expiresAt: getTodayCutoffTimestamp(), deliveryDay: new Date(getISTNow().setHours(18, 0, 0, 0)).getTime(), 
+                                // expiresAt: DELETED (Server job)
+                                deliveryDay: new Date(new Date().setHours(18, 0, 0, 0)).getTime(), 
                                 createdAt: window.fs.serverTimestamp(), type: 'group', maxKg: 100, usedKg: 0, pendingKg: requestedKg, 
-                                memberCount: 1, unlockedAt: null, status: 'OPEN'
+                                memberCount: 1, unlockedAt: null, status: 'OPEN', minSize: p.minSize || 2 
                             };
                             const memberData = { memberId, groupId: finalGroupId, name, phone, isLeader: true, quantity: qty, orderPlacedAt: window.fs.serverTimestamp(), joinedAt: window.fs.serverTimestamp() };
                             transaction.set(window.fs.doc(window.db, "groups", finalGroupId), groupData);
@@ -562,7 +624,8 @@ ${currentUrl}`;
 
                             if (!gd.firstJoinAt) updates.firstJoinAt = window.fs.serverTimestamp();
                             
-                            if (newCount >= MIN_GROUP_SIZE && !gd.unlockedAt) {
+                            const required = gd.minSize || 2;
+                            if (newCount >= required && !gd.unlockedAt) {
                                 didUnlock = true;
                                 updates = { ...updates, usedKg: (gd.usedKg || 0) + (gd.pendingKg || 0) + requestedKg, pendingKg: 0, memberCount: newCount, unlockedAt: window.fs.serverTimestamp(), groupPrice: p._unlockPrice, status: 'UNLOCKED' };
                             } else {
@@ -580,10 +643,8 @@ ${currentUrl}`;
                     if (!joinGroupId) {
                         logEvent('group_created', { groupId: finalGroupId, phone: memberId });
                         toast("You started today’s order", "check-circle");
-                        
-                        // 🔥 CRITICAL FIX #1: Clean Modal Close for Creator
                         forceCloseModalImmediately();
-                        
+                        state.isFirstLoadAfterCreation = true;
                         window.openGroup(finalGroupId);
                     } else {
                         IS_JOIN_LINK = false; AUTO_JOIN_TRIGGERED = true;
@@ -591,7 +652,7 @@ ${currentUrl}`;
                             logEvent('group_unlocked', { groupId: finalGroupId });
                             toast("You helped confirm the order", "check-circle");
                         } else {
-                            toast("Joined! One more needed.", "share-2");
+                            toast("Joined! More people needed.", "share-2");
                         }
                         logEvent('member_joined', { groupId: finalGroupId, phone: memberId });
                         window.closeModal();
@@ -614,63 +675,44 @@ ${currentUrl}`;
             actionBtn.onclick = triggerAction;
         };
 
-        // 🔥 NEW FUNCTION: Dedicated Focused Join Screen
         function renderJoinGate(el, g) {
+            // Wait for server to set expiry
+            if (!g.expiresAt) {
+                 el.innerHTML = `<div class="min-h-screen bg-white flex items-center justify-center"><div class="w-10 h-10 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin"></div></div>`;
+                 return;
+            }
+
             const p = g.productSnapshot || PRODUCTS.find(x => x.id === g.productId);
             const timeLeft = g.expiresAt - Date.now();
             
             el.innerHTML = `
                 <div class="fade-in bg-white min-h-screen flex flex-col items-center pt-safe px-6 relative font-sans">
-                     <!-- HARD GATE: No navigation, no distractions -->
-                     
-                     <div class="w-full max-w-sm mx-auto flex flex-col items-center mt-8 mb-8">
-                        <!-- 1. IDENTITY -->
+                      <div class="w-full max-w-sm mx-auto flex flex-col items-center mt-8 mb-8">
                         <div class="mb-5 text-center">
                             <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-2">JODO</h1>
-                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">You were invited by ${g.ownerName}</div>
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Duvva order • invited by ${g.ownerName}</div>
                         </div>
 
-                        <!-- 2. PRESSURE (Moved UP) -->
                         <div class="text-center mb-4">
-                             <div class="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Time left to confirm</div>
-                             <div id="gate-timer" class="text-4xl font-black text-red-600 tracking-widest tabular-nums font-mono leading-none whitespace-nowrap animate-pulse">
+                             <div class="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1 animate-pulse">Time left</div>
+                             <div id="gate-timer" class="text-4xl font-black text-red-600 tracking-widest tabular-nums font-mono leading-none whitespace-nowrap">
                                 ${formatTimeLeft(timeLeft)}
                              </div>
                         </div>
 
-                        <!-- PRODUCT HERO (Reduced size) -->
-                        <div class="w-28 h-28 bg-gray-50 rounded-full mb-4 relative overflow-hidden mx-auto">
-                             <img src="${p.imageSrc}" class="w-full h-full object-cover">
+                        <!-- 🔴 ISSUE #4 FIX: Brutal Copy -->
+                        <div class="text-sm text-gray-700 mt-1 mb-6 font-medium text-center">
+                            If you leave, order fails.
                         </div>
 
-                        <!-- 3. CONSEQUENCE -->
-                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 w-full text-center shadow-sm mb-4">
-                            <div class="font-bold text-gray-900 text-lg mb-2">${g.ownerName} needs your help</div>
-                            <div class="text-sm text-gray-600 font-medium leading-relaxed">
-                                You won’t pay anything now.<br>
-                                Order confirms when you join.<br>
-                                <span class="text-red-600 font-bold block mt-2 bg-white p-2 rounded-lg border border-red-100">
-                                    If you don’t join, they pay shop price.<br>
-                                    <span class="font-normal opacity-90 text-[10px]">(మీరు రాకపోతే వారు shop రేటు కట్టాలి)</span>
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- 4. ACTION -->
-                        <div class="text-xs font-bold text-gray-600 bg-gray-100 px-4 py-2 rounded-full mb-4">
-                          📦 Delivery: Tuesday & Saturday
-                        </div>
-
-                        <button onclick="openJoinFlow('${g.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[68px] rounded-2xl font-bold text-xl shadow-[0_10px_30px_rgba(21,128,61,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all btn-press">
-                            Join to help confirm
+                        <button onclick="openJoinFlow('${g.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-2xl font-bold text-xl shadow-[0_10px_30px_rgba(21,128,61,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all btn-press animate-pulse-fast">
+                            Join to confirm order
                         </button>
                         
-                        <!-- 5. REASSURANCE -->
-                        <div class="mt-4 text-[10px] text-gray-400 font-medium">Safe & Secure • No payment required</div>
-                     </div>
+                        <div class="mt-4 text-[10px] text-gray-400 font-medium">No payment required</div>
+                      </div>
                 </div>
             `;
-            // Ensure timer starts
             startPenaltyTimer();
         }
 
@@ -686,41 +728,23 @@ ${currentUrl}`;
                 const p = PRODUCTS[0];
                 el.innerHTML = `
                     <div class="pb-safe fade-in bg-white min-h-screen flex flex-col">
-                        <div class="glass-header sticky top-0 z-40 shadow-sm border-b-0">
-                            <div class="pt-safe px-4 pb-3 flex justify-between items-end min-h-[88px]">
-                                <div class="flex flex-col justify-end pb-0.5">
-                                    <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
-                                    <div class="text-[10px] font-bold text-orange-600 mt-1"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
                         <div class="flex-1 flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-500 -mt-10">
-                            <div class="w-32 h-32 bg-gray-50 rounded-full mb-6 border-4 border-white shadow-xl relative overflow-hidden ring-1 ring-gray-100">
+                            <div class="w-48 h-48 bg-gray-50 rounded-full mb-8 border-4 border-white shadow-xl relative overflow-hidden ring-1 ring-gray-100 mx-auto">
                                  <img src="${p.imageSrc}" class="w-full h-full object-cover">
                             </div>
-                            <h2 class="text-3xl font-bold text-gray-900 leading-tight mb-2 tracking-tight">Today’s tomato order is OPEN</h2>
-                            <p class="text-gray-500 font-medium mb-10 text-lg">Not confirmed yet.</p>
+                            <h2 class="text-3xl font-bold text-gray-900 leading-tight mb-3 tracking-tight">Today’s Duvva tomato order is OPEN</h2>
+                            <p class="text-gray-500 font-medium mb-10 text-lg">Duvva group order not confirmed yet.</p>
                             
-                            <div class="space-y-3 mt-8 w-full max-w-[320px]">
+                            <div class="w-full max-w-[320px]">
                                 <button onclick="openStartModal('${p.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-2xl font-bold text-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-center gap-2 active:scale-95 transition-all btn-press">
                                     Start today’s order
                                 </button>
-                                <div class="text-center">
-                                    <div class="text-xs font-bold text-blue-700 bg-blue-50 px-4 py-2 rounded-full inline-block">
-                                        📦 Delivery: Tuesday & Saturday
-                                    </div>
-                                </div>
-                                <!-- 🔥 VIRAL STRATEGY: PAIN AVOIDANCE COPY -->
-                                <div class="text-xs text-red-600 font-medium mt-3 text-center">
-                                    Without ${MIN_GROUP_SIZE} people, you will pay shop price.<br>
-                                    <span class="font-normal opacity-90 text-[10px]">(ఇంకెవరు join కాకపోతే shop price వర్తిస్తుంది)</span>
-                                </div>
+                                <!-- 🔴 ISSUE #4 FIX: Brutal Copy -->
+                                <div class="text-[10px] text-red-500 font-bold mt-4 uppercase tracking-widest">After 8:00 AM → Order Dies</div>
                             </div>
                         </div>
                     </div>
                 `;
-                if (window.lucide) window.lucide.createIcons();
                 initCardTilt();
                 return;
             }
@@ -729,7 +753,8 @@ ${currentUrl}`;
                 const p = g.productSnapshot || PRODUCTS.find(x => x.id === g.productId);
                 if (!p) return '';
                 const members = state.members[g.id] || []; 
-                const isUnlocked = members.length >= MIN_GROUP_SIZE;
+                const minSize = g.minSize || 2;
+                const isUnlocked = members.length >= minSize;
                 const statusLabel = isUnlocked ? 'Confirmed ✅' : 'Not Confirmed';
                 const statusClass = isUnlocked ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-gray-50 border-gray-200';
                 
@@ -748,13 +773,12 @@ ${currentUrl}`;
             }).join('');
 
             el.innerHTML = `
-                <div class="pb-safe fade-in bg-white">
+                <div class="pb-safe fade-in bg-white min-h-screen">
                     <div class="glass-header sticky top-0 z-40 shadow-sm border-b-0">
                         <div class="pt-safe px-4 pb-3 flex justify-between items-end min-h-[88px]">
                             <div class="flex flex-col justify-end pb-0.5">
                                 <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
-                                <span class="text-[10px] text-gray-500 font-bold tracking-wide">Group orders work differently</span>
-                                <div class="text-[10px] font-bold text-orange-600 mt-1"></div>
+                                <div class="text-[10px] font-bold text-orange-600 mt-1">TEST MODE</div>
                             </div>
                         </div>
                     </div>
@@ -771,9 +795,7 @@ ${currentUrl}`;
                                 </div>
                                 <div class="flex-1 flex flex-col justify-between py-1">
                                     <div><h3 class="font-bold text-lg text-gray-900 leading-tight mb-1">${PRODUCTS[0].name}</h3><p class="text-sm text-gray-500">${PRODUCTS[0].nameTe}</p></div>
-                                    <!-- 🔥 SCARCITY FIX -->
-                                    <div class="text-xs text-orange-800 font-bold bg-orange-50 px-2 py-1 rounded-full w-fit">Limited quantity today</div>
-                                    <div class="mt-2"><div class="text-sm font-medium text-gray-500 mt-1">Today’s order is not confirmed yet</div></div>
+                                    <div class="mt-2"><div class="text-sm font-medium text-gray-500 mt-1">Duvva group order not confirmed yet.</div></div>
                                 </div>
                             </div>
                         </div>
@@ -791,26 +813,46 @@ ${currentUrl}`;
                 return;
             }
             
+            // Wait for server-side timestamp simulation to populate
+            if (!g.expiresAt && g.createdAt) {
+                 el.innerHTML = `<div class="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center"><div class="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4"></div><div class="text-xs font-bold text-gray-400 uppercase tracking-widest">Initializing Server Time...</div></div>`;
+                 return;
+            }
+            
             const p = g.productSnapshot || PRODUCTS.find(x => x.id === g.productId); 
             if (!p) { toast('Product data missing', 'alert-circle'); return; }
             
             const members = state.members[g.id] || []; 
-            const isUnlocked = members.length >= MIN_GROUP_SIZE;
+            const minSize = g.minSize || 2;
+            const isUnlocked = members.length >= minSize;
             const hasJoinedThisGroup = !IS_JOIN_LINK && JOIN_SESSION_PHONE && members.some(m => m.phone === JOIN_SESSION_PHONE);
             const isCreator = JOIN_SESSION_PHONE && g.ownerName && members.some(m => m.phone === JOIN_SESSION_PHONE && m.isLeader === true);
             const isMember = hasJoinedThisGroup || isCreator;
 
-            // 🔥 FATAL ISSUE #1 FIX: HARD JOIN GATE
-            // If they are on a join link AND haven't joined yet -> Show ONLY the Gate.
+            // 🔴 ISSUE #2 FIX: Anti-Bypass Gate Logic
+            const hasShared = localStorage.getItem(`has_shared_${g.id}`);
+            const gate = document.getElementById('share-gate-overlay');
+            const forceShareBtn = document.getElementById('force-share-btn');
+            
+            if (isCreator && !hasShared && !isUnlocked && state.isFirstLoadAfterCreation) {
+                 if (gate) {
+                    gate.classList.remove('hidden');
+                    const invite = generateInviteLink(g.id, isUnlocked);
+                    forceShareBtn.onclick = () => {
+                        window.open(invite, '_blank');
+                        logShare(g.id); 
+                    };
+                 }
+            } else {
+                 if (gate) gate.classList.add('hidden');
+            }
+
             if (IS_JOIN_LINK && !isMember) {
                 renderJoinGate(el, g);
                 if(window.lucide) window.lucide.createIcons();
                 return;
             }
 
-            // ... (Rest of standard renderGroup logic for members/creators)
-            
-            // 🔥 CRITICAL FIX #2: Hard Expiry Check
             const isExpired = Date.now() > g.expiresAt;
             if (isExpired && !isUnlocked) {
                 logEvent('group_expired', { groupId: g.id });
@@ -818,12 +860,8 @@ ${currentUrl}`;
                     <div class="min-h-screen flex flex-col items-center justify-center text-center px-6">
                         <i data-lucide="x-circle" size="48" class="text-red-500 mb-4"></i>
                         <h2 class="text-2xl font-black text-gray-900 mb-2">Order Cancelled</h2>
-                        <p class="text-gray-500 mb-6">
-                            No one joined in time.
-                        </p>
-                        <button onclick="goHome()" class="bg-jodo-ctaPrimary text-white px-6 py-3 rounded-xl font-bold">
-                            Start New Order
-                        </button>
+                        <p class="text-gray-500 mb-6">No one joined in time.</p>
+                        <button onclick="goHome()" class="bg-jodo-ctaPrimary text-white px-6 py-3 rounded-xl font-bold">Start New Order</button>
                     </div>
                 `;
                 if(window.lucide) window.lucide.createIcons();
@@ -831,12 +869,8 @@ ${currentUrl}`;
             }
 
             const inviteLink = generateInviteLink(g.id, isUnlocked);
-            
-            // 🔥 LOGIC: THE PRISON STATE
-            // If group is NOT unlocked and user is in it, they CANNOT leave easily.
             const isPrison = (isCreator || hasJoinedThisGroup) && !isUnlocked;
             
-            // 🔥 HARD RULE: REMOVE BACK BUTTON IN PRISON STATE
             const backButtonHtml = isPrison 
                 ? `<div class="flex items-center gap-2 text-amber-600"><i data-lucide="lock" size="16"></i><span class="font-bold text-xs uppercase tracking-wider">Commitment Locked</span></div>`
                 : `<div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="goHome()">
@@ -844,221 +878,179 @@ ${currentUrl}`;
                        <span class="font-bold text-base tracking-wide text-gray-800">Back</span>
                    </div>`;
 
-            // 🔥 LOGIC: Locked Creator View
-            const creatorCardClass = isUnlocked ? "bg-green-50 border border-green-200" : "bg-gray-50 border border-gray-200";
-            const creatorIconColor = isUnlocked ? "text-green-700" : "text-gray-400";
-            const creatorTextColor = isUnlocked ? "text-green-900" : "text-gray-700";
-
-            // 🔥 TIMER LOGIC
             const timeLeft = g.expiresAt - Date.now();
-            const timerTopHtml = !isUnlocked ? `
-                <div class="flex flex-col items-center mb-6 animate-in fade-in zoom-in duration-300">
-                    <div class="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Time left before shop price applies</div>
-                    <div id="penalty-timer-top" class="text-4xl sm:text-5xl font-black text-red-600 tracking-[0.15em] sm:tracking-[0.2em] tabular-nums font-mono leading-none animate-pulse whitespace-nowrap">
-                        ${formatTimeLeft(timeLeft)}
+            
+            if (!isUnlocked) {
+                 const myMember = members.find(m => m.phone === JOIN_SESSION_PHONE);
+                 const myQty = myMember ? myMember.quantity : null;
+                 const myQtyLabel = myQty ? (myQty < 1 ? (myQty * 1000).toFixed(0) + ' g' : myQty + ' kg') : '';
+                 const needed = minSize - members.length;
+
+                 el.innerHTML = `
+                    <div class="fade-in bg-white min-h-screen pb-48 font-sans flex flex-col items-center pt-safe">
+                        <div class="w-full px-4 h-[60px] flex items-center justify-between">
+                            ${backButtonHtml}
+                        </div>
+
+                        <div class="mt-4 mb-2 flex flex-col items-center">
+                            <div class="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1 animate-pulse">Time left</div>
+                            <div id="penalty-timer-top" class="text-5xl font-black text-red-600 tracking-widest tabular-nums font-mono leading-none">
+                                ${formatTimeLeft(timeLeft)}
+                            </div>
+                            <!-- 🔴 ISSUE #4 FIX: Brutal Copy -->
+                            <div class="text-sm text-gray-700 mt-3 font-medium text-center px-6">
+                                Waiting for ${needed} more person${needed > 1 ? 's' : ''}.
+                            </div>
+                        </div>
+
+                        <div class="mt-8 mb-6 flex flex-col items-center opacity-80 grayscale-[0.3]">
+                            <div class="w-20 h-20 rounded-full relative overflow-hidden bg-gray-100 mb-2 ring-1 ring-gray-100">
+                                 <img src="${p.imageSrc}" class="w-full h-full object-cover">
+                            </div>
+                            <h1 class="text-lg font-bold text-gray-900 leading-none">${p.name}</h1>
+                            ${myQty ? `
+                              <div class="text-xs text-gray-500 font-medium mt-2">
+                                Your quantity: <span class="font-bold text-gray-800">${myQtyLabel}</span>
+                              </div>
+                            ` : ''}
+                            <div class="text-[10px] text-gray-400 font-medium mt-1">Duvva group order</div>
+                        </div>
+
+                        <div class="w-full max-w-xs px-4">
+                             <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 text-center">Who joined</div>
+                             <div class="space-y-2">
+                                ${members.map(m => `
+                                    <div class="flex items-center justify-between text-sm text-gray-600 py-2 border-b border-gray-50 last:border-0">
+                                         <div class="flex items-center gap-3">
+                                             <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-xs border border-gray-200">${m.name[0]}</div>
+                                             <span class="${(m.phone === JOIN_SESSION_PHONE || m.isLeader) ? 'font-bold text-gray-900' : ''}">
+                                                ${m.phone === JOIN_SESSION_PHONE ? 'You' : m.name}
+                                             </span>
+                                         </div>
+                                         <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded font-medium">Joined</span>
+                                    </div>
+                                `).join('')}
+                             </div>
+                             <!-- 🔴 ISSUE #4 FIX: Brutal Copy -->
+                             <div class="text-[11px] text-gray-500 text-center mt-6 font-medium">
+                                If you leave, order fails.
+                             </div>
+                        </div>
+
+                        <div class="fixed bottom-0 left-0 right-0 p-4 pb-safe z-50">
+                             <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white via-white to-transparent -z-10"></div>
+                             <div class="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-green-50/60 to-transparent pointer-events-none -z-10"></div>
+
+                             <div class="max-w-md mx-auto relative">
+                                  <a href="${inviteLink}" target="_blank" onclick="logShare('${g.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[60px] rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all btn-press animate-pulse-slow">
+                                      Share Now
+                                  </a>
+                                  <!-- 🔴 ISSUE #4 FIX: Brutal Copy -->
+                                  <div class="text-center text-[10px] text-gray-400 font-medium mt-3">
+                                      If you don’t send, order fails
+                                  </div>
+                             </div>
+                        </div>
                     </div>
-                </div>
-            ` : '';
-
-            // 🔥 LIVE BUYING LOGIC (LAST 45 SECONDS)
-            const recentJoins = getRecentJoins(members, 45);
-            if (recentJoins.length > 0) {
-                setTimeout(() => safeRender(), 46000);
-            }
-
-            const liveBuyingHtml = (!isUnlocked && recentJoins.length > 0) ? `
-                <div class="mb-3 space-y-0.5 animate-in fade-in-up duration-300">
-                    ${recentJoins.slice(-3).map(m => `
-                        <div class="text-[11px] text-gray-500 font-medium flex items-center justify-center gap-2">
-                            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                            ${(m.name === 'You' || m.phone === JOIN_SESSION_PHONE) ? 'You' : m.name} just joined
+                `;
+            } else {
+                const totalQty = members.reduce((sum, m) => sum + (m.quantity || 0), 0);
+                const totalQtyLabel = totalQty < 1 ? (totalQty * 1000).toFixed(0) + ' g' : totalQty.toFixed(1) + ' kg';
+                
+                el.innerHTML = `
+                    <div class="fade-in bg-white min-h-screen pb-40 font-sans">
+                        <div class="glass-header h-[60px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white shadow-sm border-b border-gray-100 mb-6">
+                            ${backButtonHtml}
                         </div>
-                    `).join('')}
-                </div>
-            ` : '';
-
-            const timerCardHtml = !isUnlocked ? `
-                <div id="penalty-timer-card" class="text-xs font-mono text-red-500 font-bold mt-1 opacity-80">
-                   ⏳ ${formatTimeLeft(timeLeft)} remaining
-                </div>
-            ` : '';
-
-            // 🔥 TOTAL QUANTITY CALCULATION (Fix 4: Simplified Math)
-            const totalQty = members.reduce((sum, m) => sum + (m.quantity || 0), 0);
-            const totalQtyLabel = totalQty < 1 ? (totalQty * 1000).toFixed(0) + ' g' : totalQty.toFixed(1) + ' kg';
-
-            const qtySummaryHtml = `
-            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4 text-center">
-              <div class="text-xs text-gray-500 font-medium">Total quantity committed</div>
-              <div class="text-lg font-bold text-gray-900">${totalQtyLabel}</div>
-            </div>`;
-
-            el.innerHTML = `
-                <div class="fade-in bg-white min-h-screen pb-40 font-sans">
-                    <div class="glass-header h-[60px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white shadow-sm border-b border-gray-100 mb-6">
-                        ${backButtonHtml}
-                    </div>
-                    
-                    <div class="p-4">
-                        ${timerTopHtml}
-                        ${liveBuyingHtml}
                         
-                        <div class="flex flex-col items-center mb-4 mt-2 animate-in fade-in-up duration-300">
-                            ${!isUnlocked && isMember ? '<div class="text-xs font-bold text-red-500 mb-2" id="validity-warning">Not confirmed yet</div>' : ''}
-                            <div class="w-28 h-28 rounded-full border-4 border-white shadow-lg overflow-hidden mb-6 relative z-10 bg-gray-100">
-                                <img src="${p.imageSrc}" class="w-full h-full object-cover" alt="${p.name}">
-                            </div>
-                            <h1 class="text-2xl font-bold text-gray-900 leading-none mb-1 tracking-tight text-center">${p.name}</h1>
-                            <div class="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full mb-3 inline-block">
-                              📦 Delivery: Tuesday & Saturday
-                            </div>
-                            <div class="text-[10px] text-gray-400 font-medium mb-2">Picked up fresh from local market</div>
-                            <div class="text-xs text-orange-800 font-bold bg-orange-50 px-2 py-1 rounded-full w-fit mb-2">Limited quantity today</div>
-                            <p class="text-sm font-medium text-gray-500 mb-2">${p.nameTe}</p>
-                        </div>
-
-                        ${isCreator ? `
-                        <div class="${creatorCardClass} p-5 rounded-xl text-center mb-6 transition-colors duration-300">
-                            <div class="flex justify-center items-center gap-2 mb-1">
-                                <i data-lucide="crown" class="${creatorIconColor}" size="20"></i>
-                                <span class="font-black ${creatorTextColor} text-sm uppercase tracking-wide">You started this order</span>
-                            </div>
-                            <!-- 🔥 VIRAL STRATEGY: FAILURE PENALTY -->
-                            <p class="text-sm text-red-700 font-semibold leading-snug">
-                                ${isUnlocked ? 'Order confirmed ✅' : `If no one joins, you will pay ₹${p.price1}/kg.`}
-                            </p>
-                            ${!isUnlocked ? '<p class="text-[11px] text-gray-500 mt-1">This is today’s shop price.<br><span class="opacity-90 font-normal">(ఎవరూ రాకపోతే shop ధర)</span></p>' : ''}
-                            ${timerCardHtml}
-                        </div>` : ''}
-
-                        ${isMember ? `
-                        <div class="bg-white border rounded-xl p-4 mb-6 shadow-sm ${isUnlocked ? 'border-green-100' : 'border-red-100 bg-gray-50'}">
-                            <div class="space-y-4 mb-6">
-                                ${!isUnlocked ? `
-                                <div class="transition-all p-4 -mx-3 rounded-lg border border-red-100 bg-red-50 flex flex-col items-center justify-center text-center gap-2 mb-2">
-                                    <div class="w-10 h-10 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm mb-1">
-                                        <i data-lucide="alert-triangle" size="20"></i>
-                                    </div>
-                                    <div>
-                                        <div class="text-red-700 font-bold text-sm leading-tight">Your order will be cancelled</div>
-                                        <div class="text-red-400 text-[10px] font-medium mt-1 uppercase tracking-wide">If no one else joins</div>
-                                    </div>
+                        <div class="p-4">
+                             <div class="bg-green-50 border border-green-200 p-4 rounded-xl text-center mb-6">
+                                <div class="flex justify-center items-center gap-2 mb-1">
+                                    <i data-lucide="check-circle" class="text-green-600" size="24"></i>
+                                    <span class="font-black text-green-800 text-lg uppercase tracking-wide">Order Confirmed</span>
                                 </div>
-                                ` : `
-                                <div class="flex justify-between items-center transition-all p-3 -mx-3 rounded-lg bg-green-50 border border-green-100">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold"><i data-lucide="check" size="14"></i></div>
-                                        <span class="text-sm font-bold text-green-800">Order confirmed ✅</span>
-                                    </div>
-                                </div>
-                                `}
+                                <div class="text-sm text-green-700">Delivery this Tuesday/Saturday</div>
                             </div>
-                        </div>
-                        ` : ''} 
-                        
-                        <!-- Note: Non-members now see renderJoinGate -->
 
-                        ${isMember ? `
-                        
-                        <!-- FIX 3: Group Quantity Summary -->
-                        ${qtySummaryHtml}
-
-                        <div class="space-y-4 mb-8">
-                            <div class="flex justify-between items-end mb-4">
-                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">${isCreator ? 'People in Your Group' : 'People Joined'}</h3>
-                                <div class="flex flex-col items-end">
-                                    ${!isUnlocked ? `<span class="text-xs font-bold text-red-500 animate-pulse">Group incomplete</span>` : '<span class="text-xs font-bold text-green-600">Confirmed</span>'}
+                            <div class="flex flex-col items-center mb-4 mt-2">
+                                <div class="w-28 h-28 rounded-full relative overflow-hidden mb-6 relative z-10 bg-gray-100 shadow-md">
+                                    <img src="${p.imageSrc}" class="w-full h-full object-cover" alt="${p.name}">
                                 </div>
+                                <h1 class="text-2xl font-bold text-gray-900 leading-none mb-1 tracking-tight text-center">${p.name}</h1>
+                                <div class="text-[10px] text-gray-400 font-medium mb-2">Picked up fresh from local market</div>
+                                <div class="text-xs text-orange-800 font-bold bg-orange-50 px-2 py-1 rounded-full w-fit mb-2">Limited quantity</div>
+                                <p class="text-sm font-medium text-gray-500 mb-2">${p.nameTe}</p>
                             </div>
                             
-                            <!-- SOCIAL PRESSURE TEXT -->
-                            <div class="text-[10px] text-gray-400 mb-3 text-center italic">People in this group can see who joined.</div>
+                            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-6 text-center">
+                              <div class="text-xs text-gray-500 font-medium">Total quantity committed</div>
+                              <div class="text-lg font-bold text-gray-900">${totalQtyLabel}</div>
+                            </div>
 
-                            ${members.map((member) => {
-                                const isMe = JOIN_SESSION_PHONE === member.phone;
-                                const weight = member.quantity; // FIX 4: Simplified Math
-                                const weightLabel = weight < 1 ? (weight * 1000).toFixed(0) + 'g' : weight + 'kg';
+                            <div class="space-y-4 mb-8">
+                                <div class="flex justify-between items-end mb-4">
+                                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">People Joined</h3>
+                                    <div class="flex flex-col items-end">
+                                        <span class="text-xs font-bold text-green-600">Confirmed</span>
+                                    </div>
+                                </div>
                                 
-                                // GHOST LOGIC: If Locked, hide details, gray out
-                                // FIX 1 & 2: Show Quantity in Locked State
-                                if (!isUnlocked) {
-                                     return `<div class="bg-white border border-gray-100 p-3 rounded-xl mb-2 flex items-center justify-between opacity-80 grayscale">
-                                          <div class="flex items-center gap-3">
-                                              <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-xs border border-white">${member.name[0]}</div>
-                                              <div>
-                                                <div class="text-sm font-bold text-gray-700">
-                                                    ${isMe ? 'You' : member.name} 
-                                                    <span class="text-xs font-medium text-gray-400 ml-1">(${weightLabel})</span>
-                                                </div>
-                                              </div>
-                                          </div>
-                                          <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">${weightLabel}</span>
-                                      </div>`;
-                                }
+                                ${members.map((member) => {
+                                    const isMe = JOIN_SESSION_PHONE === member.phone;
+                                    const weight = member.quantity; 
+                                    const weightLabel = weight < 1 ? (weight * 1000).toFixed(0) + 'g' : weight + 'kg';
+                                    let t = Math.round(g.groupPrice * member.quantity);
+                                    const priceDisplay = '₹'+t;
 
-                                // REVEALED LOGIC: Unlocked
-                                let t = Math.round(g.groupPrice * member.quantity);
-                                // weight/weightLabel already calculated above
-                                const priceDisplay = '₹'+t;
+                                    if (member.isLeader) {
+                                        return `<div class="bg-green-50 border border-green-200 p-4 rounded-xl shadow-sm mb-3 transition-all relative overflow-hidden">
+                                                    <div class="absolute top-0 right-0 bg-green-200 text-green-800 text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wide">Host</div>
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0 border-2 border-white ring-2 ring-green-100"><i data-lucide="crown" size="16"></i></div>
+                                                            <div>
+                                                                <div class="text-sm font-bold text-gray-900 flex items-center gap-2">${isMe ? 'You (Host)' : member.name}</div>
+                                                                <div class="text-xs text-green-700 font-medium">${weightLabel}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex justify-between items-center pt-2 border-t border-green-200/60">
+                                                        <span class="text-[10px] font-medium text-green-700 uppercase">Total</span>
+                                                        <span class="text-sm font-bold text-green-800">${priceDisplay}</span>
+                                                    </div>
+                                            </div>`;
+                                    }
 
-                                if (member.isLeader) {
-                                    return `<div class="bg-green-50 border border-green-200 p-4 rounded-xl shadow-sm mb-3 transition-all relative overflow-hidden">
-                                            <div class="absolute top-0 right-0 bg-green-200 text-green-800 text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wide">Host</div>
+                                    return `<div class="bg-white border border-gray-100 p-3 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] mb-2 transition-all cursor-default">
                                             <div class="flex items-center justify-between mb-2">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0 border-2 border-white ring-2 ring-green-100">
-                                                        <i data-lucide="crown" size="16"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="text-sm font-bold text-gray-900 flex items-center gap-2">${isMe ? 'You (Host)' : member.name}</div>
-                                                        <div class="text-xs text-green-700 font-medium">${weightLabel}</div>
-                                                    </div>
+                                                    <div class="w-8 h-8 rounded-full ${isMe ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'} flex items-center justify-center font-bold text-xs border border-white shadow-sm shrink-0">${member.name[0]}</div>
+                                                    <div><div class="text-sm font-bold text-gray-800 flex items-center gap-2">${isMe ? 'You' : member.name}</div><div class="text-xs text-gray-400 font-medium">${weightLabel}</div></div>
                                                 </div>
                                             </div>
-                                            <div class="flex justify-between items-center pt-2 border-t border-green-200/60">
-                                                <span class="text-[10px] font-medium text-green-700 uppercase">Total</span>
-                                                <span class="text-sm font-bold text-green-800">${priceDisplay}</span>
+                                            <div class="flex justify-between items-center pt-2 border-t border-gray-5">
+                                                <span class="text-[10px] font-medium text-gray-400 uppercase">Total</span>
+                                                <span class="text-sm font-bold text-gray-900">${priceDisplay}</span>
                                             </div>
-                                    </div>`;
-                                }
+                                        </div>`;
+                                }).join('')}
+                            </div>
+                        </div>
 
-                                return `<div class="bg-white border border-gray-100 p-3 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] mb-2 transition-all cursor-default">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-full ${isMe ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'} flex items-center justify-center font-bold text-xs border border-white shadow-sm shrink-0">${member.name[0]}</div>
-                                            <div><div class="text-sm font-bold text-gray-800 flex items-center gap-2">${isMe ? 'You' : member.name}</div><div class="text-xs text-gray-400 font-medium">${weightLabel}</div></div>
-                                        </div>
-                                    </div>
-                                    <div class="flex justify-between items-center pt-2 border-t border-gray-5">
-                                        <span class="text-[10px] font-medium text-gray-400 uppercase">Total</span>
-                                        <span class="text-sm font-bold text-gray-900">${priceDisplay}</span>
-                                    </div>
-                                </div>`;
-                            }).join('')}
-                        </div>` : ''}
-                    </div>
-
-                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-                        <div class="max-w-md mx-auto pt-2 pb-2">
-                            ${(() => {
-                                if (isCreator || (hasJoinedThisGroup && !isUnlocked)) {
-                                    return `
-                                    <div class="text-center text-[10px] text-gray-400 font-medium mb-1">${!isUnlocked ? 'If you don’t send, order fails' : 'Share deal with more people'}</div>
-                                    <a href="${inviteLink}" target="_blank" onclick="logShare('${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2 transition-all">
-                                        <i data-lucide="share-2" size="20"></i>
-                                        <div class="flex flex-col items-center leading-none">
-                                            <span>${!isUnlocked ? 'Share Now' : 'Share Link'}</span>
-                                        </div>
-                                    </a>`;
-                                }
-                                return ''; 
-                            })()}
+                        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+                            <div class="max-w-md mx-auto pt-2 pb-2">
+                                <div class="text-center text-[10px] text-gray-400 font-medium mb-1">Share deal with more people</div>
+                                <a href="${inviteLink}" target="_blank" onclick="logShare('${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2 transition-all">
+                                    <i data-lucide="share-2" size="20"></i>
+                                    <span>Share Link</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
             if (window.lucide) window.lucide.createIcons();
-            if (!isUnlocked) startPenaltyTimer(); // START TIMER IF NOT UNLOCKED
+            if (!isUnlocked) startPenaltyTimer(); 
         }
 
         function render() {
@@ -1111,15 +1103,39 @@ ${currentUrl}`;
             if (state.unsubMembers) { state.unsubMembers(); state.unsubMembers = null; }
             if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
             try { if (window.location.protocol !== 'blob:') history.pushState({}, '', BASE_URL); } catch(e) {} 
-            AUTO_JOIN_TRIGGERED = false; state.view = 'home'; state.currentGroupId = null; safeRender(); 
+            AUTO_JOIN_TRIGGERED = false; state.view = 'home'; state.currentGroupId = null; state.isFirstLoadAfterCreation = false; safeRender(); 
         };
+
+        // 🔴 ISSUE #1 FIX: SIMULATED BACKEND (In production, deploy this to Firebase Functions)
+        function initSimulatedBackend() {
+            if (!window.fs || !window.db) return;
+            window.fs.onSnapshot(window.fs.collection(window.db, 'groups'), (snap) => {
+                snap.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        const data = change.doc.data();
+                        // If createdAt exists but expiresAt is missing, Server takes over
+                        if (!data.expiresAt && data.createdAt) {
+                            // Simulate 1 second server latency
+                            setTimeout(() => {
+                                window.fs.updateDoc(change.doc.ref, {
+                                    expiresAt: Date.now() + 10800000 // 3 hours in ms
+                                });
+                            }, 1000);
+                        }
+                    }
+                });
+            });
+        }
 
         function init() {
             if (JODO_INITIALIZED) return; JODO_INITIALIZED = true;
             const params = new URLSearchParams(window.location.search);
             const gid = params.get('group');
             if (gid) { IS_JOIN_LINK = true; state.user = { name: '', phone: '', joinedGroupIds: [] }; JOIN_SESSION_PHONE = null; state.view = 'group'; state.currentGroupId = gid; } else { loadData(); IS_JOIN_LINK = false; state.view = 'home'; }
-            const startApp = () => { if (IS_JOIN_LINK && state.currentGroupId) { safeRender(); window.openGroup(state.currentGroupId); } else { initHomeListeners(); safeRender(); } };
+            const startApp = () => { 
+                initSimulatedBackend(); // Start the "Server"
+                if (IS_JOIN_LINK && state.currentGroupId) { safeRender(); window.openGroup(state.currentGroupId); } else { initHomeListeners(); safeRender(); } 
+            };
             if (window.db) startApp(); else window.addEventListener('firebase-ready', startApp);
             window.addEventListener('popstate', () => { const params = new URLSearchParams(location.search); const gid = params.get('group'); if (gid) window.openGroup(gid); else window.goHome(); });
         }
