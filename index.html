@@ -15,29 +15,22 @@
                         jodo: {
                             base: '#FFFFFF',
                             textPrimary: '#111827',
-                            textSecondary: '#4B5563',
                             ctaPrimary: '#15803D',
-                            ctaSuccess: '#15803D',      
-                            bonus: '#F3F4F6',            
-                            bonusText: '#374151',        
-                            urgency: '#4B5563',          
-                            border: '#E5E7EB',           
-                            error: '#DC2626',            
+                            error: '#DC2626',
                         }
                     },
                     fontFamily: {
                         sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
                     },
                     animation: {
                         'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                         'fade-in-up': 'fadeInUp 0.5s ease-out',
                         'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'slide-up': 'slideUp 0.3s ease-out forwards'
                     },
                     keyframes: {
                         pop: { '0%': { transform: 'scale(0.95)' }, '100%': { transform: 'scale(1)' } },
-                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-                        slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
                     }
                 }
             }
@@ -55,15 +48,6 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .fade-in { animation: fadeInUp 0.5s ease-out forwards; }
         .tilt-card { transition: transform 0.15s ease-out; transform-style: preserve-3d; }
-        .price-anchor { color: #15803D; font-weight: 700; letter-spacing: -0.01em; }
-        
-        /* Loading skeleton shimmer */
-        .skeleton {
-            background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
 <body class="antialiased">
@@ -78,69 +62,52 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import {
-          getFirestore,
-          doc,
-          getDoc, 
-          getDocs, 
-          onSnapshot,
-          collection,
-          runTransaction,
-          serverTimestamp
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { 
-          getFunctions, 
-          httpsCallable 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
+        import { getFirestore, doc, getDoc, getDocs, onSnapshot, collection, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = {
-          apiKey: "",
-          authDomain: "jodo-prod-e7788.firebaseapp.com",
-          projectId: "jodo-prod-e7788",
-          storageBucket: "jodo-prod-e7788.firebasestorage.app",
-          messagingSenderId: "535883967600",
-          appId: "1:535883967600:web:aa0b73a70ca506ad4fd8b5"
+            apiKey: "",
+            authDomain: "jodo-prod-e7788.firebaseapp.com",
+            projectId: "jodo-prod-e7788",
+            storageBucket: "jodo-prod-e7788.firebasestorage.app",
+            messagingSenderId: "535883967600",
+            appId: "1:535883967600:web:aa0b73a70ca506ad4fd8b5"
         };
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        // 🔥 FIX: ADDED REGION TO AVOID "NOT FOUND" ERRORS
-        const functions = getFunctions(app, "us-central1");
-        
-        // 🔥 SERVER-SIDE INVENTORY CHECK
-        const placeOrder = httpsCallable(functions, "placeOrder");
-        // 🔥 SERVER-SIDE ROLLBACK
-        const releaseInventory = httpsCallable(functions, "releaseInventory");
         
         window.db = db;
-        // 🔥 FIX: REMOVED setDoc AND updateDoc FROM GLOBAL EXPOSURE
         window.fs = { doc, getDoc, getDocs, onSnapshot, collection, runTransaction, serverTimestamp };
-        window.cloudFn = { placeOrder, releaseInventory }; 
         
-        console.log("🔥 FIREBASE PROJECT:", window.db._databaseId ? window.db._databaseId.projectId : "Unknown");
-
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
     
     <script>
-        // --- CONSTANTS & CONFIG ---
-        const COMPANY_PHONE = "918500742671"; 
-        const BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp';
-        const MIN_GROUP_SIZE = 2; 
+        /**
+         * 🔴 PRICING & VIRALITY FREEZE DIRECTIVE 🔴
+         * * 1. _unlockPrice must NEVER be rendered before status === UNLOCKED.
+         * 2. Reward / wholesale price must NEVER appear alongside penalty price.
+         * 3. Penalty price may be shown ONLY as text ("shop price applies") except inside the creator flow.
+         * 4. Invite messages must NEVER include numbers (₹).
+         * 5. Join-gate must focus on helping the host, not saving money.
+         * * Any future UI change that shows two prices together is a hard revert.
+         * This system is behavior-complete. Do not optimize, clarify, or "improve UX".
+         */
 
-        // 🔥 LOGIC: STRICT INVENTORY (REMOVED LOCAL VARS)
-        
-        // 🔥 DATA: TOMATOES
+        const BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp';
+        const MIN_GROUP_SIZE = 2; // ⚠️ LOGIC: Keep 2 for test. Change to 3 ONLY after data validation.
+
         const PRODUCTS = [
             { 
                 id: 'tomato', 
                 name: 'Fresh Tomatoes', 
                 nameTe: 'టమాటాలు', 
                 unit: '1kg', 
-                baseWeight: 1, 
                 weightUnit: 'kg', 
-                price1: 40, 
-                _unlockPrice: 20, // 🔥 SECRET PRICE: NOT ACTIVE UNTIL UNLOCK
+                price1: 40, // Shop Price (Penalty Reference)
+                // ⚠️ SECURITY NOTE: In a real backend, this stays on server. 
+                // DO NOT RENDER THIS VALUE IN CLIENT UI. Treat as write-only for transaction.
+                _unlockPrice: 20, 
                 mandiPrice: 35, 
                 icon: 'circle-dot', 
                 imageColor: 'bg-red-50 text-red-600', 
@@ -151,66 +118,16 @@
 
         const GROUPS_KEY = 'jodo_groups_joined_v1';
         
-        // --- 🔥 STEP 1: CREATE A SINGLE IST TIME SOURCE ---
         function getISTNow() {
-          return new Date(
-            new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-          );
+          return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
         }
 
-        // --- 🔥 STEP 2: DEFINE ORDER WINDOW (6–10 AM IST) ---
-        function isOrderWindowOpen() {
-          const now = getISTNow();
-          const hour = now.getHours();
-          const minute = now.getMinutes();
+        function isOrderWindowOpen() { return true; } // TEST MODE: Always Open
 
-          const currentMinutes = hour * 60 + minute;
-          const startMinutes = 6 * 60;   // 6:00 AM
-          const endMinutes = 10 * 60;    // 10:00 AM
-
-          return currentMinutes >= startMinutes && currentMinutes < endMinutes;
-        }
-
-        // --- DATE HELPER FOR INVENTORY DOC (FORCE IST) ---
-        function getTodayDateString() {
-            // Force Asia/Kolkata timezone to avoid client-side date mismatches
-            const now = getISTNow();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // --- HELPER FOR GROUP EXPIRY (STILL NEEDED FOR DB LOGIC) ---
+        // 🔥 LOGIC CHANGE: Expiry is 3 hours to force the pressure timer to be visible and scary
         function getTodayCutoffTimestamp() {
-            const now = getISTNow();
-            now.setHours(10, 0, 0, 0); // Hard set to 10:00 AM IST (Window End)
-            return now.getTime();
+            return Date.now() + 1000 * 60 * 60 * 3; 
         }
-
-        function formatRemaining() {
-            const now = getISTNow();
-            const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            const startMinutes = 6 * 60;
-            const endMinutes = 10 * 60;
-
-            if (currentMinutes < startMinutes) {
-                return "Opens at 6:00 AM";
-            }
-            if (currentMinutes >= endMinutes) {
-                return "Closed";
-            }
-            
-            const remainingMs = getTodayCutoffTimestamp() - now.getTime();
-            const totalSeconds = Math.floor(remainingMs / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            
-            if (hours > 0) return `${hours}h ${minutes}m left`;
-            return `${minutes}m left`;
-        }
-
-        let cutoffTimerInterval = null; // 🔥 ADDED: GLOBAL TIMER VARIABLE
 
         const state = { 
             view: 'home', 
@@ -222,8 +139,7 @@
             lastMemberCount: 0,
             unsubGroup: null,
             unsubMembers: null,
-            homeListeners: [],
-            inventory: null // 🔥 GLOBAL INVENTORY STATE
+            homeListeners: []
         };
 
         let JODO_INITIALIZED = false;
@@ -232,8 +148,9 @@
         let JOIN_SESSION_PHONE = null;
         let AUTO_JOIN_TRIGGERED = false;
 
-        function isJoinLinkVisitor() {
-            return IS_JOIN_LINK && !JOIN_SESSION_PHONE;
+        function logEvent(name, params) {
+            // 📊 SILENT ANALYTICS
+            console.log(`[JODO_ANALYTICS] ${name}`, params || {});
         }
 
         function loadData() {
@@ -242,7 +159,6 @@
                 state.user.phone = localStorage.getItem('jodo_user_phone') || '';
                 const savedGroups = localStorage.getItem(GROUPS_KEY);
                 state.user.joinedGroupIds = savedGroups ? JSON.parse(savedGroups) : [];
-                
                 if (state.user.phone) JOIN_SESSION_PHONE = state.user.phone;
             } catch(e) { console.error("Load Error", e); }
         }
@@ -255,14 +171,6 @@
             JOIN_SESSION_PHONE = phone;
         }
 
-        window.logout = function() {
-            localStorage.removeItem('jodo_user_name');
-            localStorage.removeItem('jodo_user_phone');
-            state.user = { name: '', phone: '', joinedGroupIds: [] };
-            JOIN_SESSION_PHONE = null;
-            window.location.reload();
-        }
-
         function saveJoinedGroup(gid) {
             if (!state.user.joinedGroupIds.includes(gid)) {
                 state.user.joinedGroupIds.push(gid);
@@ -270,6 +178,66 @@
                 listenToGroupForHome(gid);
             }
         }
+
+        function formatTimeLeft(ms) {
+            if (ms <= 0) return "00 : 00 : 00";
+            const totalSeconds = Math.floor(ms / 1000);
+            const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+            const s = String(totalSeconds % 60).padStart(2, '0');
+            return `${h} : ${m} : ${s}`;
+        }
+
+        function startPenaltyTimer() {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.timerInterval = setInterval(() => {
+                // Timer runs on both 'group' and specific join landing
+                if (state.view !== 'group') return; 
+                
+                const g = state.groups[state.currentGroupId];
+                const members = state.members[state.currentGroupId] || [];
+                const isUnlocked = members.length >= MIN_GROUP_SIZE;
+                
+                if (!g || isUnlocked) {
+                     clearInterval(state.timerInterval);
+                     return;
+                }
+
+                const left = g.expiresAt - Date.now();
+                const formatted = formatTimeLeft(left);
+
+                // Update Top Timer (standard group view)
+                const elTop = document.getElementById('penalty-timer-top');
+                if (elTop) elTop.innerText = formatted;
+
+                // Update Creator Card Timer (standard group view)
+                const elCard = document.getElementById('penalty-timer-card');
+                if (elCard) elCard.innerText = "⏳ " + formatted + " remaining";
+                
+                // Update Join Gate Timer (new focused landing)
+                const elGate = document.getElementById('gate-timer');
+                if (elGate) elGate.innerText = formatted;
+
+                if (left <= 0) {
+                    clearInterval(state.timerInterval);
+                    safeRender(); // Trigger re-render to show expired state if needed
+                }
+            }, 1000);
+        }
+
+        // 🔥 HELPER: Get members who joined in the last X seconds
+        function getRecentJoins(members, seconds = 30) {
+            const now = Date.now();
+            return members.filter(m => {
+                // Handle potential missing timestamp (local pending write) -> treat as now
+                const joinedTime = m.joinedAt ? (m.joinedAt.toMillis ? m.joinedAt.toMillis() : (m.joinedAt.seconds ? m.joinedAt.seconds * 1000 : m.joinedAt)) : now;
+                return (now - joinedTime) <= seconds * 1000;
+            });
+        }
+
+        window.logShare = function(gid) {
+            logEvent('share_clicked', { groupId: gid });
+        };
 
         function toast(msg, icon) { 
             const t = document.getElementById('toast'); 
@@ -279,23 +247,13 @@
             } else {
                 t.className = "fixed top-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe";
             }
-            
             t.innerHTML = `<i data-lucide="${icon}" size="16" class="${iconColor}"></i> ${msg}`; 
             t.classList.remove('hidden'); 
             if(window.lucide) window.lucide.createIcons(); 
             setTimeout(() => t.classList.add('hidden'), 4000); 
         }
 
-        function triggerVibration() { 
-            if (navigator.vibrate) navigator.vibrate(10); 
-        }
-
-        function resetActionButton(btn, html) {
-            if(!btn) return;
-            btn.disabled = false;
-            btn.innerHTML = html;
-            btn.classList.remove('opacity-75', 'cursor-not-allowed');
-        }
+        function triggerVibration() { if (navigator.vibrate) navigator.vibrate(10); }
 
         function createNodeFromHTML(html) { 
             const t = document.createElement('template'); 
@@ -306,6 +264,8 @@
         function showModalNode(node) { 
             const overlay = document.getElementById('modal-overlay');
             const content = document.getElementById('modal-content');
+            overlay.style.display = '';
+            overlay.style.pointerEvents = '';
             content.innerHTML = ''; content.appendChild(node); 
             overlay.classList.remove('hidden'); 
             setTimeout(() => { 
@@ -326,6 +286,19 @@
                 content.innerHTML = ''; 
             }, 300);
         };
+        
+        window.forceCloseModalImmediately = function() {
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            if (overlay) {
+                overlay.classList.add('hidden');
+                overlay.style.display = 'none';
+                overlay.style.pointerEvents = 'none';
+                overlay.className = "fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300"; // Reset classes
+            }
+            if (content) content.innerHTML = '';
+            document.body.style.overflow = '';
+        }
 
         function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
 
@@ -349,169 +322,111 @@
             });
         }
 
-        window.openSupportOptions = function() {
-            window.open("https://wa.me/" + COMPANY_PHONE, "_blank");
-        };
+        window.openSupportOptions = function() { window.open("https://wa.me/918500742671", "_blank"); };
 
         function generateInviteLink(groupId, isUnlocked) {
             const currentUrl = `${BASE_URL}?group=${groupId}`;
-            
             let inviteMsg;
             if (!isUnlocked) {
-                // 🔐 LOCKED SHARE (BEFORE UNLOCK)
-                inviteMsg = `ఈరోజు టమాటాల ఆర్డర్ మొదలైంది
+                // 🔐 VIRAL STRATEGY: RUTHLESS PRESSURE
+                inviteMsg = `I started today’s tomato order.
 
-ఇది ఆగిపోతే
-అందరం షాపు ధరకే కొనాలి
+If no one joins,
+I’ll have to buy at shop price.
 
-నేనే మొదలుపెట్టాను
-నువ్వే చివరివాడు
-
-👉 ${currentUrl}`;
+Join here so the group confirms:
+${currentUrl}`;
             } else {
-                // 🔓 UNLOCKED SHARE
-                inviteMsg = `ఈరోజు టమాటాల గ్రూప్ డీల్ అన్‌లాక్ అయ్యింది ✅
-
-మా గ్రూప్‌లో అందరూ తక్కువ ధరకే కొంటున్నారు  
-ఇప్పుడే జాయిన్ అయితే నీకూ అదే రేట్
-
-ఉదయం 10 లోపు మాత్రమే  
-తర్వాత షాపు ధరకే
-
-👉 ${currentUrl}`;
+                // 🔓 UNLOCKED
+                inviteMsg = `Order confirmed ✅. Join here: ${currentUrl}`;
             }
-            
             return `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
         }
 
-        // --- GLOBAL FUNCTIONS ---
-        
-        window.addToWishlist = async function(productId, quantity, phone, name = null, groupId = null) {
-            if (!window.db || !window.fs || !phone) return;
-
-            try {
-                const ref = window.fs.doc(
-                    window.db,
-                    "wishlists",
-                    `${productId}_${phone}_${Date.now()}`
-                );
-
-                // 🔥 FIX: USE RUNTRANSACTION FOR WRITES (SINCE setDoc IS REMOVED FROM window.fs)
-                await window.fs.runTransaction(window.db, async (transaction) => {
-                    transaction.set(ref, {
-                        productId,
-                        groupId: groupId || null,
-                        name: name || state.user.name || null,
-                        phone,
-                        quantity,
-                        createdAt: window.fs.serverTimestamp(), // 🔥 FIX: Server Timestamp
-                        status: "pending"
-                    });
-                });
-
-                console.log("📌 Added to wishlist (Stock Full)", productId, phone);
-            } catch (e) {
-                console.error("Wishlist add failed", e);
-            }
-        };
-        
         window.openJoinFlow = function(gid) {
             if (IS_JOIN_LINK) {
                 state.user.name = '';
                 state.user.phone = '';
                 JOIN_SESSION_PHONE = null; 
             }
-
             const g = state.groups[gid];
-
-            if (!g) {
-                toast("Loading order details...", "loader");
-                return;
-            }
-            
-            // 🔥 STEP 4: FRONTEND ENFORCE EVERYWHERE
-            if (!isOrderWindowOpen()) {
-                toast("Orders open only 6 AM – 10 AM IST", "clock");
-                return;
-            }
-
+            if (!g) { toast("Loading order details...", "loader"); return; }
+            if (!isOrderWindowOpen()) { toast("Orders open only 6 AM – 8:30 AM IST", "clock"); return; }
             window.openStartModal(g.productId, gid);
         };
 
-        // 🔥 MODAL: SOLO MODE REMOVED, PRICE HIDING IMPLEMENTED
         window.openStartModal = function(productOrId, joinGroupId = null) {
+            if (!isOrderWindowOpen()) { toast("Orders open only 6 AM – 8:30 AM IST", "clock"); return; }
             
-            // 🔥 STEP 4: FRONTEND ENFORCE EVERYWHERE
-            if (!isOrderWindowOpen()) {
-                toast("Orders open only 6 AM – 10 AM IST", "clock");
-                return;
-            }
+            let p = typeof productOrId === 'string' ? PRODUCTS.find(x => x.id === productOrId) : productOrId;
+            if (!p) { toast("Product Unavailable", "alert-circle"); return; }
             
-            let p;
-            
-            if (typeof productOrId === 'string') {
-                p = PRODUCTS.find(x => x.id === productOrId);
-            } else {
-                p = productOrId;
-            }
-
-            if (!p) {
-                toast("Product Unavailable", "alert-circle");
-                return;
-            }
-            
-            const pid = p.id;
             const user = state.user;
-            
             let qty = 0.25;
-            // ❌ FIX 1: SOLO MODE DELETED. Always Group.
-            const isGroupMode = true; 
             
-            // 🔥 REAL-TIME INVENTORY CHECK
-            let isSoldOut = false;
-            let remainingKg = 0;
-            
-            if (state.inventory) {
-                const max = state.inventory.maxSellKg || 0;
-                const sold = state.inventory.soldKg || 0;
-                remainingKg = Math.max(0, max - sold);
-                
-                if (state.inventory.status === "CLOSED" || remainingKg <= 0) {
-                    isSoldOut = true;
-                }
-            }
+            const title = joinGroupId ? "Join Order" : "Start today’s order";
+            const btnText = joinGroupId ? "Join & Confirm" : "Start & Commit"; 
 
-            if (isSoldOut) {
-                 toast("Stock finished. Join wishlist only.", "lock");
-            }
+            // 🔥 RULE: Price is ALWAYS hidden/locked in the modal
+            // User commits blindly to the wholesale price concept
             
-            const title = joinGroupId ? "Join Order" : "Start Group Deal";
-            const btnText = joinGroupId ? "Join to View Price" : "Start today’s group deal"; // Blind Join Text
+            // 🔥 RULE: Close button must NOT exist for creator (Prison Entry)
+            const closeBtnHtml = joinGroupId 
+                ? `<button id="close-modal" class="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"><i data-lucide="x" size="20"></i></button>`
+                : ``;
 
-            // 🔥 FIX 3: PRICE LEAK
-            let isGroupUnlockedForModal = false;
-            if (joinGroupId && state.members[joinGroupId]) {
-                 isGroupUnlockedForModal = state.members[joinGroupId].length >= MIN_GROUP_SIZE;
+            // 🔥 VIRAL STRATEGY: WARNING
+            // Shown to creator before starting
+            const warningHtml = !joinGroupId 
+                ? `<div class="bg-red-50 border border-red-100 rounded-lg p-3 mb-3 flex gap-2 items-start">
+                      <span class="text-red-600 mt-0.5">⚠️</span>
+                      <div class="text-xs font-bold text-red-700 leading-tight">
+                        If no one joins, shop price applies.<br>
+                        <span class="font-normal opacity-90 text-[10px]">(మరెవరూ రాకపోతే shop రేటు వర్తిస్తుంది)</span>
+                      </div>
+                    </div>`
+                : ``;
+
+            // 🔥 DELIVERY WARNING (CREATOR ONLY)
+            const deliveryHtml = !joinGroupId 
+                ? `<div class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-3 flex gap-2 items-start">
+                      <span class="text-blue-600 mt-0.5">📦</span>
+                      <div class="text-xs font-bold text-blue-700 leading-tight">
+                        📦 Delivery: Tuesday & Saturday
+                      </div>
+                    </div>`
+                : ``;
+
+            // 🔥 CRITICAL FIX #2: CREATOR MODAL TAKEOVER
+            // If creator (!joinGroupId), make background opaque/solid to prevent escape
+            const overlay = document.getElementById('modal-overlay');
+            if (!joinGroupId && overlay) {
+                overlay.className = "fixed inset-0 bg-gray-900/95 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300";
+            } else if (overlay) {
+                // Reset for joiners
+                overlay.className = "fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300";
             }
-            
-            // 🔥 BLIND JOIN CHECK FOR MODAL
-            const isBlindJoin = !!joinGroupId;
 
             const node = createNodeFromHTML(`
                 <div class="flex flex-col h-[90vh] bg-white relative rounded-t-[1.5rem] overflow-hidden font-sans">
                     <div class="bg-white px-5 py-4 flex items-center justify-between border-b border-gray-100 shrink-0 z-20">
                         <div class="flex items-center gap-2"><h3 class="font-bold text-lg text-gray-800">${title}</h3></div>
-                        <button id="close-modal" class="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"><i data-lucide="x" size="20"></i></button>
+                        ${closeBtnHtml}
                     </div>
                     <div class="p-5 overflow-y-auto flex-1 relative">
                         <div class="flex gap-4 mb-6 items-center">
                             <div class="w-24 h-24 rounded-xl bg-gray-50 border border-gray-100 relative overflow-hidden shrink-0 shadow-sm">
                                 <img src="${p.imageSrc}" class="w-full h-full object-cover" alt="${p.name}">
                             </div>
-                            <div class="flex-1 flex flex-col justify-center"><h4 class="font-bold text-2xl text-gray-900 leading-none mb-1">${p.name}</h4><div class="text-base text-gray-500 mb-1">${p.nameTe}</div><div class="text-xs text-green-700 font-bold bg-green-50 px-2 py-1 rounded-full w-fit">${isSoldOut ? 'Sold Out' : 'Fresh Stock'}</div></div>
+                            <div class="flex-1 flex flex-col justify-center"><h4 class="font-bold text-2xl text-gray-900 leading-none mb-1">${p.name}</h4><div class="text-base text-gray-500 mb-1">${p.nameTe}</div>
+                            <!-- 🔥 SCARCITY FIX -->
+                            <div class="text-xs text-orange-800 font-bold bg-orange-50 px-2 py-1 rounded-full w-fit">Limited quantity today</div>
+                            </div>
                         </div>
                         
-                        <!-- SOLO CARD REMOVED. ONLY QUANTITY. -->
+                        <!-- Warnings Moved Here (RISK BEFORE CHOICE) -->
+                        ${warningHtml}
+                        ${deliveryHtml}
 
                         <div class="bg-white p-3 rounded-xl border border-gray-200 mb-6 flex items-center justify-between">
                             <div class="pl-1"><div class="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity</div><div class="text-[10px] text-gray-400">Min 250 g</div></div>
@@ -522,10 +437,10 @@
                             <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Mobile Number"></div>
                         </div>
                     </div>
-                    <div class="bg-white border-t border-gray-100 p-4 shrink-0 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
-                        <div class="flex justify-between items-end mb-3 px-1"><div><div class="text-[10px] text-gray-500 font-bold uppercase">Total</div><div class="text-3xl font-bold text-gray-900 leading-none" id="footer-total">Locked</div></div></div>
+                    <div class="bg-gray-50 border-t-2 border-gray-200 p-4 shrink-0 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
+                        <div class="flex justify-between items-end mb-3 px-1"><div><div class="text-[10px] text-gray-500 font-bold uppercase">Total</div><div class="text-3xl font-bold text-gray-900 leading-none" id="footer-total"><span class="text-gray-400 text-xl flex items-center gap-1"><i data-lucide="lock" size="18"></i> Locked</span></div></div></div>
                         <div class="text-center text-[11px] text-gray-500 font-medium mb-2">No payment now • Pay on delivery</div>
-                        <button id="action-btn" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] transition-all btn-press">
+                        <button id="action-btn" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] transition-all btn-press">
                             <span id="btn-text-action">${btnText}</span>
                         </button>
                     </div>
@@ -534,94 +449,43 @@
             showModalNode(node);
 
             const footerTotalEl = node.querySelector('#footer-total');
-            const btnTextEl = node.querySelector('#btn-text-action');
             const actionBtn = node.querySelector('#action-btn');
 
-            // 🔥 DISABLE IF SOLD OUT
-            if (isSoldOut) {
-                actionBtn.disabled = true;
-                actionBtn.innerHTML = "Sold out for today";
-                actionBtn.classList.add('bg-gray-400', 'cursor-not-allowed', 'opacity-75');
-                actionBtn.classList.remove('bg-jodo-ctaPrimary', 'active:scale-[0.99]');
-            }
-
             const renderMode = () => {
-                let qtyText;
-                if (qty < 1) {
-                    qtyText = (qty * 1000).toFixed(0) + ' g';
-                } else {
-                    qtyText = qty + ' kg';
-                }
+                let qtyText = qty < 1 ? (qty * 1000).toFixed(0) + ' g' : qty + ' kg';
                 node.querySelector('#qty-display').innerText = qtyText;
-                
-                // 🔥 BLIND JOIN LOGIC: HIDE PRICES IN MODAL
-                if (isBlindJoin) {
-                    footerTotalEl.innerHTML = `<span class="text-gray-400 text-xl flex items-center gap-1"><i data-lucide="eye-off" size="18"></i> Hidden</span>`;
-                    return;
-                }
-
-                // 🔥 FIX 3: PRICE LEAK IN MODAL (For creator or re-render)
-                if (!isGroupUnlockedForModal) {
-                      footerTotalEl.innerHTML = `<span class="text-gray-400 text-xl flex items-center gap-1"><i data-lucide="lock" size="18"></i> Locked</span>`;
-                      return;
-                }
-                
-                // Only if unlocked (members >= 2), show total
-                const total = Math.round(p._unlockPrice * qty);
-                footerTotalEl.innerText = `₹${total}`;
+                // Price always locked/hidden in modal
+                footerTotalEl.innerHTML = `<span class="text-gray-400 text-xl flex items-center gap-1"><i data-lucide="lock" size="18"></i> Locked</span>`;
             };
             
             const btnMinus = node.querySelector('#btn-minus'); 
             if (btnMinus) btnMinus.onclick = () => { 
-                if (qty <= 0.25) { 
-                    toast("Minimum quantity reached", 'alert-triangle'); 
-                    triggerVibration(); 
-                    return;
-                }
-                
-                if (qty <= 0.5) qty = 0.25;
-                else if (qty <= 1.0) qty = 0.5;
-                else qty -= 0.5;
-
+                if (qty <= 0.25) { toast("Minimum quantity reached", 'alert-triangle'); triggerVibration(); return; }
+                if (qty <= 0.5) qty = 0.25; else if (qty <= 1.0) qty = 0.5; else qty -= 0.5;
                 renderMode(); 
             }; 
             
             const btnPlus = node.querySelector('#btn-plus'); 
             if (btnPlus) btnPlus.onclick = () => { 
-                if (isSoldOut) return;
-
-                let nextQty;
-                if (qty < 0.5) nextQty = 0.5;
-                else if (qty < 1.0) nextQty = 1.0;
-                else nextQty = qty + 0.5;
-
-                if (nextQty * p.baseWeight > remainingKg) {
-                      toast("Max available stock reached", "alert-circle");
-                      return;
-                }
-                
-                qty = nextQty;
-                renderMode(); 
+                let nextQty; if (qty < 0.5) nextQty = 0.5; else if (qty < 1.0) nextQty = 1.0; else nextQty = qty + 0.5;
+                qty = nextQty; renderMode(); 
             };
 
             renderMode(); 
-            node.querySelector('#close-modal').addEventListener('click', window.closeModal);
+            // 🔥 CRITICAL FIX #3: Joiner Confirmation Check
+            if (joinGroupId) {
+                node.querySelector('#close-modal').addEventListener('click', () => {
+                    if (confirm("If you leave, this order may fail. Continue?")) {
+                        window.closeModal();
+                    }
+                });
+            }
             
-            // --- SUBMIT ACTION ---
             const triggerAction = async () => {
-                if (!navigator.onLine) {
-                    toast("No internet connection", "wifi-off");
-                    return;
-                }
-                
-                // 🔥 STEP 4: FRONTEND ENFORCE EVERYWHERE
-                if (!isOrderWindowOpen()) {
-                    toast("Orders closed for today (6-10 AM)", "clock");
-                    window.location.reload();
-                    return;
-                }
-
+                if (!navigator.onLine) { toast("No internet connection", "wifi-off"); return; }
+                if (!isOrderWindowOpen()) { toast("Orders closed", "clock"); return; }
                 if (actionBtn.disabled) return; 
+                
                 actionBtn.disabled = true;
                 const originalText = actionBtn.innerHTML; 
                 actionBtn.innerHTML = `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>`; 
@@ -631,7 +495,7 @@
                 const phone = safeVal(node.querySelector('#inp-phone')); 
                 
                 if (!name || !/^[6-9]\d{9}$/.test(phone)) { 
-                    resetActionButton(actionBtn, originalText);
+                    actionBtn.disabled = false; actionBtn.innerHTML = originalText; actionBtn.classList.remove('opacity-75', 'cursor-not-allowed');
                     toast('Please enter name and mobile number', 'alert-circle'); 
                     return; 
                 }
@@ -639,179 +503,110 @@
                 triggerVibration(); 
                 saveUser(name, phone); 
                 
+                if (joinGroupId) {
+                      const g = state.groups[joinGroupId];
+                      const hostName = g ? g.ownerName : "Host";
+                      const modalContent = node.querySelector('.p-5'); 
+                      const footer = node.querySelector('.bg-gray-50.border-t-2'); // Updated selector
+                      modalContent.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full pt-10 text-center space-y-4 animate-in fade-in zoom-in duration-300">
+                            <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center animate-bounce">
+                                <i data-lucide="clock" class="text-green-600" size="40"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">${hostName} is waiting...</h3>
+                                <p class="text-gray-500 mt-2 font-medium">If you join, order gets confirmed.</p>
+                            </div>
+                        </div>
+                      `;
+                      if(footer) footer.style.display = 'none'; 
+                      if(window.lucide) window.lucide.createIcons(); 
+                      await new Promise(r => setTimeout(r, 900)); 
+                }
+                
                 const memberId = phone; 
                 const finalGroupId = joinGroupId || ('g-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
 
-                if (!window.fs || !window.db) {
-                      toast("Connecting...", "wifi");
-                      await new Promise(r => setTimeout(r, 1000));
-                }
+                if (!window.fs || !window.db) { toast("Connecting...", "wifi"); await new Promise(r => setTimeout(r, 1000)); }
 
-                let committedQty = 0; 
-                let currentMemberCount = 1;
-                
-                // 🔥 SERVER-SIDE INVENTORY RESERVATION FIRST
                 try {
-                    // 1. Call Cloud Function to reserve stock
-                    const requestedKg = qty * p.baseWeight;
-                    await window.cloudFn.placeOrder({
-                        requestedKg,
-                        day: getTodayDateString()
-                    });
-                    
-                    // 2. If successful, proceed to Group/Member updates locally
-                    // Note: We use a transaction here for Group consistency (unlock logic), 
-                    // even though inventory is already handled.
-                    
+                    const requestedKg = qty; // FIX 4: Simplified math
                     let didUnlock = false;
-                    try {
-                        await window.fs.runTransaction(window.db, async (transaction) => {
+                    
+                    // FIX 1: Strip sensitive fields before saving
+                    const { _unlockPrice, mandiPrice, ...safeProduct } = p;
+
+                    await window.fs.runTransaction(window.db, async (transaction) => {
+                        if (!joinGroupId) {
+                            const groupData = { 
+                                id: finalGroupId, productId: pid = p.id, productSnapshot: safeProduct, ownerName: name, 
+                                expiresAt: getTodayCutoffTimestamp(), deliveryDay: new Date(getISTNow().setHours(18, 0, 0, 0)).getTime(), 
+                                createdAt: window.fs.serverTimestamp(), type: 'group', maxKg: 100, usedKg: 0, pendingKg: requestedKg, 
+                                memberCount: 1, unlockedAt: null, status: 'OPEN'
+                            };
+                            const memberData = { memberId, groupId: finalGroupId, name, phone, isLeader: true, quantity: qty, orderPlacedAt: window.fs.serverTimestamp(), joinedAt: window.fs.serverTimestamp() };
+                            transaction.set(window.fs.doc(window.db, "groups", finalGroupId), groupData);
+                            transaction.set(window.fs.doc(window.db, "groups", finalGroupId, "members", memberId), memberData);
+                        } else {
+                            const groupRef = window.fs.doc(window.db, "groups", finalGroupId);
+                            const groupSnap = await transaction.get(groupRef);
+                            if (!groupSnap.exists()) throw "GROUP_NOT_FOUND";
                             
-                            if (!joinGroupId) {
-                                // CREATE MODE
-                                const groupData = { 
-                                    id: finalGroupId, 
-                                    productId: pid, 
-                                    productSnapshot: { ...p },
-                                    ownerName: name, 
-                                    expiresAt: getTodayCutoffTimestamp(), 
-                                    deliveryDay: new Date(getISTNow().setHours(18, 0, 0, 0)).getTime(), // 6 PM delivery
-                                    createdAt: window.fs.serverTimestamp(), // 🔥 FIX: Server Timestamp
-                                    // firstJoinAt: removed from CREATE mode, creator isn't a joiner
-                                    type: 'group', 
-                                    maxKg: 100, // Firestore inventory doc is the real limit now
-                                    usedKg: 0, 
-                                    pendingKg: requestedKg, 
-                                    memberCount: 1, 
-                                    unlockedAt: null,
-                                    status: 'OPEN' // 🔥 FIX: Explicit Status
-                                };
-                                const memberData = { 
-                                    memberId, 
-                                    groupId: finalGroupId, 
-                                    name, 
-                                    phone, 
-                                    isLeader: true, 
-                                    quantity: qty, 
-                                    // 🔒 TIME (SERVER ONLY)
-                                    orderPlacedAt: window.fs.serverTimestamp(),
-                                    joinedAt: window.fs.serverTimestamp()
-                                };
-                                transaction.set(window.fs.doc(window.db, "groups", finalGroupId), groupData);
-                                transaction.set(window.fs.doc(window.db, "groups", finalGroupId, "members", memberId), memberData);
+                            const memberRef = window.fs.doc(window.db, "groups", finalGroupId, "members", memberId);
+                            const memberSnap = await transaction.get(memberRef);
+                            if (memberSnap.exists()) throw "ALREADY_JOINED";
+                            
+                            const gd = groupSnap.data();
+                            const newCount = (gd.memberCount || 1) + 1;
+                            let updates = {};
+
+                            if (!gd.firstJoinAt) updates.firstJoinAt = window.fs.serverTimestamp();
+                            
+                            if (newCount >= MIN_GROUP_SIZE && !gd.unlockedAt) {
+                                didUnlock = true;
+                                updates = { ...updates, usedKg: (gd.usedKg || 0) + (gd.pendingKg || 0) + requestedKg, pendingKg: 0, memberCount: newCount, unlockedAt: window.fs.serverTimestamp(), groupPrice: p._unlockPrice, status: 'UNLOCKED' };
                             } else {
-                                // JOIN MODE
-                                const groupRef = window.fs.doc(window.db, "groups", finalGroupId);
-                                const groupSnap = await transaction.get(groupRef);
-                                if (!groupSnap.exists()) throw "GROUP_NOT_FOUND";
-                                
-                                const memberRef = window.fs.doc(window.db, "groups", finalGroupId, "members", memberId);
-                                const memberSnap = await transaction.get(memberRef);
-                                if (memberSnap.exists()) throw "ALREADY_JOINED";
-                                
-                                const gd = groupSnap.data();
-                                const newCount = (gd.memberCount || 1) + 1;
-                                let updates = {};
-
-                                // 🔥 FIX: Set firstJoinAt on first JOIN (not create)
-                                if (!gd.firstJoinAt) {
-                                    updates.firstJoinAt = window.fs.serverTimestamp();
-                                }
-                                
-                                if (newCount >= MIN_GROUP_SIZE && !gd.unlockedAt) {
-                                     didUnlock = true;
-                                     updates = {
-                                          ...updates,
-                                          usedKg: (gd.usedKg || 0) + (gd.pendingKg || 0) + requestedKg,
-                                          pendingKg: 0,
-                                          memberCount: newCount,
-                                          unlockedAt: window.fs.serverTimestamp(),
-                                          groupPrice: p._unlockPrice,
-                                          status: 'UNLOCKED' // 🔥 FIX: Explicit Status
-                                     };
-                                } else {
-                                     if (gd.unlockedAt) {
-                                          updates = { ...updates, usedKg: (gd.usedKg || 0) + requestedKg, memberCount: newCount };
-                                     } else {
-                                          updates = { ...updates, pendingKg: (gd.pendingKg || 0) + requestedKg, memberCount: newCount };
-                                     }
-                                }
-                                transaction.set(memberRef, { 
-                                    memberId: phone, 
-                                    name, 
-                                    phone, 
-                                    groupId: finalGroupId, 
-                                    quantity: qty, 
-                                    isLeader: false,
-                                    // 🔒 TIME (SERVER ONLY)
-                                    orderPlacedAt: window.fs.serverTimestamp(),
-                                    joinedAt: window.fs.serverTimestamp()
-                                });
-                                transaction.update(groupRef, updates);
+                                if (gd.unlockedAt) updates = { ...updates, usedKg: (gd.usedKg || 0) + requestedKg, memberCount: newCount };
+                                else updates = { ...updates, pendingKg: (gd.pendingKg || 0) + requestedKg, memberCount: newCount };
                             }
-                        });
-                    } catch (transactionError) {
-                         // 🔥 CRITICAL FIX: ROLLBACK INVENTORY IF GROUP UPDATE FAILS
-                         console.error("CRITICAL: Group Transaction Failed. Rolling back inventory...", {
-                             groupId: finalGroupId,
-                             phone: phone,
-                             requestedKg: qty * p.baseWeight,
-                             timestamp: new Date().toISOString(),
-                             error: transactionError
-                         });
-                         await window.cloudFn.releaseInventory({
-                             requestedKg: qty * p.baseWeight,
-                             day: getTodayDateString()
-                         });
-                         throw transactionError; // Re-throw to hit the outer catch and show UI error
-                    }
+                            transaction.set(memberRef, { memberId, name, phone, groupId: finalGroupId, quantity: qty, isLeader: false, orderPlacedAt: window.fs.serverTimestamp(), joinedAt: window.fs.serverTimestamp() });
+                            transaction.update(groupRef, updates);
+                        }
+                    });
 
-                    // Success handling
                     saveJoinedGroup(finalGroupId);
                     JOIN_SESSION_PHONE = phone;
-                    committedQty = qty; 
                     
                     if (!joinGroupId) {
-                        const inviteLink = generateInviteLink(finalGroupId, false);
-                        window.open(inviteLink, '_blank');
-                        toast("ఇంకొక ఇంటివారిని జాయిన్ చేయండి", "share-2");
-                        window.closeModal();
+                        logEvent('group_created', { groupId: finalGroupId, phone: memberId });
+                        toast("You started today’s order", "check-circle");
+                        
+                        // 🔥 CRITICAL FIX #1: Clean Modal Close for Creator
+                        forceCloseModalImmediately();
+                        
                         window.openGroup(finalGroupId);
                     } else {
-                        IS_JOIN_LINK = false; 
-                        AUTO_JOIN_TRIGGERED = true;
+                        IS_JOIN_LINK = false; AUTO_JOIN_TRIGGERED = true;
                         if (didUnlock) {
-                            const inviteLink = generateInviteLink(finalGroupId, true); 
-                            window.open(inviteLink, '_blank');
+                            logEvent('group_unlocked', { groupId: finalGroupId });
+                            toast("You helped confirm the order", "check-circle");
                         } else {
-                            const inviteLink = generateInviteLink(finalGroupId, false);
-                            window.open(inviteLink, '_blank');
-                            toast("ఇంకొక ఇంటివారిని జాయిన్ చేయండి", "share-2");
+                            toast("Joined! One more needed.", "share-2");
                         }
+                        logEvent('member_joined', { groupId: finalGroupId, phone: memberId });
                         window.closeModal();
                         window.openGroup(finalGroupId);
                     }
-
                 } catch (e) {
                     console.error("Order Failed:", e);
-                    // Extract error message from Cloud Function error if possible
                     const msg = e.message || e;
-                    
-                    if (msg.includes("Sold out") || e === "SOLD_OUT" || e === "NO_INVENTORY") {
-                        await window.addToWishlist(pid, qty, phone, name, finalGroupId);
-                        resetActionButton(actionBtn, originalText);
-                        window.closeModal();
-                        toast("Stock finished. Added to wishlist.", "clock");
-                    } else if (msg.includes("ALREADY_JOINED") || e === "ALREADY_JOINED") {
+                    if (msg.includes("ALREADY_JOINED") || e === "ALREADY_JOINED") {
                         saveJoinedGroup(finalGroupId);
                         window.closeModal();
                         window.openGroup(finalGroupId);
                         toast("Already joined!", "check-circle");
-                    } else if (msg.includes("Orders allowed only")) {
-                        resetActionButton(actionBtn, originalText);
-                        toast("Orders open only 6 AM – 10 AM", "clock");
                     } else {
-                        resetActionButton(actionBtn, originalText);
+                        actionBtn.disabled = false; actionBtn.innerHTML = originalText; actionBtn.classList.remove('opacity-75', 'cursor-not-allowed');
                         toast("Order failed. Please try again.", "alert-triangle");
                     }
                 }
@@ -819,419 +614,411 @@
             actionBtn.onclick = triggerAction;
         };
 
-        window.openEditMemberModal = function() {
-            toast("Order is final. No edits allowed.", "lock");
-            return;
-        };
-        
-        // --- 🔥 ISSUE 2 FIX: MONITOR MIDNIGHT ROLLOVER & 6 AM OPEN ---
-        let lastDateCheckTime = null;
-
-        function monitorDateChange() {
-            let currentISTDate = getTodayDateString();
-            // Initialize last check time to now so we don't trigger immediate reload
-            lastDateCheckTime = getISTNow();
+        // 🔥 NEW FUNCTION: Dedicated Focused Join Screen
+        function renderJoinGate(el, g) {
+            const p = g.productSnapshot || PRODUCTS.find(x => x.id === g.productId);
+            const timeLeft = g.expiresAt - Date.now();
             
-            setInterval(() => {
-                const now = getISTNow();
-                const newISTDate = getTodayDateString();
-                
-                // 1. Midnight rollover (Day change)
-                if (newISTDate !== currentISTDate) {
-                    location.reload();
-                    return;
-                }
-                
-                // 2. Exact 6:00 AM Open (Reload to refresh inventory logic/UI)
-                // 🔥 INFINITE RELOAD FIX: Only reload if we TRANSITION into 6 AM from a time < 6 AM
-                if (now.getHours() === 6 && now.getMinutes() === 0) {
-                     // Check if we haven't already reloaded for this event
-                     // If our last check was BEFORE 6am, we reload. 
-                     // If our last check was already 6am (e.g. 6:00:05), we don't reload again.
-                     if (lastDateCheckTime && lastDateCheckTime.getHours() < 6) {
-                         location.reload();
-                     }
-                }
-                
-                lastDateCheckTime = now;
-                
-            }, 5000); // Check every 5 seconds
+            el.innerHTML = `
+                <div class="fade-in bg-white min-h-screen flex flex-col items-center pt-safe px-6 relative font-sans">
+                     <!-- HARD GATE: No navigation, no distractions -->
+                     
+                     <div class="w-full max-w-sm mx-auto flex flex-col items-center mt-8 mb-8">
+                        <!-- 1. IDENTITY -->
+                        <div class="mb-5 text-center">
+                            <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-2">JODO</h1>
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">You were invited by ${g.ownerName}</div>
+                        </div>
+
+                        <!-- 2. PRESSURE (Moved UP) -->
+                        <div class="text-center mb-4">
+                             <div class="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Time left to confirm</div>
+                             <div id="gate-timer" class="text-4xl font-black text-red-600 tracking-widest tabular-nums font-mono leading-none whitespace-nowrap animate-pulse">
+                                ${formatTimeLeft(timeLeft)}
+                             </div>
+                        </div>
+
+                        <!-- PRODUCT HERO (Reduced size) -->
+                        <div class="w-28 h-28 bg-gray-50 rounded-full mb-4 relative overflow-hidden mx-auto">
+                             <img src="${p.imageSrc}" class="w-full h-full object-cover">
+                        </div>
+
+                        <!-- 3. CONSEQUENCE -->
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 w-full text-center shadow-sm mb-4">
+                            <div class="font-bold text-gray-900 text-lg mb-2">${g.ownerName} needs your help</div>
+                            <div class="text-sm text-gray-600 font-medium leading-relaxed">
+                                You won’t pay anything now.<br>
+                                Order confirms when you join.<br>
+                                <span class="text-red-600 font-bold block mt-2 bg-white p-2 rounded-lg border border-red-100">
+                                    If you don’t join, they pay shop price.<br>
+                                    <span class="font-normal opacity-90 text-[10px]">(మీరు రాకపోతే వారు shop రేటు కట్టాలి)</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- 4. ACTION -->
+                        <div class="text-xs font-bold text-gray-600 bg-gray-100 px-4 py-2 rounded-full mb-4">
+                          📦 Delivery: Tuesday & Saturday
+                        </div>
+
+                        <button onclick="openJoinFlow('${g.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[68px] rounded-2xl font-bold text-xl shadow-[0_10px_30px_rgba(21,128,61,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all btn-press">
+                            Join to help confirm
+                        </button>
+                        
+                        <!-- 5. REASSURANCE -->
+                        <div class="mt-4 text-[10px] text-gray-400 font-medium">Safe & Secure • No payment required</div>
+                     </div>
+                </div>
+            `;
+            // Ensure timer starts
+            startPenaltyTimer();
         }
 
         function renderHome(el) {
-            // Cleanup timer before rendering new view
-            if (cutoffTimerInterval) { clearInterval(cutoffTimerInterval); cutoffTimerInterval = null; }
-
             const activeUserGroups = [];
             state.user.joinedGroupIds.forEach(gid => {
-                if (state.groups[gid]) activeUserGroups.push(state.groups[gid]);
+                const g = state.groups[gid];
+                if (g) activeUserGroups.push(g);
             });
             activeUserGroups.sort((a, b) => b.createdAt - a.createdAt);
             
-            const userActiveGroupIds = {};
-            activeUserGroups.forEach(g => { userActiveGroupIds[g.productId] = g.id; });
-            
-            const sortedProducts = [...PRODUCTS].sort((a, b) => { 
-                const aActive = !!userActiveGroupIds[a.id]; 
-                const bActive = !!userActiveGroupIds[b.id]; 
-                if (aActive && !bActive) return -1; 
-                if (!aActive && bActive) return 1; 
-                return 0; 
-            });
-
-            // 🔥 INVENTORY CHECK
-            let isSoldOut = false;
-            if (state.inventory) {
-                const max = state.inventory.maxSellKg || 0;
-                const sold = state.inventory.soldKg || 0;
-                if (state.inventory.status === "CLOSED" || sold >= max) {
-                    isSoldOut = true;
-                }
-            }
-
-            // 🔥 STEP 4: USE THIS CHECK EVERYWHERE
-            const isWindowOpen = isOrderWindowOpen();
-            const isClosedGlobally = !isWindowOpen || isSoldOut;
-
-            let heroContent = '';
-            if (activeUserGroups.length > 0) {
-                const cardsHtml = activeUserGroups.map(g => {
-                    const p = g.productSnapshot || PRODUCTS.find(x => x.id === g.productId);
-                    if (!p) return '';
-                    
-                    const members = state.members[g.id] || []; 
-                    const count = members.length;
-                    
-                    const isUnlocked = count >= MIN_GROUP_SIZE;
-                    // 🔥 FIX 6: TELUGU IMPERATIVE & CHANGE 2: REMOVE NUMBERS
-                    const statusLabel = isUnlocked ? 'Active' : 'ఇంకొక ఇంటివాడు లేకపోతే ఇదే ధర';
-                    const statusClass = isUnlocked ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-gray-50 border-gray-200';
-                    
-                    return `<div onclick="openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
-                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 relative overflow-hidden h-full flex flex-col justify-between">
-                            <div class="flex items-center gap-3 mb-3 relative z-10 mt-2">
-                                <div class="w-12 h-12 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-gray-700 shadow-sm shrink-0"><i data-lucide="${p.icon}" size="24"></i></div>
-                                <div class="flex-1 min-w-0"><h3 class="font-bold text-gray-900 text-base leading-none mb-2 truncate">${p.name}</h3>
-                                    <div class="flex items-center justify-between gap-2">
-                                        <div class="${statusClass} text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider whitespace-nowrap">${statusLabel}</div>
-                                    </div>
+            if (activeUserGroups.length === 0) {
+                const p = PRODUCTS[0];
+                el.innerHTML = `
+                    <div class="pb-safe fade-in bg-white min-h-screen flex flex-col">
+                        <div class="glass-header sticky top-0 z-40 shadow-sm border-b-0">
+                            <div class="pt-safe px-4 pb-3 flex justify-between items-end min-h-[88px]">
+                                <div class="flex flex-col justify-end pb-0.5">
+                                    <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
+                                    <div class="text-[10px] font-bold text-orange-600 mt-1"></div>
                                 </div>
                             </div>
                         </div>
-                    </div>`;
-                }).join('');
-                heroContent = `<div class="mt-6 mb-4"><div class="px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">${cardsHtml}</div></div>`;
+                        
+                        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-500 -mt-10">
+                            <div class="w-32 h-32 bg-gray-50 rounded-full mb-6 border-4 border-white shadow-xl relative overflow-hidden ring-1 ring-gray-100">
+                                 <img src="${p.imageSrc}" class="w-full h-full object-cover">
+                            </div>
+                            <h2 class="text-3xl font-bold text-gray-900 leading-tight mb-2 tracking-tight">Today’s tomato order is OPEN</h2>
+                            <p class="text-gray-500 font-medium mb-10 text-lg">Not confirmed yet.</p>
+                            
+                            <div class="space-y-3 mt-8 w-full max-w-[320px]">
+                                <button onclick="openStartModal('${p.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-2xl font-bold text-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-center gap-2 active:scale-95 transition-all btn-press">
+                                    Start today’s order
+                                </button>
+                                <div class="text-center">
+                                    <div class="text-xs font-bold text-blue-700 bg-blue-50 px-4 py-2 rounded-full inline-block">
+                                        📦 Delivery: Tuesday & Saturday
+                                    </div>
+                                </div>
+                                <!-- 🔥 VIRAL STRATEGY: PAIN AVOIDANCE COPY -->
+                                <div class="text-xs text-red-600 font-medium mt-3 text-center">
+                                    Without ${MIN_GROUP_SIZE} people, you will pay shop price.<br>
+                                    <span class="font-normal opacity-90 text-[10px]">(ఇంకెవరు join కాకపోతే shop price వర్తిస్తుంది)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                if (window.lucide) window.lucide.createIcons();
+                initCardTilt();
+                return;
             }
-            
+
+            const cardsHtml = activeUserGroups.map(g => {
+                const p = g.productSnapshot || PRODUCTS.find(x => x.id === g.productId);
+                if (!p) return '';
+                const members = state.members[g.id] || []; 
+                const isUnlocked = members.length >= MIN_GROUP_SIZE;
+                const statusLabel = isUnlocked ? 'Confirmed ✅' : 'Not Confirmed';
+                const statusClass = isUnlocked ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-gray-50 border-gray-200';
+                
+                return `<div onclick="openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 relative overflow-hidden h-full flex flex-col justify-between">
+                        <div class="flex items-center gap-3 mb-3 relative z-10 mt-2">
+                            <div class="w-12 h-12 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-gray-700 shadow-sm shrink-0"><i data-lucide="${p.icon}" size="24"></i></div>
+                            <div class="flex-1 min-w-0"><h3 class="font-bold text-gray-900 text-base leading-none mb-2 truncate">${p.name}</h3>
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="${statusClass} text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider whitespace-nowrap">${statusLabel}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
             el.innerHTML = `
                 <div class="pb-safe fade-in bg-white">
                     <div class="glass-header sticky top-0 z-40 shadow-sm border-b-0">
                         <div class="pt-safe px-4 pb-3 flex justify-between items-end min-h-[88px]">
                             <div class="flex flex-col justify-end pb-0.5">
                                 <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
-                                <!-- 🔥 ISSUE 5: HEADER TAGLINE CHANGE -->
                                 <span class="text-[10px] text-gray-500 font-bold tracking-wide">Group orders work differently</span>
-                                <div id="home-timer" class="text-[10px] font-bold text-red-600 mt-1">Loading…</div>
+                                <div class="text-[10px] font-bold text-orange-600 mt-1"></div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="px-4 mt-4">
-                        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 flex items-center justify-center gap-2">
-                             <i data-lucide="home" size="16" class="text-gray-400"></i>
-                             <div class="font-bold text-gray-700 text-sm">For households in Duvva Village</div>
-                        </div>
-                        ${isSoldOut ? `<div class="bg-red-50 border border-red-100 rounded-xl p-3 flex items-center justify-center gap-2 mt-2">
-                             <span class="font-bold text-red-700 text-sm">SOLD OUT FOR TODAY</span>
-                        </div>` : ''}
-                    </div>
-                    
-                    ${heroContent}
+                    <div class="mt-6 mb-4"><div class="px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">${cardsHtml}</div></div>
                     
                     <div class="px-4 space-y-3 mt-2 pb-32">
                         <div class="flex items-center justify-between mb-2 mt-6">
-                            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Open Orders</h2>
+                            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Start New Order</h2>
                         </div>
-                        
-                        ${sortedProducts.map(p => {
-                            const activeGid = userActiveGroupIds[p.id];
-                            
-                            const actionAttr = (isClosedGlobally && !activeGid) 
-                                ? `onclick="toast('Orders closed', 'lock')"` 
-                                : activeGid 
-                                    ? `onclick="openGroup('${activeGid}')"` 
-                                    : `onclick="openStartModal('${p.id}')"`;
-                            
-                            // 🔥 CRITICAL FIX: PSYCHOLOGICAL CARD REDESIGN
-                            // 90% view is "Locked/Incomplete"
-                            
-                            let isUnlocked = false;
-                            if (activeGid && state.members[activeGid]) {
-                                isUnlocked = state.members[activeGid].length >= MIN_GROUP_SIZE;
-                            }
-                            
-                            // Locked State HTML (Neutral, Incomplete, Uncomfortable)
-                            const lockedStateHtml = `
-                                <div class="text-sm font-medium text-gray-500 mt-1">ఈరోజు ఆర్డర్ ఇంకా పూర్తికాలేదు</div>
-                            `;
-
-                            // Unlocked State HTML (Celebratory, Green, Winning)
-                            // 🚨 CRITICAL FIX: REMOVED PRICE FROM HOME PAGE. TEXT ONLY.
-                            const unlockedStateHtml = `
-                                <div class="bg-green-50 rounded-lg p-2 px-3 border border-green-100 flex items-center gap-2">
-                                    <div class="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center text-white"><i data-lucide="check" size="12"></i></div>
-                                    <span class="text-sm font-bold text-green-700">Deal unlocked today ✅</span>
+                        <div onclick="openStartModal('tomato')" class="bg-white p-4 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden active:scale-[0.99] transition-all duration-200 cursor-pointer mb-3">
+                            <div class="flex gap-4">
+                                <div class="w-24 h-24 bg-gray-50 rounded-xl shrink-0 relative overflow-hidden border border-gray-100">
+                                     <img src="${PRODUCTS[0].imageSrc}" class="w-full h-full object-cover" loading="lazy">
                                 </div>
-                            `;
-
-                            return `
-                            <div class="bg-white p-4 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden active:scale-[0.99] transition-all duration-200 cursor-pointer mb-3 ${isClosedGlobally ? 'opacity-70 grayscale-[0.5]' : ''}" ${actionAttr}>
-                                <div class="flex gap-4">
-                                    <!-- Image -->
-                                    <div class="w-24 h-24 bg-gray-50 rounded-xl shrink-0 relative overflow-hidden border border-gray-100">
-                                         <img src="${p.imageSrc}" class="w-full h-full object-cover" alt="${p.name}" loading="lazy">
-                                         ${isClosedGlobally ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="text-white font-bold text-xs bg-black/50 px-2 py-1 rounded">CLOSED</span></div>' : ''}
-                                    </div>
-
-                                    <!-- Content -->
-                                    <div class="flex-1 flex flex-col justify-between py-1">
-                                         <div>
-                                            <h3 class="font-bold text-lg text-gray-900 leading-tight mb-1">${p.name}</h3>
-                                            <p class="text-sm text-gray-500">${p.nameTe}</p>
-                                         </div>
-                                         
-                                         <!-- STATUS LINE (The Hook) -->
-                                         <div class="mt-2">
-                                             ${isUnlocked ? unlockedStateHtml : lockedStateHtml}
-                                         </div>
-                                    </div>
+                                <div class="flex-1 flex flex-col justify-between py-1">
+                                    <div><h3 class="font-bold text-lg text-gray-900 leading-tight mb-1">${PRODUCTS[0].name}</h3><p class="text-sm text-gray-500">${PRODUCTS[0].nameTe}</p></div>
+                                    <!-- 🔥 SCARCITY FIX -->
+                                    <div class="text-xs text-orange-800 font-bold bg-orange-50 px-2 py-1 rounded-full w-fit">Limited quantity today</div>
+                                    <div class="mt-2"><div class="text-sm font-medium text-gray-500 mt-1">Today’s order is not confirmed yet</div></div>
                                 </div>
-                            </div>`;
-                        }).join('')}
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
             initCardTilt();
-
-            // 🔥 FIX 6: TELUGU URGENCY
-            const homeTimer = document.getElementById('home-timer');
-            if (homeTimer) {
-                if (cutoffTimerInterval) clearInterval(cutoffTimerInterval);
-                const tick = () => {
-                    homeTimer.textContent = formatRemaining();
-                };
-                tick();
-                cutoffTimerInterval = setInterval(tick, 60000);
-            }
+            if(window.lucide) window.lucide.createIcons();
         }
 
         function renderGroup(el) {
-            // Cleanup legacy timer state if exists, and global timer
-            if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
-            if (cutoffTimerInterval) { clearInterval(cutoffTimerInterval); cutoffTimerInterval = null; }
-            
             const g = state.groups[state.currentGroupId]; 
             if (!g) {
-                el.innerHTML = `
-                <div class="min-h-screen bg-white p-6 pt-24 space-y-6">
-                    <div class="w-2/3 h-8 bg-gray-100 rounded-lg skeleton mx-auto"></div>
-                    <div class="w-1/2 h-4 bg-gray-100 rounded-lg skeleton mx-auto"></div>
-                    <div class="w-full h-64 bg-gray-100 rounded-xl skeleton mt-8"></div>
-                </div>`;
+                el.innerHTML = `<div class="min-h-screen bg-white p-6 pt-24 space-y-6"><div class="w-2/3 h-8 bg-gray-100 rounded-lg skeleton mx-auto"></div></div>`;
                 return;
             }
             
             const p = g.productSnapshot || PRODUCTS.find(x => x.id === g.productId); 
-            if (!p) { 
-                toast('Product data missing', 'alert-circle'); 
-                return;
-            }
-            
-            const isWindowOpen = isOrderWindowOpen();
-            // 🔥 PROBLEM 1 FIX: Group expiry is strictly based on its deadline, not global window
-            const isExpired = Date.now() > g.expiresAt;
+            if (!p) { toast('Product data missing', 'alert-circle'); return; }
             
             const members = state.members[g.id] || []; 
-            const count = members.length;
-            
-            // 🔥 FIX 3: PRICE LOCK LOGIC
-            const isUnlocked = count >= MIN_GROUP_SIZE;
-            
-            const usedKg = g.usedKg || 0;
-            // 🔥 INVENTORY CHECK
-            let isSoldOut = false;
-            if (state.inventory) {
-                const max = state.inventory.maxSellKg || 0;
-                const sold = state.inventory.soldKg || 0;
-                if (state.inventory.status === "CLOSED" || sold >= max) {
-                    isSoldOut = true;
-                }
-            }
-            const isFull = isSoldOut; // Driven by global inventory now
-            
+            const isUnlocked = members.length >= MIN_GROUP_SIZE;
             const hasJoinedThisGroup = !IS_JOIN_LINK && JOIN_SESSION_PHONE && members.some(m => m.phone === JOIN_SESSION_PHONE);
             const isCreator = JOIN_SESSION_PHONE && g.ownerName && members.some(m => m.phone === JOIN_SESSION_PHONE && m.isLeader === true);
             const isMember = hasJoinedThisGroup || isCreator;
 
-            state.lastMemberCount = count;
+            // 🔥 FATAL ISSUE #1 FIX: HARD JOIN GATE
+            // If they are on a join link AND haven't joined yet -> Show ONLY the Gate.
+            if (IS_JOIN_LINK && !isMember) {
+                renderJoinGate(el, g);
+                if(window.lucide) window.lucide.createIcons();
+                return;
+            }
+
+            // ... (Rest of standard renderGroup logic for members/creators)
+            
+            // 🔥 CRITICAL FIX #2: Hard Expiry Check
+            const isExpired = Date.now() > g.expiresAt;
+            if (isExpired && !isUnlocked) {
+                logEvent('group_expired', { groupId: g.id });
+                el.innerHTML = `
+                    <div class="min-h-screen flex flex-col items-center justify-center text-center px-6">
+                        <i data-lucide="x-circle" size="48" class="text-red-500 mb-4"></i>
+                        <h2 class="text-2xl font-black text-gray-900 mb-2">Order Cancelled</h2>
+                        <p class="text-gray-500 mb-6">
+                            No one joined in time.
+                        </p>
+                        <button onclick="goHome()" class="bg-jodo-ctaPrimary text-white px-6 py-3 rounded-xl font-bold">
+                            Start New Order
+                        </button>
+                    </div>
+                `;
+                if(window.lucide) window.lucide.createIcons();
+                return;
+            }
+
             const inviteLink = generateInviteLink(g.id, isUnlocked);
             
-            // 🔥 FIX 4 & CHANGE 3: PRISON LOGIC FOR JOINERS TOO
-            // If user joined/created group AND it's not unlocked, they CANNOT go back.
-            const mustForceShare = (isCreator || hasJoinedThisGroup) && !isUnlocked;
+            // 🔥 LOGIC: THE PRISON STATE
+            // If group is NOT unlocked and user is in it, they CANNOT leave easily.
+            const isPrison = (isCreator || hasJoinedThisGroup) && !isUnlocked;
             
-            const backButtonHtml = mustForceShare 
-                ? `<div class="font-bold text-sm text-red-600 animate-pulse">Share to confirm order</div>`
+            // 🔥 HARD RULE: REMOVE BACK BUTTON IN PRISON STATE
+            const backButtonHtml = isPrison 
+                ? `<div class="flex items-center gap-2 text-amber-600"><i data-lucide="lock" size="16"></i><span class="font-bold text-xs uppercase tracking-wider">Commitment Locked</span></div>`
                 : `<div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="goHome()">
                        <i data-lucide="arrow-left" size="24" class="text-gray-700"></i>
                        <span class="font-bold text-base tracking-wide text-gray-800">Back</span>
                    </div>`;
 
-            // 🔥 ISSUE 3: GREEN VS GRAY TOGGLE (Creator Card)
-            // ISSUE 4: COLOR LEAKS. LOCKED = GRAY.
-            const creatorCardClass = isUnlocked 
-                ? "bg-green-50 border border-green-200" 
-                : "bg-gray-50 border border-gray-200";
-            
+            // 🔥 LOGIC: Locked Creator View
+            const creatorCardClass = isUnlocked ? "bg-green-50 border border-green-200" : "bg-gray-50 border border-gray-200";
             const creatorIconColor = isUnlocked ? "text-green-700" : "text-gray-400";
             const creatorTextColor = isUnlocked ? "text-green-900" : "text-gray-700";
-            const creatorSubtextColor = isUnlocked ? "text-green-800" : "text-gray-600";
-            
-            // 🔥 LOGIC: WHO SEES WHAT?
-            const showSecretPrice = isUnlocked && isMember;
+
+            // 🔥 TIMER LOGIC
+            const timeLeft = g.expiresAt - Date.now();
+            const timerTopHtml = !isUnlocked ? `
+                <div class="flex flex-col items-center mb-6 animate-in fade-in zoom-in duration-300">
+                    <div class="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Time left before shop price applies</div>
+                    <div id="penalty-timer-top" class="text-4xl sm:text-5xl font-black text-red-600 tracking-[0.15em] sm:tracking-[0.2em] tabular-nums font-mono leading-none animate-pulse whitespace-nowrap">
+                        ${formatTimeLeft(timeLeft)}
+                    </div>
+                </div>
+            ` : '';
+
+            // 🔥 LIVE BUYING LOGIC (LAST 45 SECONDS)
+            const recentJoins = getRecentJoins(members, 45);
+            if (recentJoins.length > 0) {
+                setTimeout(() => safeRender(), 46000);
+            }
+
+            const liveBuyingHtml = (!isUnlocked && recentJoins.length > 0) ? `
+                <div class="mb-3 space-y-0.5 animate-in fade-in-up duration-300">
+                    ${recentJoins.slice(-3).map(m => `
+                        <div class="text-[11px] text-gray-500 font-medium flex items-center justify-center gap-2">
+                            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                            ${(m.name === 'You' || m.phone === JOIN_SESSION_PHONE) ? 'You' : m.name} just joined
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+
+            const timerCardHtml = !isUnlocked ? `
+                <div id="penalty-timer-card" class="text-xs font-mono text-red-500 font-bold mt-1 opacity-80">
+                   ⏳ ${formatTimeLeft(timeLeft)} remaining
+                </div>
+            ` : '';
+
+            // 🔥 TOTAL QUANTITY CALCULATION (Fix 4: Simplified Math)
+            const totalQty = members.reduce((sum, m) => sum + (m.quantity || 0), 0);
+            const totalQtyLabel = totalQty < 1 ? (totalQty * 1000).toFixed(0) + ' g' : totalQty.toFixed(1) + ' kg';
+
+            const qtySummaryHtml = `
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4 text-center">
+              <div class="text-xs text-gray-500 font-medium">Total quantity committed</div>
+              <div class="text-lg font-bold text-gray-900">${totalQtyLabel}</div>
+            </div>`;
 
             el.innerHTML = `
                 <div class="fade-in bg-white min-h-screen pb-40 font-sans">
-                    <div class="glass-header h-[60px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white shadow-sm border-b border-gray-100">
+                    <div class="glass-header h-[60px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white shadow-sm border-b border-gray-100 mb-6">
                         ${backButtonHtml}
                     </div>
                     
                     <div class="p-4">
+                        ${timerTopHtml}
+                        ${liveBuyingHtml}
+                        
                         <div class="flex flex-col items-center mb-4 mt-2 animate-in fade-in-up duration-300">
-                            <!-- 🔥 ISSUE 5: HEADER NOT VALID TEXT -->
-                            ${!isUnlocked && isMember ? '<div class="text-xs font-bold text-red-500 mb-2 animate-pulse" id="validity-warning">ఈ ఆర్డర్ ఇంకా వాలిడ్ కాదు (Not valid yet)</div>' : ''}
-                            
-                            <div class="w-28 h-28 rounded-full border-4 border-white shadow-lg overflow-hidden mb-4 relative z-10 bg-gray-100">
+                            ${!isUnlocked && isMember ? '<div class="text-xs font-bold text-red-500 mb-2" id="validity-warning">Not confirmed yet</div>' : ''}
+                            <div class="w-28 h-28 rounded-full border-4 border-white shadow-lg overflow-hidden mb-6 relative z-10 bg-gray-100">
                                 <img src="${p.imageSrc}" class="w-full h-full object-cover" alt="${p.name}">
                             </div>
-                            <h1 class="text-2xl font-black text-gray-900 leading-none mb-1 tracking-tight text-center">${p.name}</h1>
+                            <h1 class="text-2xl font-bold text-gray-900 leading-none mb-1 tracking-tight text-center">${p.name}</h1>
+                            <div class="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full mb-3 inline-block">
+                              📦 Delivery: Tuesday & Saturday
+                            </div>
+                            <div class="text-[10px] text-gray-400 font-medium mb-2">Picked up fresh from local market</div>
+                            <div class="text-xs text-orange-800 font-bold bg-orange-50 px-2 py-1 rounded-full w-fit mb-2">Limited quantity today</div>
                             <p class="text-sm font-medium text-gray-500 mb-2">${p.nameTe}</p>
-                            ${isMember ? `<div id="cutoff-timer" class="text-xs font-bold text-red-600 text-center mb-3">Loading…</div>` : ''}
                         </div>
 
                         ${isCreator ? `
-                        <div class="${creatorCardClass} p-4 rounded-xl text-center mb-6 transition-colors duration-300">
+                        <div class="${creatorCardClass} p-5 rounded-xl text-center mb-6 transition-colors duration-300">
                             <div class="flex justify-center items-center gap-2 mb-1">
                                 <i data-lucide="crown" class="${creatorIconColor}" size="20"></i>
-                                <span class="font-black ${creatorTextColor} text-sm uppercase tracking-wide">You started this deal</span>
+                                <span class="font-black ${creatorTextColor} text-sm uppercase tracking-wide">You started this order</span>
                             </div>
-                            <!-- 🔥 CHANGE 1: PERSONAL FAILURE -->
-                            <p class="text-xs ${creatorSubtextColor} font-semibold mb-1">
-                                ${isUnlocked ? 'Because of you, everyone pays less today' : 'If this fails, order cancelled'}
+                            <!-- 🔥 VIRAL STRATEGY: FAILURE PENALTY -->
+                            <p class="text-sm text-red-700 font-semibold leading-snug">
+                                ${isUnlocked ? 'Order confirmed ✅' : `If no one joins, you will pay ₹${p.price1}/kg.`}
                             </p>
-                        </div>` : ''}
-
-                        ${isExpired ? `
-                        <div class="bg-red-50 text-red-700 p-4 mb-6 rounded-xl text-center border border-red-100 flex flex-col items-center justify-center gap-1">
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="lock" size="18"></i>
-                                <div class="font-bold text-sm uppercase">Order Closed</div>
-                            </div>
-                            <div class="text-xs font-medium">ఆర్డర్ క్లోజ్ అయింది – రేపటి గ్రూప్ కోసం వేచి ఉండండి</div>
+                            ${!isUnlocked ? '<p class="text-[11px] text-gray-500 mt-1">This is today’s shop price.<br><span class="opacity-90 font-normal">(ఎవరూ రాకపోతే shop ధర)</span></p>' : ''}
+                            ${timerCardHtml}
                         </div>` : ''}
 
                         ${isMember ? `
-                        <!-- JOINED MEMBER VIEW -->
                         <div class="bg-white border rounded-xl p-4 mb-6 shadow-sm ${isUnlocked ? 'border-green-100' : 'border-red-100 bg-gray-50'}">
                             <div class="space-y-4 mb-6">
                                 ${!isUnlocked ? `
-                                <!-- 🚨 LOCKED STATE: PURE THREAT MODE (NO NUMBERS) -->
                                 <div class="transition-all p-4 -mx-3 rounded-lg border border-red-100 bg-red-50 flex flex-col items-center justify-center text-center gap-2 mb-2">
                                     <div class="w-10 h-10 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm mb-1">
                                         <i data-lucide="alert-triangle" size="20"></i>
                                     </div>
                                     <div>
-                                        <div class="text-red-700 font-bold text-sm leading-tight">ఇది ఫెయిల్ అయితే ఆర్డర్ రద్దు</div>
-                                        <div class="text-red-400 text-[10px] font-medium mt-1 uppercase tracking-wide">If this fails, order cancelled</div>
+                                        <div class="text-red-700 font-bold text-sm leading-tight">Your order will be cancelled</div>
+                                        <div class="text-red-400 text-[10px] font-medium mt-1 uppercase tracking-wide">If no one else joins</div>
                                     </div>
                                 </div>
                                 ` : `
-                                <!-- UNLOCKED STATE: CELEBRATION MODE -->
                                 <div class="flex justify-between items-center transition-all p-3 -mx-3 rounded-lg bg-green-50 border border-green-100">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold"><i data-lucide="check" size="14"></i></div>
-                                        <span class="text-sm font-bold text-green-800">Deal unlocked 🎉</span>
+                                        <span class="text-sm font-bold text-green-800">Order confirmed ✅</span>
                                     </div>
-                                    <span class="text-2xl font-bold text-green-700 animate-pop">₹${g.groupPrice}</span>
                                 </div>
                                 `}
                             </div>
                         </div>
-                        ` : `
-                        <!-- 🔥 BLIND JOIN CARD (NON-MEMBER) -->
-                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-6 text-center shadow-sm">
-                            <div class="flex justify-center mb-2 text-gray-400"><i data-lucide="package-open" size="32"></i></div>
-                            <div class="font-bold text-gray-800 text-lg mb-1">ఈరోజు ఆర్డర్ కొనసాగుతోంది</div>
-                            <div class="text-sm text-gray-500">Today's order is in progress</div>
-                        </div>
-                        `}
+                        ` : ''} 
+                        
+                        <!-- Note: Non-members now see renderJoinGate -->
 
                         ${isMember ? `
-                        <div class="space-y-3 mb-8">
+                        
+                        <!-- FIX 3: Group Quantity Summary -->
+                        ${qtySummaryHtml}
+
+                        <div class="space-y-4 mb-8">
                             <div class="flex justify-between items-end mb-4">
                                 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">${isCreator ? 'People in Your Group' : 'People Joined'}</h3>
                                 <div class="flex flex-col items-end">
-                                   <!-- 🔥 ISSUE 3: UNSTABLE STATE -->
-                                   ${!isUnlocked ? `<span class="text-xs font-bold text-red-500 animate-pulse">Group incomplete</span>` : '<span class="text-xs font-bold text-green-600">Unlocked!</span>'}
+                                    ${!isUnlocked ? `<span class="text-xs font-bold text-red-500 animate-pulse">Group incomplete</span>` : '<span class="text-xs font-bold text-green-600">Confirmed</span>'}
                                 </div>
                             </div>
                             
+                            <!-- SOCIAL PRESSURE TEXT -->
+                            <div class="text-[10px] text-gray-400 mb-3 text-center italic">People in this group can see who joined.</div>
+
                             ${members.map((member) => {
                                 const isMe = JOIN_SESSION_PHONE === member.phone;
+                                const weight = member.quantity; // FIX 4: Simplified Math
+                                const weightLabel = weight < 1 ? (weight * 1000).toFixed(0) + 'g' : weight + 'kg';
                                 
-                                // 🔥 ISSUE 3: GHOST ORDER LOGIC (If Locked, hide details)
+                                // GHOST LOGIC: If Locked, hide details, gray out
+                                // FIX 1 & 2: Show Quantity in Locked State
                                 if (!isUnlocked) {
-                                     // LOCKED MEMBER CARD (GHOST)
                                      return `<div class="bg-white border border-gray-100 p-3 rounded-xl mb-2 flex items-center justify-between opacity-80 grayscale">
-                                         <div class="flex items-center gap-3">
-                                             <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-xs border border-white">${member.name[0]}</div>
-                                             <div><div class="text-sm font-bold text-gray-500 flex items-center gap-2">${isMe ? 'You' : member.name}</div></div>
-                                         </div>
-                                         <span class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">Joined</span>
-                                     </div>`;
+                                          <div class="flex items-center gap-3">
+                                              <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-xs border border-white">${member.name[0]}</div>
+                                              <div>
+                                                <div class="text-sm font-bold text-gray-700">
+                                                    ${isMe ? 'You' : member.name} 
+                                                    <span class="text-xs font-medium text-gray-400 ml-1">(${weightLabel})</span>
+                                                </div>
+                                              </div>
+                                          </div>
+                                          <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">${weightLabel}</span>
+                                      </div>`;
                                 }
 
-                                // UNLOCKED MEMBER CARD (FULL DETAILS)
-                                // 🚨 CRITICAL FIX: MEMORY LEAK. DO NOT CALCULATE IF LOCKED.
-                                // Logic: This block only runs if (isUnlocked) is true above.
-                                let t = null;
-                                // 🔥 FIX: USE g.groupPrice, not p.price5
-                                if (isUnlocked && g.groupPrice) {
-                                    t = Math.round(g.groupPrice * member.quantity);
-                                }
-                                
-                                const weight = member.quantity * p.baseWeight;
-                                const weightLabel = weight < 1 ? (weight * 1000).toFixed(0) + 'g' : weight + 'kg';
-                                const priceDisplay = (t !== null) ? '₹'+t : '---';
+                                // REVEALED LOGIC: Unlocked
+                                let t = Math.round(g.groupPrice * member.quantity);
+                                // weight/weightLabel already calculated above
+                                const priceDisplay = '₹'+t;
 
                                 if (member.isLeader) {
                                     return `<div class="bg-green-50 border border-green-200 p-4 rounded-xl shadow-sm mb-3 transition-all relative overflow-hidden">
-                                        <div class="absolute top-0 right-0 bg-green-200 text-green-800 text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wide">Host</div>
-                                        <div class="flex items-center justify-between mb-2">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0 border-2 border-white ring-2 ring-green-100">
-                                                    <i data-lucide="crown" size="16"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="text-sm font-bold text-gray-900 flex items-center gap-2">${isMe ? 'You (Host)' : member.name}</div>
-                                                    <div class="text-xs text-green-700 font-medium">${weightLabel}</div>
+                                            <div class="absolute top-0 right-0 bg-green-200 text-green-800 text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wide">Host</div>
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0 border-2 border-white ring-2 ring-green-100">
+                                                        <i data-lucide="crown" size="16"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-sm font-bold text-gray-900 flex items-center gap-2">${isMe ? 'You (Host)' : member.name}</div>
+                                                        <div class="text-xs text-green-700 font-medium">${weightLabel}</div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="flex justify-between items-center pt-2 border-t border-green-200/60">
-                                            <span class="text-[10px] font-medium text-green-700 uppercase">Total</span>
-                                            <span class="text-sm font-bold text-green-800">${priceDisplay}</span>
-                                        </div>
+                                            <div class="flex justify-between items-center pt-2 border-t border-green-200/60">
+                                                <span class="text-[10px] font-medium text-green-700 uppercase">Total</span>
+                                                <span class="text-sm font-bold text-green-800">${priceDisplay}</span>
+                                            </div>
                                     </div>`;
                                 }
 
@@ -1254,270 +1041,87 @@
                     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
                         <div class="max-w-md mx-auto pt-2 pb-2">
                             ${(() => {
-                                // 🔥 FIX 6: SHOW SHARE CTA IF HOST OR GROUP NOT UNLOCKED
                                 if (isCreator || (hasJoinedThisGroup && !isUnlocked)) {
                                     return `
-                                    <!-- 🔥 FIX 6: TELUGU IMPERATIVE & CHANGE 2: REMOVE NUMBERS -->
-                                    <div class="text-center text-[10px] text-gray-400 font-medium mb-1">${!isUnlocked ? 'ఇంకొక ఇంటివాడు లేకపోతే ఇదే ధర' : 'Share deal with more people'}</div>
-                                    <a href="${inviteLink}" target="_blank" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2 transition-all">
+                                    <div class="text-center text-[10px] text-gray-400 font-medium mb-1">${!isUnlocked ? 'If you don’t send, order fails' : 'Share deal with more people'}</div>
+                                    <a href="${inviteLink}" target="_blank" onclick="logShare('${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2 transition-all">
                                         <i data-lucide="share-2" size="20"></i>
-                                        <!-- CHANGE 6: TIME PRESSURE -->
                                         <div class="flex flex-col items-center leading-none">
-                                            <span>${!isUnlocked ? 'Invite to Unlock' : 'వెంటనే షేర్ చేయండి'}</span>
-                                            <span class="text-[10px] font-normal opacity-90 mt-1">⏰ Few minutes left today</span>
+                                            <span>${!isUnlocked ? 'Share Now' : 'Share Link'}</span>
                                         </div>
-                                    </a>
-                                    <!-- CHANGE 5: REMOVE NEED HELP IF LOCKED -->
-                                    ${isUnlocked ? '<div class="mt-2 text-center"><button onclick="openSupportOptions()" class="text-xs font-bold text-gray-400 hover:text-gray-600">Need Help?</button></div>' : ''}`;
+                                    </a>`;
                                 }
-
-                                // Full State (Waitlist)
-                                if (isFull && !hasJoinedThisGroup && !isExpired) {
-                                     return `<div class="text-center text-sm text-red-600 font-bold mb-3 border border-red-100 bg-red-50 p-3 rounded-xl">
-                                         Group full • Join Waitlist
-                                     </div>
-                                     <button onclick="addToWishlist('${g.productId}', 1, '${state.user.phone || ''}', '${state.user.name || ''}', '${g.id}'); toast('Added to wishlist', 'check');" class="block w-full bg-white border border-gray-300 text-gray-700 h-[56px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 mb-3 btn-press">
-                                          <span>Notify Me</span>
-                                     </button>
-                                     <div class="mt-2 text-center"><button onclick="openSupportOptions()" class="text-xs font-bold text-gray-400 hover:text-gray-600">Need Help?</button></div>`;
-                                }
-
-                                // Join State
-                                if (!isExpired && !hasJoinedThisGroup) {
-                                    return `
-                                    <div class="text-center text-[11px] text-gray-500 font-medium mb-2">No payment now • Pay on delivery</div>
-                                    <button onclick="openJoinFlow('${g.id}')" class="block w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 mb-3 btn-press">
-                                        <span>ఆర్డర్ పూర్తి చేయడానికి జాయిన్ అవ్వండి</span>
-                                    </button>
-                                    <div class="mt-2 text-center"><button onclick="openSupportOptions()" class="text-xs font-bold text-gray-400 hover:text-gray-600">Need Help?</button></div>`;
-                                }
-
-                                // Expired State
-                                if (isExpired) {
-                                    return `
-                                    <div class="text-center text-xs text-gray-500 font-medium mb-2">Orders for today are closed</div>
-                                    <button disabled class="block w-full bg-gray-100 text-gray-400 h-[56px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 mb-3 cursor-not-allowed">
-                                        <span>Closed</span>
-                                    </button>
-                                    <div class="mt-2 text-center"><button onclick="openSupportOptions()" class="text-xs font-bold text-gray-400 hover:text-gray-600">Need Help?</button></div>
-                                    `;
-                                }
-                                
-                                // Fallback
-                                return `
-                                <div class="text-center text-[10px] text-gray-400 font-medium mb-1">Sharing helps more people get the wholesale price</div>
-                                <a href="${inviteLink}" target="_blank" class="block w-full bg-white border border-gray-300 text-gray-700 h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2 transition-all hover:bg-gray-50">
-                                    <i data-lucide="share-2" size="20"></i>
-                                    <span>అందరికీ పంపండి</span>
-                                </a>
-                                <div class="mt-2 text-center"><button onclick="openSupportOptions()" class="text-xs font-bold text-gray-400 hover:text-gray-600">Need Help?</button></div>`;
+                                return ''; 
                             })()}
                         </div>
                     </div>
                 </div>
             `;
-
-            // 🔥 FIX 6: TELUGU URGENCY
-            const timerEl = document.getElementById('cutoff-timer');
-            if (timerEl) {
-                if (cutoffTimerInterval) clearInterval(cutoffTimerInterval);
-                const tick = () => {
-                    timerEl.textContent = formatRemaining();
-                };
-                tick();
-                cutoffTimerInterval = setInterval(tick, 60000);
-            }
+            if (window.lucide) window.lucide.createIcons();
+            if (!isUnlocked) startPenaltyTimer(); // START TIMER IF NOT UNLOCKED
         }
 
         function render() {
             const app = document.getElementById('app');
             if (!app) return;
-            
             if (state.view === 'home') renderHome(app);
             else renderGroup(app);
-            
             if (window.lucide) window.lucide.createIcons();
         }
         
         function safeRender() {
             if (renderScheduled) return;
             renderScheduled = true;
-            requestAnimationFrame(() => {
-                render();
-                renderScheduled = false;
-            });
-        }
-
-        // --- NEW: INVENTORY LISTENER ---
-        function listenToInventory() {
-            if (!window.fs || !window.db) return;
-            
-            const today = getTodayDateString();
-            const invRef = window.fs.doc(window.db, "inventory", today);
-            
-            window.fs.onSnapshot(invRef, (doc) => {
-                // 🔥 PROBLEM 5 FIX: Store raw data, do not mutate state based on UI logic here
-                if (!doc.exists()) {
-                    state.inventory = {
-                        status: "CLOSED",
-                        soldKg: 0,
-                        maxSellKg: 0
-                    };
-                } else {
-                    state.inventory = doc.data();
-                }
-                safeRender();
-            });
+            requestAnimationFrame(() => { render(); renderScheduled = false; });
         }
 
         function listenToGroupForHome(gid) {
             if (!window.fs || !window.db) return;
-            
-            const unsubG = window.fs.onSnapshot(
-                window.fs.doc(window.db, "groups", gid),
-                (doc) => { if (doc.exists()) { state.groups[gid] = doc.data(); safeRender(); } }
-            );
+            const unsubG = window.fs.onSnapshot(window.fs.doc(window.db, "groups", gid), (doc) => { if (doc.exists()) { state.groups[gid] = doc.data(); safeRender(); } });
             state.homeListeners.push(unsubG);
-
-            const unsubM = window.fs.onSnapshot(
-                window.fs.collection(window.db, "groups", gid, "members"),
-                (snap) => {
-                    const m = []; 
-                    snap.forEach(d => m.push({ ...d.data(), id: d.id })); 
-                    m.sort((a, b) => a.joinedAt - b.joinedAt); 
-                    state.members[gid] = m;
-                    safeRender();
-                }
-            );
+            const unsubM = window.fs.onSnapshot(window.fs.collection(window.db, "groups", gid, "members"), (snap) => {
+                const m = []; snap.forEach(d => m.push({ ...d.data(), id: d.id })); m.sort((a, b) => a.joinedAt - b.joinedAt); state.members[gid] = m; safeRender();
+            });
             state.homeListeners.push(unsubM);
         }
 
         function initHomeListeners() {
-            state.homeListeners.forEach(u => u());
-            state.homeListeners = [];
-            state.user.joinedGroupIds.forEach(gid => {
-                listenToGroupForHome(gid);
-            });
+            state.homeListeners.forEach(u => u()); state.homeListeners = [];
+            state.user.joinedGroupIds.forEach(gid => listenToGroupForHome(gid));
         }
 
         window.openGroup = function(gid) { 
-            if (!gid || typeof gid !== 'string') {
-                toast('Invalid group link', 'alert-circle');
-                window.goHome();
-                return;
-            }
-            
-            // CLEANUP TIMER
-            if (cutoffTimerInterval) { clearInterval(cutoffTimerInterval); cutoffTimerInterval = null; }
-
-            try { 
-                if (window.location.protocol !== 'blob:') {
-                    history.pushState({}, '', `${BASE_URL}?group=${gid}`);
-                }
-            } catch(e) {} 
-
-            state.currentGroupId = gid; 
-            state.view = 'group'; 
-            
+            if (!gid || typeof gid !== 'string') { window.goHome(); return; }
+            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', `${BASE_URL}?group=${gid}`); } catch(e) {} 
+            state.currentGroupId = gid; state.view = 'group';
             if (state.unsubGroup) { state.unsubGroup(); state.unsubGroup = null; }
             if (state.unsubMembers) { state.unsubMembers(); state.unsubMembers = null; }
-
             safeRender(); 
-
             if (window.fs && window.db) {
-                state.unsubGroup = window.fs.onSnapshot(
-                    window.fs.doc(window.db, "groups", gid),
-                    (doc) => {
-                        if (doc.exists()) {
-                            state.groups[gid] = doc.data();
-                            safeRender();
-                        } else {
-                            toast("Squad not found", "alert-circle");
-                            window.goHome();
-                        }
-                    },
-                    (error) => { console.error("Group Listen Error:", error); }
-                );
-
-                state.unsubMembers = window.fs.onSnapshot(
-                    window.fs.collection(window.db, "groups", gid, "members"),
-                    (snapshot) => {
-                        const members = [];
-                        snapshot.forEach((doc) => {
-                            const data = doc.data();
-                            members.push({ ...data, id: doc.id });
-                        });
-                        members.sort((a, b) => a.joinedAt - b.joinedAt); 
-                        state.members[gid] = members;
-                        safeRender();
-                    },
-                      (error) => { console.error("Member Listen Error:", error); }
-                );
+                state.unsubGroup = window.fs.onSnapshot(window.fs.doc(window.db, "groups", gid), (doc) => { if (doc.exists()) { state.groups[gid] = doc.data(); safeRender(); } else { window.goHome(); } });
+                state.unsubMembers = window.fs.onSnapshot(window.fs.collection(window.db, "groups", gid, "members"), (snapshot) => {
+                    const members = []; snapshot.forEach((doc) => { members.push({ ...doc.data(), id: doc.id }); });
+                    members.sort((a, b) => a.joinedAt - b.joinedAt); state.members[gid] = members; safeRender();
+                });
             }
         };
 
         window.goHome = function() { 
-            if (state.timerInterval) clearInterval(state.timerInterval);
-            
-            // CLEANUP TIMER
-            if (cutoffTimerInterval) { clearInterval(cutoffTimerInterval); cutoffTimerInterval = null; }
-
             if (state.unsubGroup) { state.unsubGroup(); state.unsubGroup = null; }
             if (state.unsubMembers) { state.unsubMembers(); state.unsubMembers = null; }
-
-            try { 
-                if (window.location.protocol !== 'blob:') {
-                    history.pushState({}, '', BASE_URL);
-                }
-            } catch(e) {} 
-            
-            AUTO_JOIN_TRIGGERED = false;
-            
-            state.view = 'home'; 
-            state.currentGroupId = null; 
-            
-            safeRender(); 
+            if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', BASE_URL); } catch(e) {} 
+            AUTO_JOIN_TRIGGERED = false; state.view = 'home'; state.currentGroupId = null; safeRender(); 
         };
 
         function init() {
-            if (JODO_INITIALIZED) return; 
-            JODO_INITIALIZED = true;
-            
+            if (JODO_INITIALIZED) return; JODO_INITIALIZED = true;
             const params = new URLSearchParams(window.location.search);
             const gid = params.get('group');
-
-            if (gid) {
-                IS_JOIN_LINK = true;
-                state.user = { name: '', phone: '', joinedGroupIds: [] };
-                JOIN_SESSION_PHONE = null;
-                state.view = 'group';
-                state.currentGroupId = gid;
-            } else {
-                loadData(); 
-                IS_JOIN_LINK = false;
-                state.view = 'home';
-            }
-            
-            const startApp = () => {
-                if (IS_JOIN_LINK && state.currentGroupId) {
-                    safeRender();
-                    window.openGroup(state.currentGroupId);
-                } else {
-                    initHomeListeners(); 
-                    safeRender();
-                }
-                listenToInventory(); // 🔥 START LISTENING TO INVENTORY
-                monitorDateChange(); // 🔥 ISSUE 2 FIX: START DATE MONITOR
-            };
-
-            if (window.db) startApp();
-            else window.addEventListener('firebase-ready', startApp);
-
-            window.addEventListener('popstate', () => {
-                const params = new URLSearchParams(location.search);
-                const gid = params.get('group');
-                if (gid) window.openGroup(gid); else window.goHome();
-            });
+            if (gid) { IS_JOIN_LINK = true; state.user = { name: '', phone: '', joinedGroupIds: [] }; JOIN_SESSION_PHONE = null; state.view = 'group'; state.currentGroupId = gid; } else { loadData(); IS_JOIN_LINK = false; state.view = 'home'; }
+            const startApp = () => { if (IS_JOIN_LINK && state.currentGroupId) { safeRender(); window.openGroup(state.currentGroupId); } else { initHomeListeners(); safeRender(); } };
+            if (window.db) startApp(); else window.addEventListener('firebase-ready', startApp);
+            window.addEventListener('popstate', () => { const params = new URLSearchParams(location.search); const gid = params.get('group'); if (gid) window.openGroup(gid); else window.goHome(); });
         }
         
         document.addEventListener('DOMContentLoaded', init);
