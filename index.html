@@ -135,44 +135,60 @@
                 id: 'tomato', 
                 name: 'టమాటాలు (Tomato)', 
                 target: 25, 
-                priceMin: 38,       
-                priceMax: 42,       
+                priceMin: 42,       
+                priceMax: 48,       
                 step: 0.5, 
                 min: 0.5,
                 unit: 'kg',
                 img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=150&q=80',
                 quantityOptions: [0.5, 1, 1.5, 2],
                 lastShop: 60,
-                lastJodo: 40
+                lastJodo: 42
             },
             { 
-                id: 'onion', 
-                name: 'ఉల్లిపాయలు (Onion)', 
+                id: 'green_chilli', 
+                name: 'పచ్చిమిర్చి (Green Chillies)', 
                 target: 15, 
-                priceMin: 27,
-                priceMax: 32,
+                priceMin: 44,
+                priceMax: 52,
+                step: 0.25, 
+                min: 0.25,
+                unit: 'kg',
+                img: 'https://www.alsothecrumbsplease.com/wp-content/uploads/2024/05/substitute-for-green-chilies-1-500x500.jpg',
+                quantityOptions: [0.25, 0.5, 1, 2],
+                lastShop: 80,
+                lastJodo: 44
+            },
+            { 
+                id: 'brinjal', 
+                name: 'వంకాయలు (Brinjal)', 
+                target: 20, 
+                priceMin: 46,
+                priceMax: 55,
                 step: 0.5, 
                 min: 0.5,
                 unit: 'kg',
-                img: 'https://images.unsplash.com/photo-1508747703725-7197771e445d?auto=format&fit=crop&w=150&q=80',
-                quantityOptions: [0.5, 1, 2, 3]
+                img: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQztpahmLoryBJ0eqpQXOskJU7SWYwefOPIRw&s',
+                quantityOptions: [0.5, 1, 1.5, 2],
+                lastShop: 75,
+                lastJodo: 46
             }
         ];
 
         const PICKUP_POINTS = [
             {
-                id: "duvva_main",
-                name: "Duvva Main Road",
-                clue: "SBI Bank tree",
-                img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=400&q=80",
-                mapLink: "https://maps.google.com/?q=Duvva+Main+Road"
+                id: "ward_1",
+                name: "Ward 1",
+                type: "సరుకుల పంపిణీ కేంద్రం",
+                instruction: "ఈ ఆర్డర్ సరుకులు ఇక్కడే అందిస్తాము",
+                mapLink: ""
             },
             {
-                id: "temple",
-                name: "Near Temple",
-                clue: "Temple gate",
-                img: "https://images.unsplash.com/photo-1563499118-8f830d93708e?auto=format&fit=crop&w=400&q=80",
-                mapLink: "https://maps.google.com/?q=Hanuman+Temple+Duvva"
+                id: "ward_6",
+                name: "Ward 6",
+                type: "సరుకుల పంపిణీ కేంద్రం",
+                instruction: "ఈ ఆర్డర్ సరుకులు ఇక్కడే అందిస్తాము",
+                mapLink: ""
             }
         ];
 
@@ -581,12 +597,11 @@
             const pickupCards = PICKUP_POINTS.map(p => {
                 const selected = state.selectedPickupId === p.id;
                 return `
-                    <div onclick="window.selectPickupPoint('${p.id}')" class="border-2 rounded-xl overflow-hidden cursor-pointer transition relative ${selected ? 'border-black ring-1 ring-black' : 'border-gray-200 hover:border-gray-400'}">
-                        <img src="${p.img}" class="w-full h-24 object-cover">
-                        ${selected ? '<div class="absolute top-2 right-2 bg-black text-white rounded-full p-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>' : ''}
-                        <div class="p-2 bg-white">
-                            <div class="font-black text-sm text-gray-900 leading-tight">${p.clue}</div>
-                        </div>
+                    <div onclick="window.selectPickupPoint('${p.id}')" class="border-2 rounded-xl p-3 cursor-pointer transition relative text-center flex flex-col justify-center min-h-[90px] ${selected ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-400'}">
+                        ${selected ? '<div class="absolute top-2 right-2 bg-black text-white rounded-full p-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>' : ''}
+                        <div class="font-black text-sm text-gray-900 leading-tight mb-1">${p.name}</div>
+                        <div class="text-[11px] text-gray-500 font-medium leading-tight">${p.type}</div>
+                        <div class="text-[10px] text-gray-400 mt-1 leading-tight">${p.instruction}</div>
                     </div>
                 `;
             }).join('');
@@ -617,7 +632,7 @@
                                 <label class="cursor-pointer" onclick="window.setDelivery('pickup')"><input type="radio" class="peer hidden" ${state.deliveryMethod === 'pickup' ? 'checked' : ''}><div class="border-2 rounded-xl p-4 text-center transition-all ${state.deliveryMethod === 'pickup' ? 'border-black bg-gray-50' : 'border-gray-200'}"><div class="font-bold text-sm text-gray-900 flex items-center justify-center gap-1">🚶 Pickup</div></div></label>
                                 <label class="cursor-pointer" onclick="window.setDelivery('home')"><input type="radio" class="peer hidden" ${state.deliveryMethod === 'home' ? 'checked' : ''}><div class="border-2 rounded-xl p-4 text-center transition-all ${state.deliveryMethod === 'home' ? 'border-black bg-gray-50' : 'border-gray-200'}"><div class="font-bold text-sm text-gray-900 flex items-center justify-center gap-1">🚚 Home</div><div class="text-[10px] text-gray-600 font-bold mt-1">+₹10</div></div></label>
                             </div>
-                            <div id="pickup-container" class="mb-4" style="display: ${isHome ? 'none' : 'block'};"><div class="text-xs font-bold text-gray-500 mb-2 flex items-center gap-1">📍 Select Location</div><div class="grid grid-cols-2 gap-3">${pickupCards}</div></div>
+                            <div id="pickup-container" class="mb-4" style="display: ${isHome ? 'none' : 'block'};"><div class="text-xs font-bold text-gray-500 mb-2 flex items-center gap-1">📍 సరుకులు తీసుకునే స్థలం</div><div class="grid grid-cols-2 gap-3">${pickupCards}</div></div>
                             <div id="home-address-container" style="display: ${isHome ? 'block' : 'none'};"><button id="btn-use-location" type="button" onclick="window.useMyLocation()" class="mb-4 w-full border border-dashed border-gray-400 rounded-xl py-3 text-sm font-bold text-gray-700 flex items-center justify-center gap-2 active:scale-[0.98]">📍 Use My Location</button><input id="inp-landmark" placeholder="Landmark (e.g. Near Temple)" class="w-full border border-gray-200 p-3 rounded-xl font-bold text-gray-900 focus:border-black focus:outline-none"></div>
                         </div>
                         <div class="bg-white rounded-2xl shadow-sm p-5">
@@ -931,6 +946,7 @@
             let contentHtml = `
                 <div class="bg-white px-6 py-4 border-b border-gray-100 sticky top-0 z-20 shadow-sm flex justify-between items-center">
                     <div><div class="text-xl font-black text-gray-900">${headerTitle}</div></div>
+                    <div class="bg-black text-white text-[10px] font-bold px-3 py-1.5 rounded-full">My Order Active</div>
                 </div>
             `;
             
@@ -963,11 +979,39 @@
                     const shareText = `Current Status: Need ${totalRemainingFamilies} more to unlock best price.\nCheck here: ${BASE_URL}?group=${group.id}`;
                     const waLink = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
+                    // --- 1. SYSTEM EXPLANATION CARD ---
+                    contentHtml += `
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                          <div class="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">
+                            HOW THIS WORKS
+                          </div>
+
+                          <div class="text-lg font-black text-gray-900 leading-snug mb-2">
+                            ఇది దుకాణం కాదు. ఇది ఒక సిస్టమ్.
+                          </div>
+
+                          <div class="text-sm text-gray-600 font-medium leading-relaxed">
+                            దుకాణంలో ధర రోజూ మారుతుంది —  
+                            మనకు తెలియకుండా.
+
+                            <br><br>
+
+                            JODOలో ధర ఇలా మారుతుంది:
+                            <ul class="list-disc ml-5 mt-2 space-y-1">
+                              <li>ఎంత కిలోలు కలిస్తే</li>
+                              <li>ఎంత మంది ఆర్డర్ చేస్తే</li>
+                              <li>ఒకే సారి కొనుగోలు అయితే</li>
+                            </ul>
+                          </div>
+                        </div>
+                    `;
+
+                    // --- 2. LIVE PROGRESS (With Authority Copy) ---
                     contentHtml += `
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                              <div class="bg-gray-50 p-4 border-b border-gray-100 text-center">
                                 <div class="text-xl font-black text-gray-900 leading-tight">Live Group Status</div>
-                                <div class="text-xs font-bold text-gray-500 mt-1">Final price depends on today’s total</div>
+                                <div class="text-xs font-bold text-gray-500 mt-1">ఈ రోజు మొత్తం ఎంత ఉంటే — అదే ధర ఫిక్స్ అవుతుంది</div>
                              </div>
                              <div class="p-4">
                                 ${failingItems.map(p => `
@@ -982,16 +1026,61 @@
                                         <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden relative">
                                             <div class="h-full bg-gray-600 rounded-full" style="width: ${(p.total/p.target)*100}%"></div>
                                         </div>
+                                        <div class="text-[11px] text-gray-500 font-medium mt-1">
+                                          ఇంకా ${Math.ceil(p.remaining)} కిలోలు కలిస్తే ధర తగ్గుతుంది
+                                        </div>
                                     </div>
                                 `).join('')}
                              </div>
+                        </div>
+                    `;
+
+                    // --- 3. RETAIL vs JODO FACT CARD ---
+                    const tomato = PRODUCTS.find(p => p.id === 'tomato');
+                    const shopPrice = tomato ? tomato.lastShop : 60;
+                    const jodoMin = tomato ? tomato.priceMin : 38;
+                    const jodoMax = tomato ? tomato.priceMax : 42;
+
+                    contentHtml += `
+                        <div class="bg-gray-50 rounded-2xl border border-gray-200 p-5">
+                          <div class="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
+                            PRICE TRUTH
+                          </div>
+
+                          <div class="grid grid-cols-2 gap-4 text-center">
+                            <div class="bg-white rounded-xl p-4 border">
+                              <div class="text-sm font-bold text-gray-500">దువ్వ షాపు</div>
+                              <div class="text-2xl font-black text-red-600 mt-1">₹${shopPrice}</div>
+                              <div class="text-[11px] text-gray-400 mt-1">
+                                ఒక్కొక్కరికి విడిగా
+                              </div>
+                            </div>
+
+                            <div class="bg-white rounded-xl p-4 border border-black">
+                              <div class="text-sm font-bold text-gray-500">JODO</div>
+                              <div class="text-2xl font-black text-green-700 mt-1">
+                                ₹${jodoMin} – ₹${jodoMax}
+                              </div>
+                              <div class="text-[11px] text-gray-400 mt-1">
+                                అందరూ కలిసే కొనుగోలు
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="text-center text-xs text-gray-600 font-medium mt-3">
+                            మధ్యలో దళారి లేదు. అదనపు మార్జిన్ లేదు.
+                          </div>
+                        </div>
+                    `;
                              
-                             <!-- Pinduoduo: Structure for ownership -->
-                             <div class="p-4 bg-gray-50 border-t border-gray-100">
-                                <a href="${waLink}" target="_blank" class="block text-center text-sm font-bold text-gray-500 hover:text-black transition-colors">
-                                    Share status on WhatsApp
-                                </a>
-                             </div>
+                    // --- 4. OWNERSHIP SHARE CTA ---
+                    contentHtml += `
+                        <div class="mt-2">
+                            <a href="${waLink}" target="_blank"
+                             class="block w-full bg-black text-white rounded-xl py-4 text-center font-black text-sm active:scale-[0.98]">
+                              ఈ గ్రూప్ మనది <br>
+                              <span class="font-medium text-xs opacity-80">ఇంకా మందిని కలిపితే ధర తగ్గుతుంది</span>
+                            </a>
                         </div>
                     `;
                 } else {
