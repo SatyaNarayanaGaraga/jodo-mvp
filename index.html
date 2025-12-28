@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
-    <title>JODO</title>
+    <title>JODO - Village Order</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -15,7 +15,7 @@
                         jodo: {
                             base: '#FFFFFF',
                             textPrimary: '#111827',
-                            ctaPrimary: '#15803D',
+                            ctaPrimary: '#000000', 
                             error: '#DC2626',
                         }
                     },
@@ -24,48 +24,82 @@
                         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
                     },
                     animation: {
-                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                        'fade-in-up': 'fadeInUp 0.5s ease-out',
-                        // Removed excessive pulse animations
-                    },
-                    keyframes: {
-                        pop: { '0%': { transform: 'scale(0.95)' }, '100%': { transform: 'scale(1)' } },
-                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background: #FFFFFF; color: #111827; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; }
+        body { 
+            background: #F3F4F6; 
+            color: #111827; 
+            -webkit-tap-highlight-color: transparent; 
+            min-height: 100dvh; 
+            display: flex; 
+            justify-content: center; 
+            margin: 0; 
+            overscroll-behavior-y: contain;
+            line-height: 1.45;
+            letter-spacing: -0.01em; 
+        }
         #app { width: 100%; max-width: 448px; background: #FFFFFF; min-height: 100dvh; position: relative; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
-        .btn-press { transition: transform 0.1s; cursor: pointer; user-select: none; }
-        .btn-press:active:not(:disabled) { transform: scale(0.96); }
-        .card-modern { background: #FFFFFF; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #E5E7EB; }
-        .glass-header { background: rgba(255, 255, 255, 0.98); border-bottom: 1px solid #E5E7EB; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .fade-in { animation: fadeInUp 0.5s ease-out forwards; }
-        .tilt-card { transition: transform 0.15s ease-out; transform-style: preserve-3d; }
+        
+        /* Pinduoduo-style Progress Bar */
+        .progress-strip {
+            background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+            background-size: 1rem 1rem;
+        }
+
+        /* Fear Ticker (Premium, Colorful, Continuous) */
+        .jodo-fear-ticker {
+            background: linear-gradient(90deg, #7C2D12, #B91C1C, #7C2D12);
+            color: #FFF7ED;
+            overflow: hidden;
+            padding: 10px 0;
+            border-radius: 14px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+        }
+
+        .jodo-fear-track {
+            display: inline-flex;
+            white-space: nowrap;
+            animation: jodo-marquee 30s linear infinite;
+            padding-left: 100%;
+            font-weight: 900;
+            font-size: 14px;
+            letter-spacing: 0.2px;
+        }
+
+        .jodo-fear-track .gap {
+            width: 48px;
+            display: inline-block;
+        }
+
+        @keyframes jodo-marquee {
+            from { transform: translateX(0); }
+            to { transform: translateX(-100%); }
+        }
     </style>
 </head>
 <body class="antialiased">
 
     <div id="app"></div>
 
-    <div id="modal-overlay" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300">
-        <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[1.5rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden pb-safe"></div>
+    <div id="modal-overlay" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300">
+        <div id="modal-content" class="bg-gray-50 w-full max-w-[448px] rounded-t-2xl shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] overflow-y-auto pb-safe"></div>
     </div>
 
-    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe text-center w-max max-w-[90%]"></div>
+    <div id="toast" class="fixed top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 text-sm font-bold shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none text-center w-max max-w-[90%] rounded-full transition-all transform duration-200"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, getDocs, onSnapshot, collection, runTransaction, serverTimestamp, updateDoc, deleteDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, runTransaction, serverTimestamp, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = {
-            apiKey: "",
+            apiKey: "", // TODO: Add your real API Key here for production deployment
             authDomain: "jodo-prod-e7788.firebaseapp.com",
             projectId: "jodo-prod-e7788",
             storageBucket: "jodo-prod-e7788.firebasestorage.app",
@@ -77,926 +111,962 @@
         const db = getFirestore(app);
         
         window.db = db;
-        window.fs = { doc, getDoc, getDocs, onSnapshot, collection, runTransaction, serverTimestamp, updateDoc, deleteDoc, deleteField };
+        window.fs = { doc, getDoc, setDoc, onSnapshot, collection, runTransaction, serverTimestamp, updateDoc, increment };
         
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
     
     <script>
-        const BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp';
-        const IS_TEST_MODE = true; 
+        const BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp'; 
+        const FORCE_OPEN_FOR_TESTING = false; 
+        const OPEN_HOUR = 6;
+        const CLOSE_HOUR = 21; 
+        
+        // Tier based pricing logic
+        function calculateFinalPrice(totalKg, product) {
+          if (totalKg >= 100) return product.priceMin;
+          if (totalKg >= product.target) return product.priceMin; // Simplified for visual clarity
+          return product.priceMax;
+        }
 
+        // --- CEO CHANGE: Boring & Correct Pricing ---
+        // We do NOT calculate a single price before cutoff. We show the range.
+        // This function is kept for internal logic if needed, but UI will prefer ranges.
+        function getDisplayPrice(totalKg, product) {
+          if (totalKg >= product.target) {
+            return product.priceMin; // locked lowest price
+          }
+          return product.priceMax; // current price before target
+        }
+        
+        // Helper: Convert KG gap to Households (Heuristic: 1 house approx 2kg)
+        // Note: This is copy text, not hard data. Real behavior varies.
+        function getRemainingHouseholds(remainingKg) {
+            return Math.max(1, Math.ceil(remainingKg / 2));
+        }
+
+        // STRICT RULES: Min 1kg, Integer options only. No small buyers.
         const PRODUCTS = [
             { 
                 id: 'tomato', 
-                name: 'Fresh Tomatoes', 
-                nameTe: 'టమాటాలు', 
-                unit: '1kg', 
-                weightUnit: 'kg', 
-                price: 20, 
-                icon: 'circle-dot', 
-                imageColor: 'bg-red-50 text-red-600', 
-                location: 'Duvva Fields', 
-                imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80',
+                name: 'టమాటాలు (Tomato)', 
+                target: 25, 
+                priceMin: 42,       
+                priceMax: 48,       
+                step: 1, 
+                min: 1,
+                unit: 'kg',
+                img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=150&q=80',
+                quantityOptions: [1, 2, 3],
+                lastShop: 60,
+                lastJodo: 42
             }
         ];
 
-        const GROUPS_KEY = 'jodo_groups_joined_v1';
+        const state = { 
+            view: 'home', 
+            groups: {}, 
+            members: {}, 
+            user: { name: '', phone: '' },
+            cart: {}, 
+            listeners: [],
+            modalStep: 0,
+            deliveryMethod: 'home', // STRICT: Silent Home Delivery
+            cycleId: null,
+            extraHouseholds: [], 
+            isCollectorMode: false,
+            isRepeatUser: false,
+            referrerId: null
+        };
         
-        function getISTNow() {
-          return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+        function getISTDate() {
+            return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+        }
+
+        function getISTDateStr() {
+            const d = getISTDate();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function getCycleGroupId() {
+            const d = getISTDate();
+            const days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+            const y = d.getFullYear();
+            const m = String(d.getMonth()+1).padStart(2,'0');
+            const da = String(d.getDate()).padStart(2,'0');
+            return `duvva_${days[d.getDay()]}_${y}_${m}_${da}`;
         }
 
         function isOrderWindowOpen() {
-            if (IS_TEST_MODE) return true;
-            const now = getISTNow();
-            const hours = now.getHours();
-            return hours >= 6 && hours < 8; 
+            if (FORCE_OPEN_FOR_TESTING) return true;
+            const d = getISTDate();
+            const hour = d.getHours();
+            if (hour < OPEN_HOUR || hour >= CLOSE_HOUR) return false;
+            return true;
+        }
+        
+        function isViewingTodayCycle(groupId) {
+            const d = getISTDate();
+            const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dayStr = days[d.getDay()];
+            const todayId = `duvva_${dayStr}_${year}_${month}_${day}`;
+            return groupId === todayId;
         }
 
-        const state = { 
-            view: 'home', 
-            currentGroupId: null, 
-            groups: {}, 
-            members: {}, 
-            user: { name: '', phone: '', joinedGroupIds: [] }, 
-            timerInterval: null, 
-            unsubGroup: null,
-            unsubMembers: null,
-            homeListeners: [],
-            isFirstLoadAfterCreation: false 
-        };
+        function getCutoffRemaining() {
+            const now = getISTDate();
+            const cutoff = new Date(now);
+            cutoff.setHours(CLOSE_HOUR, 0, 0, 0);
+            const diff = cutoff - now;
+            if (diff <= 0) return "Closed";
+            
+            const totalSeconds = Math.floor(diff / 1000);
+            const hrs = Math.floor(totalSeconds / 3600);
+            const mins = Math.floor((totalSeconds % 3600) / 60);
+            
+            const pMins = String(mins).padStart(2, '0');
 
-        let JODO_INITIALIZED = false;
-        let renderScheduled = false;
-        let IS_JOIN_LINK = false;
-        let JOIN_SESSION_PHONE = null;
-        let AUTO_MODAL_SHOWN = false;
-
-        function logEvent(name, params) {
-            console.log(`[JODO_ANALYTICS] ${name}`, params || {});
+            return hrs > 0 ? `${hrs}h ${pMins}m` : `${mins}m`;
         }
 
-        window.logShare = function(gid) {
-            logEvent('share_clicked', { groupId: gid });
-        };
+        function getCutoffMinutes() {
+            const now = getISTDate();
+            const cutoff = new Date(now);
+            cutoff.setHours(CLOSE_HOUR, 0, 0, 0);
+            return Math.floor((cutoff - now) / 60000);
+        }
 
-        function loadData() {
-            try {
-                state.user.name = localStorage.getItem('jodo_user_name') || '';
-                state.user.phone = localStorage.getItem('jodo_user_phone') || '';
-                const savedGroups = localStorage.getItem(GROUPS_KEY);
-                state.user.joinedGroupIds = savedGroups ? JSON.parse(savedGroups) : [];
-                if (state.user.phone) JOIN_SESSION_PHONE = state.user.phone;
-            } catch(e) { console.error("Load Error", e); }
+        function getProductStats(members, prodId) {
+            const gid = getCycleGroupId();
+            const group = state.groups[gid];
+            
+            let total = 0;
+            let peopleCount = 0; // Still useful for UI relative sizing if needed, or we can use confirmedCount from group
+
+            // --- CEO CHANGE: Use Backend Confirmed Totals (Source of Truth) ---
+            if (group && group.confirmedTotals && group.confirmedTotals[prodId] !== undefined) {
+                 total = group.confirmedTotals[prodId];
+            } else {
+                // Fallback for older groups or pre-transaction logic (though we are fixing it now)
+                members.forEach(m => {
+                    if (m.isConfirmed && m.items && m.items[prodId]) {
+                        total += parseFloat(m.items[prodId]);
+                    }
+                });
+            }
+
+            const p = PRODUCTS.find(x => x.id === prodId);
+            return {
+                total: parseFloat(total.toFixed(2)),
+                target: p.target,
+                isRunning: total >= p.target,
+                remaining: Math.max(0, p.target - total),
+                peopleCount: peopleCount 
+            };
+        }
+        
+        function toast(msg, type = 'normal') { 
+            const t = document.getElementById('toast'); 
+            t.innerHTML = msg; 
+            if(type === 'error') {
+                t.className = "fixed top-12 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl z-[90] scale-100";
+            } else {
+                t.className = "fixed top-12 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-3 font-bold shadow-2xl z-[90] rounded-full scale-100";
+            }
+            t.classList.remove('hidden'); 
+            setTimeout(() => {
+                t.classList.add('hidden');
+            }, 3000); 
+        }
+
+        function loadUser() {
+            state.user.name = localStorage.getItem('jodo_name') || '';
+            state.user.phone = localStorage.getItem('jodo_phone') || '';
+            const orderCount = parseInt(localStorage.getItem('jodo_order_count') || '0');
+            state.isRepeatUser = orderCount > 0;
         }
 
         function saveUser(name, phone) {
             state.user.name = name;
             state.user.phone = phone;
-            localStorage.setItem('jodo_user_name', name);
-            localStorage.setItem('jodo_user_phone', phone);
-            JOIN_SESSION_PHONE = phone;
+            localStorage.setItem('jodo_name', name);
+            localStorage.setItem('jodo_phone', phone);
         }
 
-        function saveJoinedGroup(gid) {
-            if (!state.user.joinedGroupIds.includes(gid)) {
-                state.user.joinedGroupIds.push(gid);
-                localStorage.setItem(GROUPS_KEY, JSON.stringify(state.user.joinedGroupIds));
-                listenToGroupForHome(gid);
+        function listenToCycleGroup() {
+            const gid = getCycleGroupId();
+            state.cycleId = gid;
+            if (!window.fs) return;
+            state.listeners.forEach(u => u()); state.listeners = [];
+            const unsubG = window.fs.onSnapshot(window.fs.doc(window.db, "groups", gid), (doc) => {
+                state.groups[gid] = doc.exists() ? doc.data() : null;
+                render();
+            });
+            const unsubM = window.fs.onSnapshot(window.fs.collection(window.db, "groups", gid, "members"), (snap) => {
+                const m = [];
+                snap.forEach(d => m.push({ ...d.data(), id: d.id }));
+                m.sort((a, b) => (a.joinedAt?.seconds || 0) - (b.joinedAt?.seconds || 0));
+                state.members[gid] = m;
+                render();
+                if (state.modalStep === 2) renderDetailsStep();
+            });
+            state.listeners.push(unsubG, unsubM);
+        }
+
+        function setCartQuantity(prodId, qty) {
+            if (!isOrderWindowOpen()) {
+                toast('JODO Closed', 'error');
+                return;
             }
-        }
-
-        function formatTimeLeft(ms) {
-            if (ms <= 0) return "00 : 00 : 00";
-            const totalSeconds = Math.floor(ms / 1000);
-            const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-            const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-            const s = String(totalSeconds % 60).padStart(2, '0');
-            return `${h} : ${m} : ${s}`;
-        }
-
-        function startPenaltyTimer() {
-            if (state.timerInterval) clearInterval(state.timerInterval);
-            state.timerInterval = setInterval(() => {
-                if (state.view !== 'group') return; 
-                
-                const g = state.groups[state.currentGroupId];
-                if (!g || !g.expiresAt) return;
-
-                // 🔴 Rule: Success = 2 people
-                const members = state.members[state.currentGroupId] || [];
-                const isSuccess = members.length >= 2;
-
-                if (isSuccess) {
-                      clearInterval(state.timerInterval);
-                      return;
-                }
-
-                const left = g.expiresAt - Date.now();
-                const formatted = formatTimeLeft(left);
-
-                const elTop = document.getElementById('penalty-timer-top');
-                if (elTop) elTop.innerText = formatted;
-                
-                const elGate = document.getElementById('gate-timer');
-                if (elGate) elGate.innerText = formatted;
-
-                if (left <= 0) {
-                    clearInterval(state.timerInterval);
-                    safeRender(); 
-                }
-            }, 1000);
-        }
-
-        function toast(msg, icon) { 
-            const t = document.getElementById('toast'); 
-            const iconColor = icon === 'share-2' ? 'text-white' : 'text-green-400';
-            if (icon === 'share-2') {
-                t.className = "fixed top-24 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe";
+            if (qty === 0) {
+                delete state.cart[prodId];
             } else {
-                t.className = "fixed top-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe";
+                state.cart[prodId] = qty;
             }
-            t.innerHTML = `<i data-lucide="${icon}" size="16" class="${iconColor}"></i> ${msg}`; 
-            t.classList.remove('hidden'); 
-            if(window.lucide) window.lucide.createIcons(); 
-            setTimeout(() => t.classList.add('hidden'), 4000); 
+            // Minimal toast, systems > words
+            toast(qty === 0 ? 'Removed' : 'Updated');
+            render();
         }
+        window.setCartQuantity = setCartQuantity;
+        window.updateCart = setCartQuantity;
 
-        function triggerVibration() { if (navigator.vibrate) navigator.vibrate([15, 50, 15]); }
-
-        function createNodeFromHTML(html) { 
-            const t = document.createElement('template'); 
-            t.innerHTML = html.trim(); 
-            return t.content.firstElementChild; 
-        }
-        
-        function showModalNode(node) { 
-            const overlay = document.getElementById('modal-overlay');
-            const content = document.getElementById('modal-content');
-            overlay.style.display = '';
-            overlay.style.pointerEvents = '';
-            content.innerHTML = ''; content.appendChild(node); 
-            overlay.classList.remove('hidden'); 
-            
-            if (IS_JOIN_LINK) {
-                overlay.onclick = null; 
+        window.addExtraHousehold = function() {
+            // STRICT RULE: Max 1 extra household (total 2 max)
+            if (state.extraHouseholds.length >= 1) {
+                toast('ఒకరికి మించి జోడించలేరు (Max 1 neighbor)', 'error');
+                return;
             }
+            state.extraHouseholds.push({ name: '', phone: '', items: {} });
+            renderDetailsStep();
+        };
 
+        window.removeExtraHousehold = function(idx) {
+            state.extraHouseholds.splice(idx, 1);
+            renderDetailsStep();
+        };
+
+        window.updateExtraHouseholdField = function(idx, field, value) {
+            state.extraHouseholds[idx][field] = value;
+        };
+
+        window.updateExtraHouseholdItem = function(idx, prodId, qty) {
+            if (qty === 0) {
+                delete state.extraHouseholds[idx].items[prodId];
+            } else {
+                state.extraHouseholds[idx].items[prodId] = qty;
+            }
+            renderDetailsStep();
+        };
+
+        window.openCollectorMode = function() {
+            if (!isOrderWindowOpen()) { toast('Closed', 'error'); return; }
+            const gid = getCycleGroupId();
+            const members = state.members[gid] || [];
+            const myMember = state.user.phone ? members.find(m => m.phone === state.user.phone) : null;
+            if (!myMember) {
+                toast('Order needed to collect', 'error');
+                return;
+            }
+            state.cart = { ...myMember.items }; 
+            state.deliveryMethod = 'home'; // Force Home
+            state.extraHouseholds = [{ name: '', phone: '', items: {} }];
+            state.modalStep = 2;
+            state.isCollectorMode = true; 
+            renderDetailsStep();
+            document.getElementById('modal-overlay').classList.remove('hidden');
             setTimeout(() => { 
-                overlay.classList.remove('opacity-0'); 
-                content.classList.remove('translate-y-full'); 
+                document.getElementById('modal-overlay').classList.remove('opacity-0'); 
+                document.getElementById('modal-content').classList.remove('translate-y-full'); 
             }, 10);
-            if(node.querySelector('input')) node.querySelector('input').focus(); 
-            if(window.lucide) window.lucide.createIcons(); 
         }
 
-        window.closeModal = () => {
+        function openModalFlow() {
+            if (!isOrderWindowOpen()) { toast('Closed', 'error'); return; }
+            if (Object.keys(state.cart).length === 0) { toast('Select items first', 'error'); return; }
+            state.deliveryMethod = 'home'; // Force Home
+            state.extraHouseholds = []; 
+            state.modalStep = 2; 
+            state.isCollectorMode = false;
+            renderDetailsStep();
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            setTimeout(() => { 
+                document.getElementById('modal-overlay').classList.remove('opacity-0'); 
+                document.getElementById('modal-content').classList.remove('translate-y-full'); 
+            }, 10);
+        }
+
+        function closeModal() {
             const overlay = document.getElementById('modal-overlay');
             const content = document.getElementById('modal-content');
             content.classList.add('translate-y-full');
             overlay.classList.add('opacity-0');
-            setTimeout(() => { 
-                overlay.classList.add('hidden'); 
-                content.innerHTML = ''; 
-            }, 300);
-        };
-        
-        window.forceCloseModalImmediately = function() {
-            const overlay = document.getElementById('modal-overlay');
-            const content = document.getElementById('modal-content');
-            if (overlay) {
-                overlay.classList.add('hidden');
-                overlay.style.display = 'none';
-                overlay.style.pointerEvents = 'none';
-                overlay.className = "fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300"; 
-            }
-            if (content) content.innerHTML = '';
-            document.body.style.overflow = '';
+            setTimeout(() => { overlay.classList.add('hidden'); state.modalStep = 0; }, 300);
         }
 
-        function safeVal(el) { return (el && el.value) ? el.value.trim() : ''; }
+        function renderDetailsStep() {
+            const container = document.getElementById('modal-content');
+            const gid = getCycleGroupId(); 
+            const members = state.members[gid] || [];
+            
+            // --- CEO CHANGE: Boring & Correct Pricing (Range) ---
+            // Don't show a single total. Show the range of possibilities.
+            let minTotal = 0;
+            let maxTotal = 0;
 
-        function initCardTilt() {
-            if (window.matchMedia("(pointer: coarse)").matches) return;
-            const cards = document.querySelectorAll('.tilt-card');
-            cards.forEach(card => {
-                card.addEventListener('mousemove', (e) => {
-                    const rect = card.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    const centerX = rect.width / 2;
-                    const centerY = rect.height / 2;
-                    const rotateX = ((y - centerY) / centerY) * -3; 
-                    const rotateY = ((x - centerX) / centerX) * 3;
-                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
-                });
-                card.addEventListener('mouseleave', () => {
-                    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-                });
+            Object.entries(state.cart).forEach(([pid, qty]) => {
+                const p = PRODUCTS.find(x => x.id === pid);
+                if (p) {
+                    minTotal += qty * p.priceMin;
+                    maxTotal += qty * p.priceMax;
+                }
             });
-        }
 
-        window.openSupportOptions = function() { window.open("https://wa.me/918500742671", "_blank"); };
-
-        function generateInviteLink(groupId, isSuccess) {
-            const currentUrl = `${BASE_URL}?group=${groupId}`;
-            let inviteMsg;
-            if (!isSuccess) {
-                inviteMsg = `I placed a JODO vegetable order.
-
-If you join, order gets confirmed for today.
-
-Join here:
-${currentUrl}`;
-            } else {
-                inviteMsg = `Order confirmed ✅. Join here: ${currentUrl}`;
-            }
-            return `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
-        }
-
-        window.openJoinFlow = function(gid) {
-            if (IS_JOIN_LINK) {
-                state.user.name = '';
-                state.user.phone = '';
-                JOIN_SESSION_PHONE = null; 
-            }
-            const g = state.groups[gid];
-            if (!g) { toast("Loading order details...", "loader"); return; }
-            if (!isOrderWindowOpen()) { 
-                toast("Orders closed", "clock"); 
-                return; 
-            }
-            window.openStartModal(g.productId, gid);
-        };
-
-        window.openStartModal = function(productOrId, joinGroupId = null) {
-            if (!isOrderWindowOpen()) { 
-                toast("Orders closed", "clock"); 
-                return; 
-            }
+            // Delivery logic removed. Pure product total.
             
-            let p = typeof productOrId === 'string' ? PRODUCTS.find(x => x.id === productOrId) : productOrId;
-            if (!p) { toast("Product Unavailable", "alert-circle"); return; }
-            
-            const user = state.user;
-            let qty = 0.25;
-            
-            const title = joinGroupId ? "Join Order" : "Start today’s order";
-            const btnText = joinGroupId ? "Join & Confirm" : "Start & Commit"; 
-
-            const closeBtnHtml = IS_JOIN_LINK ? `` : `<button id="close-modal" class="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"><i data-lucide="x" size="20"></i></button>`;
-
-            const importantRulesHtml = !joinGroupId 
-                ? `<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 text-center">
-                        <div class="text-gray-900 font-bold text-sm mb-1">Confirm with 1 friend</div>
-                        <div class="text-[10px] text-gray-500 font-medium">If no one joins, order fails.</div>
-                    </div>`
-                : ``;
-
-            const node = createNodeFromHTML(`
-                <div class="flex flex-col h-[90vh] bg-white relative rounded-t-[1.5rem] overflow-hidden font-sans">
-                    <div class="bg-white px-5 py-4 flex items-center justify-between border-b border-gray-100 shrink-0 z-20">
-                        <div class="flex items-center gap-2"><h3 class="font-bold text-lg text-gray-800">${title}</h3></div>
-                        ${closeBtnHtml}
+            const summaryHtml = `
+                <div class="flex justify-between items-center border-t border-gray-100 mt-3 pt-3">
+                    <div>
+                        <div class="text-xs font-bold text-gray-500 uppercase">Estimated Total</div>
+                        <div class="text-[10px] text-gray-400 font-medium">Final price at 9 PM</div>
                     </div>
-                    <div class="p-5 overflow-y-auto flex-1 relative">
-                        <div class="flex gap-4 mb-6 items-center">
-                            <div class="w-24 h-24 rounded-xl bg-gray-50 border border-gray-100 relative overflow-hidden shrink-0 shadow-sm">
-                                <img src="${p.imageSrc}" class="w-full h-full object-cover" alt="${p.name}">
-                            </div>
-                            <div class="flex-1 flex flex-col justify-center">
-                                <h4 class="font-bold text-2xl text-gray-900 leading-none mb-1">${p.name}</h4>
-                                <div class="text-base text-gray-500 mb-1">${p.nameTe}</div>
-                                <div class="text-[11px] text-gray-400 font-medium">Duvva group order</div>
-                            </div>
-                        </div>
-                        
-                        ${importantRulesHtml}
-
-                        <div class="bg-white p-3 rounded-xl border border-gray-200 mb-2 flex items-center justify-between">
-                            <div class="pl-1"><div class="text-xs font-bold text-gray-500 uppercase tracking-wide">Quantity</div><div class="text-[10px] text-gray-400">Min 250 g</div></div>
-                            <div class="flex items-center gap-3 bg-gray-50 p-1 rounded-lg border border-gray-200"><button id="btn-minus" class="w-10 h-10 rounded-md bg-white border border-gray-200 text-gray-500 flex items-center justify-center active:scale-90 transition-all"><i data-lucide="minus" size="18"></i></button><div class="text-lg font-bold text-gray-800 w-20 text-center leading-none tabular-nums" id="qty-display">250 g</div><button id="btn-plus" class="w-10 h-10 rounded-md bg-jodo-ctaPrimary text-white shadow-sm flex items-center justify-center active:scale-90 transition-all"><i data-lucide="plus" size="18"></i></button></div>
-                        </div>
-                        
-                        <div class="text-xs text-gray-500 text-center mt-2 mb-6">
-                          You can order for neighbours without smartphones
-                        </div>
-
-                        <div class="space-y-4 mb-8">
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${user.name}" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Your Name"></div>
-                            <div class="relative group"><div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg font-medium text-gray-900 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-all placeholder-gray-400" placeholder="Mobile Number"></div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 border-t-2 border-gray-200 p-4 shrink-0 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
-                        <div class="flex justify-between items-end mb-3 px-1"><div><div class="text-[10px] text-gray-500 font-bold uppercase">Total</div><div class="text-3xl font-bold text-gray-900 leading-none" id="footer-total"></div></div></div>
-                        <button id="action-btn" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] transition-all btn-press">
-                            <span id="btn-text-action">${btnText}</span>
-                        </button>
-                        
-                        <div class="flex gap-2 text-sm mt-3 justify-center text-gray-600">
-                          <label class="flex items-center gap-1"><input type="radio" name="delivery" checked> Pickup (Free)</label>
-                          <span class="text-gray-300">|</span>
-                          <label class="flex items-center gap-1"><input type="radio" name="delivery"> Home Delivery (+₹10)</label>
-                        </div>
-                    </div>
+                    <div class="text-2xl font-black text-gray-900">₹${minTotal.toFixed(0)} - ₹${maxTotal.toFixed(0)}</div>
                 </div>
-            `);
-            showModalNode(node);
+            `;
 
-            const footerTotalEl = node.querySelector('#footer-total');
-            const actionBtn = node.querySelector('#action-btn');
-
-            const renderMode = () => {
-                let qtyText = qty < 1 ? (qty * 1000).toFixed(0) + ' g' : qty + ' kg';
-                node.querySelector('#qty-display').innerText = qtyText;
+            let listHtml = '';
+            Object.entries(state.cart).forEach(([pid, qty]) => {
+                const p = PRODUCTS.find(x => x.id === pid);
+                if (!p) return;
                 
-                const total = p.price * qty;
-                footerTotalEl.innerText = `₹${total.toFixed(0)}`;
-            };
-            
-            const btnMinus = node.querySelector('#btn-minus'); 
-            if (btnMinus) btnMinus.onclick = () => { 
-                if (qty <= 0.25) { toast("Minimum quantity reached", 'alert-triangle'); triggerVibration(); return; }
-                if (qty <= 0.5) qty = 0.25; else if (qty <= 1.0) qty = 0.5; else qty -= 0.5;
-                renderMode(); 
-            }; 
-            
-            const btnPlus = node.querySelector('#btn-plus'); 
-            if (btnPlus) btnPlus.onclick = () => { 
-                let nextQty; if (qty < 0.5) nextQty = 0.5; else if (qty < 1.0) nextQty = 1.0; else nextQty = qty + 0.5;
-                qty = nextQty; renderMode(); 
-            };
-
-            renderMode(); 
-            
-            if (joinGroupId) {
-                const closeBtn = node.querySelector('#close-modal');
-                if (closeBtn) {
-                     closeBtn.addEventListener('click', () => {
-                        if (confirm("If you leave, this order may fail. Continue?")) {
-                            window.closeModal();
-                        }
-                    });
-                }
-            }
-            
-            const triggerAction = async () => {
-                if (!navigator.onLine) { toast("No internet connection", "wifi-off"); return; }
-                if (!isOrderWindowOpen()) { toast("Orders closed", "clock"); return; }
-                if (actionBtn.disabled) return; 
-                
-                actionBtn.disabled = true;
-                const originalText = actionBtn.innerHTML; 
-                actionBtn.innerHTML = `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>`; 
-                actionBtn.classList.add('opacity-75', 'cursor-not-allowed');
-                
-                const name = safeVal(node.querySelector('#inp-name')); 
-                const phone = safeVal(node.querySelector('#inp-phone')); 
-                
-                if (!name || !/^[6-9]\d{9}$/.test(phone)) { 
-                    actionBtn.disabled = false; actionBtn.innerHTML = originalText; actionBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-                    toast('Please enter name and mobile number', 'alert-circle'); 
-                    return; 
-                }
-                
-                triggerVibration(); 
-                saveUser(name, phone); 
-                
-                if (joinGroupId) {
-                      const g = state.groups[joinGroupId];
-                      const hostName = g ? g.ownerName : "Host";
-                      const modalContent = node.querySelector('.p-5'); 
-                      const footer = node.querySelector('.bg-gray-50.border-t-2'); 
-                      modalContent.innerHTML = `
-                        <div class="flex flex-col items-center justify-center h-full pt-10 text-center space-y-4 animate-in fade-in zoom-in duration-300">
-                            <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center animate-bounce">
-                                <i data-lucide="clock" class="text-green-600" size="40"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-900">${hostName} is waiting...</h3>
-                                <p class="text-gray-500 mt-2 font-medium">If you join, order gets confirmed.</p>
-                            </div>
-                        </div>
-                      `;
-                      if(footer) footer.style.display = 'none'; 
-                      if(window.lucide) window.lucide.createIcons(); 
-                      await new Promise(r => setTimeout(r, 900)); 
-                }
-                
-                const memberId = phone; 
-                const finalGroupId = joinGroupId || ('g-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
-
-                if (!window.fs || !window.db) { toast("Connecting...", "wifi"); await new Promise(r => setTimeout(r, 1000)); }
-
-                try {
-                    let didUnlock = false;
-                    const safeProduct = { id: p.id, name: p.name, price: p.price };
-
-                    await window.fs.runTransaction(window.db, async (transaction) => {
-                        if (!joinGroupId) {
-                            const groupData = { 
-                                id: finalGroupId, productId: pid = p.id, productSnapshot: safeProduct, ownerName: name, 
-                                deliveryDay: new Date(new Date().setHours(18, 0, 0, 0)).getTime(), 
-                                createdAt: window.fs.serverTimestamp(), type: 'group',
-                                status: 'OPEN', memberCount: 1 // 🔴 Added memberCount for safety
-                            };
-                            const memberData = { memberId, groupId: finalGroupId, name, phone, isLeader: true, quantity: qty, joinedAt: window.fs.serverTimestamp() };
-                            transaction.set(window.fs.doc(window.db, "groups", finalGroupId), groupData);
-                            transaction.set(window.fs.doc(window.db, "groups", finalGroupId, "members", memberId), memberData);
-                        } else {
-                            const groupRef = window.fs.doc(window.db, "groups", finalGroupId);
-                            const groupSnap = await transaction.get(groupRef);
-                            if (!groupSnap.exists()) throw "GROUP_NOT_FOUND";
-                            
-                            const memberRef = window.fs.doc(window.db, "groups", finalGroupId, "members", memberId);
-                            const memberSnap = await transaction.get(memberRef);
-                            if (memberSnap.exists()) throw "ALREADY_JOINED";
-                            
-                            const gd = groupSnap.data();
-                            
-                            // 🔴 Check Expiry in Transaction
-                            if (gd.expiresAt && Date.now() > gd.expiresAt) throw "ORDER_EXPIRED";
-
-                            // 🔴 ATOMIC SAFETY: Use stored memberCount
-                            const newCount = (gd.memberCount || 1) + 1;
-                            let updates = { memberCount: newCount };
-                            
-                            // 🔴 LOGIC: If new count >= 2, SUCCESS
-                            if (newCount >= 2) {
-                                didUnlock = true;
-                                updates.status = 'SUCCESS';
-                                if (!gd.unlockedAt) updates.unlockedAt = window.fs.serverTimestamp();
-                            }
-                            
-                            transaction.set(memberRef, { memberId, name, phone, groupId: finalGroupId, quantity: qty, isLeader: false, joinedAt: window.fs.serverTimestamp() });
-                            transaction.update(groupRef, updates);
-                        }
-                    });
-
-                    saveJoinedGroup(finalGroupId);
-                    JOIN_SESSION_PHONE = phone;
-                    
-                    if (!joinGroupId) {
-                        logEvent('group_created', { groupId: finalGroupId, phone: memberId });
-                        toast("You started today’s order", "check-circle");
-                        forceCloseModalImmediately();
-                        state.isFirstLoadAfterCreation = true;
-                        window.openGroup(finalGroupId);
-                    } else {
-                        IS_JOIN_LINK = false; 
-                        if (didUnlock) {
-                            logEvent('group_unlocked', { groupId: finalGroupId });
-                            toast("You helped confirm the order", "check-circle");
-                        } else {
-                            toast("Joined!", "share-2");
-                        }
-                        logEvent('member_joined', { groupId: finalGroupId, phone: memberId });
-                        window.closeModal();
-                        window.openGroup(finalGroupId);
-                    }
-                } catch (e) {
-                    console.error("Order Failed:", e);
-                    const msg = e.message || e;
-                    if (msg.includes("ALREADY_JOINED") || e === "ALREADY_JOINED") {
-                        saveJoinedGroup(finalGroupId);
-                        window.closeModal();
-                        window.openGroup(finalGroupId);
-                        toast("Already joined!", "check-circle");
-                    } else if (msg.includes("ORDER_EXPIRED") || e === "ORDER_EXPIRED") {
-                        actionBtn.disabled = false; actionBtn.innerHTML = originalText; actionBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-                        toast("This order has expired.", "clock");
-                    } else {
-                        actionBtn.disabled = false; actionBtn.innerHTML = originalText; actionBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-                        toast("Order failed. Please try again.", "alert-triangle");
-                    }
-                }
-            };
-            actionBtn.onclick = triggerAction;
-        };
-
-        function renderHome(el) {
-            const activeUserGroups = [];
-            state.user.joinedGroupIds.forEach(gid => {
-                const g = state.groups[gid];
-                if (g) activeUserGroups.push(g);
-            });
-            activeUserGroups.sort((a, b) => b.createdAt - a.createdAt);
-            
-            if (activeUserGroups.length === 0) {
-                const p = PRODUCTS[0];
-                el.innerHTML = `
-                    <div class="pb-safe fade-in bg-white min-h-screen flex flex-col">
-                        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-500 -mt-10">
-                            <div class="w-48 h-48 bg-gray-50 rounded-full mb-8 border-4 border-white shadow-xl relative overflow-hidden ring-1 ring-gray-100 mx-auto">
-                                 <img src="${p.imageSrc}" class="w-full h-full object-cover">
-                            </div>
-                            <h2 class="text-3xl font-bold text-gray-900 leading-tight mb-3 tracking-tight">Today’s Duvva tomato order is OPEN</h2>
-                            <p class="text-gray-500 font-medium mb-10 text-lg">Duvva group order not confirmed yet.</p>
-                            
-                            <div class="w-full max-w-[320px]">
-                                <button onclick="openStartModal('${p.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[64px] rounded-2xl font-bold text-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-center gap-2 active:scale-95 transition-all btn-press">
-                                    Start today’s order
-                                </button>
-                                <div class="text-[10px] text-red-500 font-bold mt-4 uppercase tracking-widest">Order closes when timer ends</div>
-                            </div>
+                listHtml += `
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                        <div><div class="font-bold text-gray-900">${p.name} <span class="text-gray-500 font-medium">x ${qty}kg</span></div></div>
+                        <div class="text-right">
+                             <div class="text-sm font-bold text-gray-900">₹${(qty * p.priceMin).toFixed(0)} - ₹${(qty * p.priceMax).toFixed(0)}</div>
                         </div>
                     </div>
                 `;
-                initCardTilt();
-                return;
-            }
+            });
 
-            const cardsHtml = activeUserGroups.map(g => {
-                const p = g.productSnapshot || PRODUCTS.find(x => x.id === g.productId);
-                if (!p) return '';
-                const members = state.members[g.id] || []; 
-                const isSuccess = members.length >= 2;
-                const statusLabel = isSuccess ? 'Confirmed ✅' : 'Not Confirmed';
-                const statusClass = isSuccess ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-gray-50 border-gray-200';
-                
-                return `<div onclick="openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
-                    <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 relative overflow-hidden h-full flex flex-col justify-between">
-                        <div class="flex items-center gap-3 mb-3 relative z-10 mt-2">
-                            <div class="w-12 h-12 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-gray-700 shadow-sm shrink-0"><i data-lucide="${p.icon}" size="24"></i></div>
-                            <div class="flex-1 min-w-0"><h3 class="font-bold text-gray-900 text-base leading-none mb-2 truncate">${p.name}</h3>
-                                <div class="flex items-center justify-between gap-2">
-                                    <div class="${statusClass} text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider whitespace-nowrap">${statusLabel}</div>
-                                </div>
+            // Removed extraHouseholdsHtml generation (Manual Add Family Killed)
+
+            const headerTitle = 'Confirm Order';
+            const ctaText = 'Confirm Order';
+            const ctaSub = 'Group succeeds → we deliver tomorrow morning';
+            
+            container.innerHTML = `
+                <div class="bg-gray-50 relative font-sans">
+                    <div class="px-6 py-4 bg-white shadow-sm flex justify-between items-center z-10 sticky top-0">
+                        <div><h3 class="font-black text-xl text-gray-900 leading-none">${headerTitle}</h3></div>
+                        <button onclick="window.closeModal()" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-full"><i data-lucide="x" size="20"></i></button>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        <div class="bg-white rounded-2xl shadow-sm p-5">
+                            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Order Summary</h4>
+                            ${listHtml}
+                            ${summaryHtml}
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl shadow-sm p-5">
+                            <div class="space-y-4">
+                                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-2">Name</label><input id="inp-name" value="${state.user.name}" class="w-full border border-gray-200 p-3 rounded-xl font-bold focus:border-black focus:outline-none"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-2">Mobile</label><input id="inp-phone" type="tel" value="${state.user.phone}" class="w-full border border-gray-200 p-3 rounded-xl font-bold focus:border-black focus:outline-none"></div>
                             </div>
                         </div>
                     </div>
-                </div>`;
-            }).join('');
-
-            el.innerHTML = `
-                <div class="pb-safe fade-in bg-white min-h-screen">
-                    <div class="glass-header sticky top-0 z-40 shadow-sm border-b-0">
-                        <div class="pt-safe px-4 pb-3 flex justify-between items-end min-h-[88px]">
-                            <div class="flex flex-col justify-end pb-0.5">
-                                <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
-                                <div class="text-[10px] font-bold text-orange-600 mt-1">TEST MODE</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-6 mb-4"><div class="px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">${cardsHtml}</div></div>
-                    
-                    <div class="px-4 space-y-3 mt-2 pb-32">
-                        <div class="flex items-center justify-between mb-2 mt-6">
-                            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Start New Order</h2>
-                        </div>
-                        <div onclick="openStartModal('tomato')" class="bg-white p-4 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden active:scale-[0.99] transition-all duration-200 cursor-pointer mb-3">
-                            <div class="flex gap-4">
-                                <div class="w-24 h-24 bg-gray-50 rounded-xl shrink-0 relative overflow-hidden border border-gray-100">
-                                     <img src="${PRODUCTS[0].imageSrc}" class="w-full h-full object-cover" loading="lazy">
-                                </div>
-                                <div class="flex-1 flex flex-col justify-between py-1">
-                                    <div><h3 class="font-bold text-lg text-gray-900 leading-tight mb-1">${PRODUCTS[0].name}</h3><p class="text-sm text-gray-500">${PRODUCTS[0].nameTe}</p></div>
-                                    <div class="mt-2"><div class="text-sm font-medium text-gray-500 mt-1">Duvva group order not confirmed yet.</div></div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="p-4 bg-white border-t border-gray-200 pb-safe sticky bottom-0">
+                         <button id="btn-submit-order" class="w-full bg-black text-white font-black text-xl h-[64px] rounded-2xl shadow-lg flex flex-col items-center justify-center leading-tight active:scale-[0.98]">
+                            <span>${ctaText}</span>
+                            <span class="text-[10px] opacity-80 font-medium">${ctaSub}</span>
+                         </button>
                     </div>
                 </div>
             `;
-            initCardTilt();
             if(window.lucide) window.lucide.createIcons();
+
+            document.getElementById('btn-submit-order').onclick = async () => {
+                let name = '', phone = '';
+                name = document.getElementById('inp-name').value.trim();
+                phone = document.getElementById('inp-phone').value.trim();
+                if(!name || phone.length < 10) { toast('Invalid details', 'error'); return; }
+                
+                // ROOT CAUSE 3 FIX: Robust Button Handling
+                const btn = document.getElementById('btn-submit-order');
+                if (btn) {
+                    btn.innerText = 'Processing...';
+                    btn.disabled = true;
+                }
+                
+                await submitOrder(name, phone, 0);
+            };
         }
 
-        function renderGroup(el) {
-            const g = state.groups[state.currentGroupId]; 
-            if (!g) {
-                el.innerHTML = `<div class="min-h-screen bg-white p-6 pt-24 space-y-6"><div class="w-2/3 h-8 bg-gray-100 rounded-lg skeleton mx-auto"></div></div>`;
-                return;
-            }
+        async function submitOrder(name, phone, amountPayable) {
+            saveUser(name, phone);
             
-            // Wait for server-side timestamp simulation to populate
-            if (!g.expiresAt && g.createdAt) {
-                 el.innerHTML = `<div class="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center"><div class="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4"></div><div class="text-xs font-bold text-gray-400 uppercase tracking-widest">Initializing Server Time...</div></div>`;
-                 return;
+            // ROOT CAUSE 1 FIX: Ensure Cycle ID exists
+            const gid = state.cycleId || getCycleGroupId();
+            state.cycleId = gid; // Sync state
+            
+            const normalizedPhone = phone.replace(/\D/g, '').slice(-10);
+            
+            // CEO FIX: Force state sync with normalized phone immediately. 
+            state.user.phone = normalizedPhone; 
+
+            // DEBUG CONFIRM
+            console.log('SUBMIT', {
+              cycleId: state.cycleId,
+              cart: state.cart,
+              referrer: state.referrerId
+            });
+
+            try {
+                // --- CEO CHANGE: Robust Transaction Logic ---
+                // 1. Validate Referrer (Anti-Abuse)
+                // 2. Update confirmedCounts and confirmedTotals AT SOURCE
+                
+                const memberId = crypto.randomUUID();
+                
+                await window.fs.runTransaction(window.db, async (transaction) => {
+                    const groupRef = window.fs.doc(window.db, "groups", gid);
+                    const groupSnap = await transaction.get(groupRef);
+                    
+                    // Referrer Logic
+                    let referrerSnap = null;
+                    let isValidReferrer = false;
+                    
+                    if (state.referrerId) {
+                        const referrerRef = window.fs.doc(window.db, "groups", gid, "members", state.referrerId);
+                        referrerSnap = await transaction.get(referrerRef);
+                        
+                        // FIX: Anti-Abuse Checks
+                        if (referrerSnap.exists()) {
+                            const refData = referrerSnap.data();
+                            
+                            // 1. Prevent Self-Referral (Phone Check)
+                            if (refData.phone === normalizedPhone) {
+                                throw new Error("Self-referral is not allowed.");
+                            }
+
+                            // 2. Prevent Link Reuse (1 Invite = 1 Confirmation)
+                            // Ideally this is server-side, but this adds significant friction client-side.
+                            if (refData.hasConfirmedSomeone) {
+                                throw new Error("This referral link has already been used.");
+                            }
+
+                            isValidReferrer = true;
+                        }
+                    }
+
+                    // Determine Status
+                    // I am confirmed ONLY if I have a valid referrer
+                    const newMemberConfirmed = isValidReferrer;
+                    
+                    // Does referrer need confirmation? (Only if they are currently unconfirmed)
+                    const referrerNeedsConfirm = isValidReferrer && (referrerSnap.data().isConfirmed === false);
+
+                    // Initialize Group Data if missing
+                    let groupData = { id: gid, date: getISTDateStr(), createdAt: window.fs.serverTimestamp(), expiresAt: Date.now() + 43200000 };
+                    let currentConfirmedTotals = {};
+
+                    if (groupSnap.exists()) {
+                        groupData = groupSnap.data();
+                        currentConfirmedTotals = groupData.confirmedTotals || {};
+                    } else {
+                        // ROOT CAUSE 2 FIX: Safe creation before update
+                        // FIX: Metric Cleanup (ordersPlaced, ordersConfirmed)
+                        transaction.set(groupRef, {
+                            ...groupData,
+                            ordersPlaced: 0,
+                            ordersConfirmed: 0,
+                            confirmedTotals: {}
+                        }, { merge: true });
+                    }
+
+                    // --- Calculate Deltas ---
+                    let deltaConfirmedCount = 0;
+                    let totalsUpdates = {};
+
+                    // 1. If I am confirmed, add my items to totals
+                    if (newMemberConfirmed) {
+                        deltaConfirmedCount += 1;
+                        Object.entries(state.cart).forEach(([pid, qty]) => {
+                            totalsUpdates[pid] = (totalsUpdates[pid] || 0) + qty;
+                        });
+                    }
+
+                    // 2. If referrer is confirmed NOW, add THEIR items to totals
+                    if (referrerNeedsConfirm) {
+                        deltaConfirmedCount += 1;
+                        const rItems = referrerSnap.data().items || {};
+                        Object.entries(rItems).forEach(([pid, qty]) => {
+                            totalsUpdates[pid] = (totalsUpdates[pid] || 0) + qty;
+                        });
+                    }
+
+                    // --- Apply Updates ---
+                    
+                    // 1. Update Group (Source of Truth)
+                    // Merge new totals into existing confirmedTotals
+                    const newConfirmedTotals = { ...currentConfirmedTotals };
+                    Object.entries(totalsUpdates).forEach(([pid, qty]) => {
+                        newConfirmedTotals[pid] = (newConfirmedTotals[pid] || 0) + qty;
+                    });
+
+                    // FIX: Use window.fs.increment instead of direct increment call
+                    // FIX: Metric Renaming (ordersPlaced instead of memberCount)
+                    transaction.update(groupRef, { 
+                        ordersPlaced: window.fs.increment(1), // Raw orders
+                        ordersConfirmed: window.fs.increment(deltaConfirmedCount), // Validated orders
+                        confirmedTotals: newConfirmedTotals 
+                    });
+
+                    // 2. Create New Member
+                    const memberRef = window.fs.doc(window.db, "groups", gid, "members", memberId);
+                    const deliveryData = { method: 'home' };
+                    
+                    // Calculate Immutable Order Snapshot
+                    const orderSnapshot = {};
+                    Object.entries(state.cart).forEach(([pid, qty]) => {
+                        const p = PRODUCTS.find(x => x.id === pid);
+                        orderSnapshot[pid] = {
+                            priceMin: p.priceMin,
+                            priceMax: p.priceMax,
+                            target: p.target,
+                            qty: qty
+                        };
+                    });
+
+                    transaction.set(memberRef, { 
+                        name, 
+                        phone: normalizedPhone, 
+                        items: state.cart, 
+                        delivery: deliveryData, 
+                        paymentStatus: "pending_manual", 
+                        futurePaymentMethod: "UPI", 
+                        amountPayable: amountPayable, 
+                        joinedAt: window.fs.serverTimestamp(),
+                        isConfirmed: newMemberConfirmed,
+                        hasConfirmedSomeone: false, // Init flag for anti-abuse
+                        referrerId: isValidReferrer ? state.referrerId : null,
+                        orderSnapshot: orderSnapshot 
+                    });
+
+                    // 3. Update Referrer (if needed)
+                    if (isValidReferrer) {
+                        const referrerRef = window.fs.doc(window.db, "groups", gid, "members", state.referrerId);
+                        // Mark referrer as used (Anti-Abuse)
+                        const updates = { hasConfirmedSomeone: true };
+                        if (referrerNeedsConfirm) {
+                            updates.isConfirmed = true;
+                        }
+                        transaction.update(referrerRef, updates);
+                    }
+                });
+                
+                // Update Repeat User Status
+                const currentCount = parseInt(localStorage.getItem('jodo_order_count') || '0');
+                localStorage.setItem('jodo_order_count', currentCount + 1);
+                state.isRepeatUser = true;
+
+                closeModal(); 
+
+                // --- CEO FIX: No Auto Redirect. Let user see status screen. ---
+                // The onSnapshot listener will update the member list, causing getHomeHtml to render getStatusScreenHtml
+                state.view = 'home';
+                render();
+
+            } catch(e) { 
+                console.error(e); 
+                // Improved Error Toast
+                let msg = 'Error submitting order';
+                if (e.message.includes("Self-referral")) msg = "Cannot invite yourself.";
+                if (e.message.includes("already been used")) msg = "This invite link is expired.";
+                toast(msg, 'error'); 
+                
+                // ROOT CAUSE 3 FIX: Safe Re-enable
+                const btn = document.getElementById('btn-submit-order');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'Confirm Order';
+                }
+            }
+        }
+
+        // Ticker Logic - Fear-Based (Pinduoduo Style)
+        function getTickerHtml() {
+            // Dynamic Ticker Text
+            const tomato = PRODUCTS.find(p => p.id === 'tomato');
+            const jodoPrice = tomato?.lastJodo || 40;
+            const shopPrice = tomato?.lastShop || 60;
+
+            // Conditional Fear: Only show if urgent
+            const minsLeft = getCutoffMinutes();
+            // Show if less than 3 hours (180 mins)
+            if (minsLeft > 180 && !state.isRepeatUser) return '';
+
+            let content = '';
+            
+            if (state.isRepeatUser) {
+                // Fear/Loss framing for repeat users
+                content = `<span>ఈ రోజు మిస్ అయితే — మంగళవారం వరకు దుకాణం ధరే. జోడోలో ₹${jodoPrice} | దువ్వ షాపులో ₹${shopPrice}.</span>`;
+            } else {
+                // Mild urgency for new users (FIX: Fear Ticker enabled for new users too)
+                content = `<span>ఆఫర్ ముగుస్తోంది! జోడోలో ₹${jodoPrice} - బయట ₹${shopPrice}. ఆర్డర్ చేయండి.</span>`;
             }
 
-            // 🔴 1️⃣ FORCE JOIN FLOW (AUTO-OPEN MODAL) CHECK
-            // We check it here to ensure data 'g' exists before opening
-            if (IS_JOIN_LINK && !AUTO_MODAL_SHOWN && g && g.productId) {
-                 // Check if user is already a member
-                 const members = state.members[g.id] || [];
-                 const isMember = JOIN_SESSION_PHONE && members.some(m => m.phone === JOIN_SESSION_PHONE);
-                 
-                 if (!isMember) {
-                     AUTO_MODAL_SHOWN = true;
-                     setTimeout(() => {
-                        openStartModal(g.productId, g.id);
-                     }, 500);
-                 }
+            return `
+                <div style="padding: 0 16px; margin-top: 10px;">
+                    <div class="jodo-fear-ticker">
+                      <div class="jodo-fear-track">
+                        ${content}
+                        <span class="gap"></span>
+                        ${content}
+                      </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getHomeHtml() {
+            const gid = getCycleGroupId();
+            const isOpen = isOrderWindowOpen();
+            const viewingToday = isViewingTodayCycle(gid);
+            const group = state.groups[gid];
+
+            if (group && group.status === 'cancelled') {
+                 return `<div class="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-center font-sans"><h2 class="text-2xl font-black text-gray-900 mb-2">Cancelled</h2></div>`;
             }
             
-            const p = g.productSnapshot || PRODUCTS.find(x => x.id === g.productId); 
-            if (!p) { toast('Product data missing', 'alert-circle'); return; }
-            
-            const members = state.members[g.id] || []; 
-            // 🔴 Rule: Success = 2 people
-            const isSuccess = members.length >= 2;
-            
-            const hasJoinedThisGroup = !IS_JOIN_LINK && JOIN_SESSION_PHONE && members.some(m => m.phone === JOIN_SESSION_PHONE);
-            const isCreator = JOIN_SESSION_PHONE && g.ownerName && members.some(m => m.phone === JOIN_SESSION_PHONE && m.isLeader === true);
+            if (!isOpen && !viewingToday) {
+                return `<div class="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-center font-sans"><h2 class="text-2xl font-black text-gray-900 mb-2">Closed</h2><p class="text-gray-500 font-bold">Opens 6 AM</p></div>`;
+            }
 
-            const isExpired = Date.now() > g.expiresAt;
-            if (isExpired && !isSuccess) {
-                logEvent('group_expired', { groupId: g.id });
-                // 🔴 6️⃣ FAILURE MUST BE HARD (NO SOFT LANDING)
-                el.innerHTML = `
-                    <div class="min-h-screen flex flex-col items-center justify-center text-center px-6">
-                        <i data-lucide="x-circle" size="48" class="text-red-500 mb-4"></i>
-                        <h2 class="text-2xl font-black text-red-600 mb-2">Order Failed</h2>
-                        <p class="text-gray-700 text-center mb-4">
-                        Order expired without confirmation.<br>
-                        Supplier did not supply today.
-                        </p>
-                        <p class="text-xs text-gray-500 mb-6">
-                        Next order opens tomorrow morning.
-                        </p>
-                        <button onclick="goHome()" class="bg-gray-800 text-white px-6 py-3 rounded-xl font-bold">Close</button>
+            const members = state.members[gid] || [];
+            
+            // FIX 1: Normalize phone before comparison
+            const normalizedUserPhone = state.user.phone ? state.user.phone.replace(/\D/g, '').slice(-10) : null;
+            const myMember = normalizedUserPhone ? members.find(m => m.phone === normalizedUserPhone) : null;
+            
+            if (myMember) return getStatusScreenHtml(state.groups[gid], members, myMember);
+            else return getSelectionScreenHtml(members, isOpen);
+        }
+
+        function getSelectionScreenHtml(members, isOpen) {
+            if (!isOpen) return `<div class="p-10 text-center text-gray-500 font-bold">Time Up</div>`;
+
+            const hasItems = Object.keys(state.cart).length > 0;
+            const remainingTime = getCutoffRemaining();
+            
+            // Psychology: No moral headers. Just time urgency.
+            // Structure: Price Ladder Hero
+
+            let productsHtml = PRODUCTS.map(p => {
+                const qty = state.cart[p.id] || 0;
+                const isSelected = qty > 0;
+                const stats = getProductStats(members, p.id);
+                const progressPct = Math.min(100, (stats.total / p.target) * 100);
+                
+                // --- CEO CHANGE: Boring, Stable, Trustworthy Range ---
+                // Revert to showing the range to build trust.
+                // No "Current Price" vs "Locked Price" switching which confuses billing expectations.
+                
+                const priceHtmlContent = `
+                    <div class="text-2xl font-black text-gray-900">
+                        ₹${p.priceMin} - ₹${p.priceMax}
+                        <span class="text-sm font-medium text-gray-500">/ kg</span>
+                    </div>
+                    <div class="text-[11px] text-gray-500 font-medium mt-0.5">
+                        *తుది ధర రాత్రి 9 గంటలకు నిర్ణయించబడుతుంది (Final price @ 9 PM)
                     </div>
                 `;
-                if(window.lucide) window.lucide.createIcons();
-                return;
+
+                const priceHtml = `
+                    <div class="mt-1 mb-2">
+                        ${priceHtmlContent}
+                    </div>
+                `;
+
+                // --- PROGRESS SURGE ---
+                // Decoupled from price logic completely. Just shows progress.
+                const progressHtml = `
+                    <div class="mt-3">
+                         <div class="w-full bg-gray-200 h-2.5 rounded-full overflow-hidden">
+                            <div class="h-full bg-black rounded-full transition-all duration-700 progress-strip" style="width: ${progressPct}%"></div>
+                         </div>
+                    </div>
+                `;
+
+                const qtyButtons = p.quantityOptions.map(q => {
+                  const active = qty === q;
+                  const label = q + 'kg';
+                  return `<button onclick="window.setCartQuantity('${p.id}', ${q}); event.stopPropagation();" class="flex-1 py-3 rounded-xl text-sm font-bold transition border ${active ? 'bg-black text-white border-black shadow-lg transform scale-105' : 'bg-white text-gray-900 border-gray-200'}">${label}</button>`;
+                }).join('');
+
+                return `
+                    <div class="bg-white rounded-2xl shadow-sm p-4 mb-4 border border-gray-100 relative overflow-hidden transition-all ${isSelected ? 'ring-2 ring-black' : ''}">
+                        <div class="flex gap-4 mb-2">
+                            <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0"><img src="${p.img}" class="w-full h-full object-cover" onclick="window.setCartQuantity('${p.id}', ${p.quantityOptions[0]})"></div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-black text-gray-900 leading-tight">${p.name}</h3>
+                                ${priceHtml}
+                            </div>
+                        </div>
+                        ${progressHtml}
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                             <div class="flex gap-2">${qtyButtons}</div>
+                             <div class="text-[11px] text-gray-500 font-medium mt-2 text-center leading-snug">
+                                *తదుపరి ఆర్డర్ మంగళవారం. మీరు ఎంచుకున్న పరిమాణం 3–4 రోజులకు సరిపడేలా ఉండాలి
+                             </div>
+                             ${isSelected ? `<button onclick="window.setCartQuantity('${p.id}', 0); event.stopPropagation();" class="w-full mt-2 py-2 text-xs font-bold text-gray-400">Remove Item</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // --- DYNAMIC CTA (Structure > Words) ---
+            let ctaMain = "Select Items";
+            let ctaSub = "";
+            let btnBg = "bg-gray-900";
+
+            if (hasItems) {
+                // Boring CTA logic
+                ctaMain = "Confirm Order";
+                ctaSub = "Pay at pickup ONLY if group succeeds";
+                btnBg = "bg-black";
+            } else {
+                ctaMain = "Pick Items to Start";
+                btnBg = "bg-gray-300 text-gray-500 cursor-not-allowed";
             }
 
-            const inviteLink = generateInviteLink(g.id, isSuccess);
+            return `
+                <div class="min-h-screen bg-gray-50 flex flex-col font-sans pb-safe">
+                    <div class="bg-white px-6 py-4 sticky top-0 z-20 shadow-sm border-b border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-2xl font-black tracking-tight">JODO</div>
+                                ${state.isRepeatUser ? '<div class="text-[10px] text-green-600 font-bold">Welcome back! Previous order saved.</div>' : ''}
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs font-bold text-gray-400 uppercase tracking-widest">Ends In</div>
+                                <div id="cutoff-timer" class="text-xl font-mono font-black text-gray-900 bg-gray-100 px-2 py-0.5 rounded">${remainingTime}</div>
+                            </div>
+                        </div>
+                    </div>
+                    ${getTickerHtml()}
+                    <div class="p-4 pb-32">
+                        ${productsHtml}
+                    </div>
+
+                    <div class="fixed bottom-0 left-0 right-0 bg-white p-4 pb-safe border-t border-gray-100 z-50">
+                         <button onclick="window.openModalFlow()" ${!hasItems ? 'disabled' : ''} class="w-full h-[64px] ${btnBg} text-white text-lg font-black rounded-xl shadow-lg active:scale-[0.98] transition-all flex flex-col items-center justify-center leading-tight">
+                            <span>${ctaMain}</span>
+                            ${ctaSub ? `<span class="text-[10px] opacity-80 font-medium">${ctaSub}</span>` : ''}
+                         </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getStatusScreenHtml(group, members, myMember) {
+            // FIX 3: Defensive check
+            if (!group) {
+                return `<div class="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-center font-sans"><h2 class="text-xl font-black text-gray-300">Loading Status...</h2></div>`;
+            }
+
+            const productStats = PRODUCTS.map(p => {
+                const stats = getProductStats(members, p.id);
+                return { ...p, ...stats };
+            });
+
+            // --- CEO CHANGE: Invite Lock Logic (INTEGRATED, NOT REPLACEMENT) ---
+            const needsInvite = !myMember.isConfirmed;
             
-            // Standard back button everywhere now
-            const backButtonHtml = `<div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="goHome()">
-                       <i data-lucide="arrow-left" size="24" class="text-gray-700"></i>
-                       <span class="font-bold text-base tracking-wide text-gray-800">Back</span>
-                   </div>`;
-
-            const timeLeft = g.expiresAt - Date.now();
+            // Common Share Link Logic
+            // If needsInvite (Pending): I need to invite someone to confirm MY order.
+            // If !needsInvite (Confirmed): I invite to drop price.
+            // In both cases, referrer=myMember.id
+            const groupLink = `${BASE_URL}?group=${group.id}&referrer=${myMember.id}`;
+            let waText = "";
+            let ctaButtonText = "";
+            let ctaSubText = "";
             
-            if (!isSuccess) {
-                 const myMember = members.find(m => m.phone === JOIN_SESSION_PHONE);
-                 const myQty = myMember ? myMember.quantity : null;
-                 const myQtyLabel = myQty ? (myQty < 1 ? (myQty * 1000).toFixed(0) + ' g' : myQty + ' kg') : '';
-                 
-                 el.innerHTML = `
-                    <div class="fade-in bg-white min-h-screen pb-48 font-sans flex flex-col items-center pt-safe">
-                        <div class="w-full px-4 h-[60px] flex items-center justify-between">
-                            ${backButtonHtml}
-                        </div>
+            if (needsInvite) {
+                waText = `నేను టమాటాలు ఆర్డర్ చేశాను.\nమీరు కూడా ఆర్డర్ చేస్తే మన ఇద్దరి ఆర్డర్ కన్ఫర్మ్ అవుతుంది.\n\nఆర్డర్ చేయడానికి ఇక్కడ క్లిక్ చేయండి 👇\n${groupLink}`;
+                ctaButtonText = "Invite 1 Family to Activate";
+                ctaSubText = "Order pending until 1 person joins";
+            } else {
+                const totalRemainingFamilies = productStats.reduce((acc, i) => acc + Math.ceil(i.remaining/2), 0); // approx
+                waText = `నేను టమాటాలు ఆర్డర్ చేశాను.\nఇంకా కొన్ని ఇళ్లు కలిస్తే ధర తగ్గుతుంది.\n\nఇక్కడ చూడండి 👇\n${groupLink}`;
+                ctaButtonText = "🔗 Share to unlock price";
+                ctaSubText = "ఇంకా మందిని కలిపితే ధర తగ్గుతుంది";
+            }
+            const waLink = `https://wa.me/?text=${encodeURIComponent(waText)}`;
 
-                        <div class="mt-4 mb-2 flex flex-col items-center">
-                            <div class="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Time left</div>
-                            <div id="penalty-timer-top" class="text-5xl font-black text-red-600 tracking-widest tabular-nums font-mono leading-none">
-                                ${formatTimeLeft(timeLeft)}
-                            </div>
-                            
-                            <!-- 🔴 REPLACED WITH SIMPLE TRUST COPY -->
-                            <div class="text-xl font-bold text-center mt-3 text-gray-900 leading-tight px-4">
-                              Invite 1 person to confirm today’s order
-                            </div>
-                            <div class="text-xs text-gray-500 text-center mt-2 px-4">
-                              If no one joins before time ends, order is cancelled.
-                            </div>
-                        </div>
 
-                        <div class="mt-8 mb-6 flex flex-col items-center opacity-80 grayscale-[0.3]">
-                            <div class="w-20 h-20 rounded-full relative overflow-hidden bg-gray-100 mb-2 ring-1 ring-gray-100">
-                                 <img src="${p.imageSrc}" class="w-full h-full object-cover">
-                            </div>
-                            <h1 class="text-lg font-bold text-gray-900 leading-none">${p.name}</h1>
-                            ${myQty ? `
-                              <div class="text-xs text-gray-500 font-medium mt-2">
-                                Your quantity: <span class="font-bold text-gray-800">${myQtyLabel}</span>
-                              </div>
-                            ` : ''}
-                            <div class="text-[10px] text-gray-400 font-medium mt-1">Duvva group order</div>
-                        </div>
+            const isPostCutoff = !isOrderWindowOpen(); 
+            let failingItems = [], runningItems = [], cancelledItems = [];
 
-                        <div class="w-full max-w-xs px-4">
-                             <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 text-center">Who joined</div>
-                             <div class="space-y-2">
-                                ${members.map(m => `
-                                    <div class="flex items-center justify-between text-sm text-gray-600 py-2 border-b border-gray-50 last:border-0">
-                                         <div class="flex items-center gap-3">
-                                             <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-xs border border-gray-200">${m.name[0]}</div>
-                                             <span class="${(m.phone === JOIN_SESSION_PHONE || m.isLeader) ? 'font-bold text-gray-900' : ''}">
-                                                ${m.phone === JOIN_SESSION_PHONE ? 'You' : m.name}
-                                             </span>
-                                         </div>
-                                         <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded font-medium">Joined</span>
+            if (!isPostCutoff) {
+                failingItems = productStats.filter(p => !p.isRunning); 
+                runningItems = productStats.filter(p => p.isRunning); 
+            } else {
+                runningItems = productStats.filter(p => p.total >= p.target); 
+                cancelledItems = productStats.filter(p => p.total < p.target); 
+            }
+            
+            const headerTitle = isPostCutoff ? "Final Results" : "Live Status";
+            
+            // Header Badge Logic
+            const statusBadge = needsInvite 
+                ? `<div class="bg-yellow-100 text-yellow-800 text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1"><i data-lucide="clock" size="10"></i> Pending</div>`
+                : `<div class="bg-green-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1"><i data-lucide="check" size="10"></i> Confirmed</div>`;
+
+            let contentHtml = `
+                <div class="bg-white px-6 py-4 border-b border-gray-100 sticky top-0 z-20 shadow-sm flex justify-between items-center">
+                    <div><div class="text-xl font-black text-gray-900">${headerTitle}</div></div>
+                    ${statusBadge}
+                </div>
+            `;
+            
+            contentHtml += getTickerHtml();
+            contentHtml += `<div class="p-4 space-y-4">`;
+
+            if (isPostCutoff) {
+                if (runningItems.length > 0) {
+                    contentHtml += `
+                        <div class="bg-white rounded-2xl shadow-sm border border-green-100 p-6 text-center">
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600"><i data-lucide="check" size="32"></i></div>
+                            <h2 class="text-2xl font-black text-gray-900 mb-1">Target Reached</h2>
+                            <div class="text-sm text-gray-500 mb-6 font-medium">Delivery tomorrow morning.</div>
+                            ${runningItems.map(p => `<div class="flex justify-between items-center py-3 border-t border-gray-50"><span class="font-bold text-gray-900">${p.name}</span><span class="font-mono font-bold text-green-600">₹${p.priceMin} Locked</span></div>`).join('')}
+                        </div>
+                    `;
+                }
+                if (cancelledItems.length > 0) {
+                     contentHtml += `
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center opacity-70 grayscale">
+                            <h2 class="text-lg font-black text-gray-900 mb-1">Missed Targets</h2>
+                            ${cancelledItems.map(p => `<div class="flex justify-between items-center py-2 border-b border-gray-50"><span class="font-medium text-gray-900">${p.name}</span><span class="text-xs text-gray-500">${p.total}/${p.target}kg</span></div>`).join('')}
+                        </div>
+                    `;
+                }
+            } else {
+                // LIVE STATUS
+                if (failingItems.length > 0) {
+                    
+                    // --- 1. PENDING WARNING CARD (Shown ONLY if not confirmed) ---
+                    if (needsInvite) {
+                        contentHtml += `
+                            <div class="bg-yellow-50 rounded-2xl border border-yellow-200 p-5 mb-2 relative overflow-hidden">
+                                <div class="flex gap-3 items-start relative z-10">
+                                    <div class="bg-yellow-100 p-2 rounded-full text-yellow-700 shrink-0 mt-1"><i data-lucide="alert-circle" size="20"></i></div>
+                                    <div>
+                                        <div class="font-black text-gray-900 text-lg leading-tight mb-1">Action Required</div>
+                                        <p class="text-sm text-gray-700 font-medium leading-snug">
+                                            మీ ఆర్డర్ పెండింగ్‌లో ఉంది. అది కన్ఫర్మ్ కావాలంటే ఇంకా ఒక్కరిని జాయిన్ చేయాలి.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // --- 2. LIVE PROGRESS (Always visible to show what they are missing/joining) ---
+                    contentHtml += `
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                             <div class="bg-gray-50 p-4 border-b border-gray-100 text-center">
+                                <div class="text-xl font-black text-gray-900 leading-tight">Live Group Status</div>
+                                <div class="text-xs font-bold text-gray-500 mt-1">ఈ రోజు మొత్తం ఎంత ఉంటే — అదే ధర ఫిక్స్ అవుతుంది</div>
+                             </div>
+                             <div class="p-4">
+                                ${failingItems.map(p => `
+                                    <div class="mb-5 last:mb-0">
+                                        <div class="flex justify-between items-end mb-1">
+                                            <span class="font-bold text-gray-900 text-lg">${p.name}</span>
+                                        </div>
+                                        <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden relative">
+                                            <div class="h-full bg-gray-600 rounded-full" style="width: ${(p.total/p.target)*100}%"></div>
+                                        </div>
+                                        <div class="text-[11px] text-gray-500 font-medium mt-1">
+                                          ఇంకా ${getRemainingHouseholds(p.remaining)} ఇళ్లు కలిస్తే ధర తగ్గుతుంది
+                                        </div>
                                     </div>
                                 `).join('')}
                              </div>
-                             <!-- 🔴 Added subtle warning instead of panic -->
-                             <div class="text-[11px] text-gray-500 text-center mt-6 font-medium">
-                                Waiting for confirmation...
-                             </div>
                         </div>
+                    `;
 
-                        <div class="fixed bottom-0 left-0 right-0 p-4 pb-safe z-50">
-                             <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white via-white to-transparent -z-10"></div>
-                             <div class="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-green-50/60 to-transparent pointer-events-none -z-10"></div>
-
-                             <div class="max-w-md mx-auto relative">
-                                  <a href="${inviteLink}" target="_blank" onclick="logShare('${g.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[60px] rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all btn-press">
-                                      Share Link
-                                  </a>
-                                  <div class="text-center text-[10px] text-gray-400 font-medium mt-3">
-                                     If you don’t send, order fails
-                                  </div>
-                             </div>
+                    // --- 3. CTA (Context Aware) ---
+                    contentHtml += `
+                        <div class="mt-4">
+                            <a href="${waLink}" target="_blank"
+                             class="block w-full bg-black text-white rounded-xl py-4 text-center font-black text-sm active:scale-[0.98] shadow-lg flex flex-col items-center justify-center">
+                              <span class="leading-tight text-base">${ctaButtonText}</span>
+                              <span class="text-[10px] opacity-80 font-medium mt-0.5">${ctaSubText}</span>
+                            </a>
                         </div>
-                    </div>
-                `;
-            } else {
-                
-                el.innerHTML = `
-                    <div class="fade-in bg-white min-h-screen pb-40 font-sans">
-                        <div class="glass-header h-[60px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white shadow-sm border-b border-gray-100 mb-6">
-                            ${backButtonHtml}
+                    `;
+                } else {
+                    // Success State (Live)
+                    contentHtml += `
+                        <div class="bg-green-50 rounded-2xl p-8 text-center border border-green-100">
+                            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600"><i data-lucide="lock" size="32"></i></div>
+                            <h2 class="text-3xl font-black text-green-800 mb-2">Price Locked</h2>
+                            <p class="text-green-700 font-medium">Target reached. Lowest price secured for everyone.</p>
                         </div>
-                        
-                        <div class="p-4">
-                             <div class="bg-green-50 border border-green-200 p-4 rounded-xl text-center mb-6">
-                                <div class="flex justify-center items-center gap-2 mb-1">
-                                    <i data-lucide="check-circle" class="text-green-600" size="24"></i>
-                                    <span class="font-black text-green-800 text-lg uppercase tracking-wide">Order Confirmed</span>
-                                </div>
-                                <div class="text-sm text-green-700">Delivery scheduled</div>
-                            </div>
-
-                            <div class="flex flex-col items-center mb-4 mt-2">
-                                <div class="w-28 h-28 rounded-full relative overflow-hidden mb-6 relative z-10 bg-gray-100 shadow-md">
-                                    <img src="${p.imageSrc}" class="w-full h-full object-cover" alt="${p.name}">
-                                </div>
-                                <h1 class="text-2xl font-bold text-gray-900 leading-none mb-1 tracking-tight text-center">${p.name}</h1>
-                                <div class="text-[10px] text-gray-400 font-medium mb-2">Picked up fresh from local market</div>
-                                <div class="text-xs text-orange-800 font-bold bg-orange-50 px-2 py-1 rounded-full w-fit mb-2">Subject to market availability</div>
-                                <p class="text-sm font-medium text-gray-500 mb-2">${p.nameTe}</p>
-                            </div>
-                            
-                            <div class="space-y-4 mb-8">
-                                <div class="flex justify-between items-end mb-4">
-                                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">People Joined</h3>
-                                    <div class="flex flex-col items-end">
-                                        <span class="text-xs font-bold text-green-600">Confirmed</span>
-                                    </div>
-                                </div>
-                                
-                                ${members.map((member) => {
-                                    const isMe = JOIN_SESSION_PHONE === member.phone;
-                                    const weight = member.quantity; 
-                                    const weightLabel = weight < 1 ? (weight * 1000).toFixed(0) + 'g' : weight + 'kg';
-                                    // 🔴 Simplified Price Display
-                                    let t = Math.round(p.price * member.quantity);
-                                    const priceDisplay = '₹'+t;
-
-                                    if (member.isLeader) {
-                                        return `<div class="bg-green-50 border border-green-200 p-4 rounded-xl shadow-sm mb-3 transition-all relative overflow-hidden">
-                                                    <div class="absolute top-0 right-0 bg-green-200 text-green-800 text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wide">Host</div>
-                                                    <div class="flex items-center justify-between mb-2">
-                                                        <div class="flex items-center gap-3">
-                                                            <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0 border-2 border-white ring-2 ring-green-100"><i data-lucide="crown" size="16"></i></div>
-                                                            <div>
-                                                                <div class="text-sm font-bold text-gray-900 flex items-center gap-2">${isMe ? 'You (Host)' : member.name}</div>
-                                                                <div class="text-xs text-green-700 font-medium">${weightLabel}</div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex justify-between items-center pt-2 border-t border-green-200/60">
-                                                        <span class="text-[10px] font-medium text-green-700 uppercase">Total</span>
-                                                        <span class="text-sm font-bold text-green-800">${priceDisplay}</span>
-                                                    </div>
-                                            </div>`;
-                                    }
-
-                                    return `<div class="bg-white border border-gray-100 p-3 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] mb-2 transition-all cursor-default">
-                                                <div class="flex items-center justify-between mb-2">
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-8 h-8 rounded-full ${isMe ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'} flex items-center justify-center font-bold text-xs border border-white shadow-sm shrink-0">${member.name[0]}</div>
-                                                        <div><div class="text-sm font-bold text-gray-800 flex items-center gap-2">${isMe ? 'You' : member.name}</div><div class="text-xs text-gray-400 font-medium">${weightLabel}</div></div>
-                                                    </div>
-                                                </div>
-                                                <div class="flex justify-between items-center pt-2 border-t border-gray-5">
-                                                    <span class="text-[10px] font-medium text-gray-400 uppercase">Total</span>
-                                                    <span class="text-sm font-bold text-gray-900">${priceDisplay}</span>
-                                                </div>
-                                            </div>`;
-                                }).join('')}
-                            </div>
-                        </div>
-
-                        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-                            <div class="max-w-md mx-auto pt-2 pb-2">
-                                <div class="text-center text-sm font-bold text-green-700 mb-1 flex items-center justify-center gap-2">
-                                    <i data-lucide="check-circle" size="16"></i>
-                                    Order confirmed. No further action needed.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                    `;
+                }
             }
-            if (window.lucide) window.lucide.createIcons();
-            if (!isSuccess) startPenaltyTimer(); 
+            contentHtml += `</div>`;
+            return `<div class="min-h-screen bg-gray-50 flex flex-col font-sans pb-safe">${contentHtml}</div>`;
         }
 
+        let lastRenderedHTML = '';
         function render() {
             const app = document.getElementById('app');
-            if (!app) return;
-            if (state.view === 'home') renderHome(app);
-            else renderGroup(app);
-            if (window.lucide) window.lucide.createIcons();
-        }
-        
-        function safeRender() {
-            if (renderScheduled) return;
-            renderScheduled = true;
-            requestAnimationFrame(() => { render(); renderScheduled = false; });
-        }
-
-        function listenToGroupForHome(gid) {
-            if (!window.fs || !window.db) return;
-            const unsubG = window.fs.onSnapshot(window.fs.doc(window.db, "groups", gid), (doc) => { if (doc.exists()) { state.groups[gid] = doc.data(); safeRender(); } });
-            state.homeListeners.push(unsubG);
-            const unsubM = window.fs.onSnapshot(window.fs.collection(window.db, "groups", gid, "members"), (snap) => {
-                const m = []; snap.forEach(d => m.push({ ...d.data(), id: d.id })); m.sort((a, b) => a.joinedAt - b.joinedAt); state.members[gid] = m; safeRender();
-            });
-            state.homeListeners.push(unsubM);
-        }
-
-        function initHomeListeners() {
-            state.homeListeners.forEach(u => u()); state.homeListeners = [];
-            state.user.joinedGroupIds.forEach(gid => listenToGroupForHome(gid));
-        }
-
-        window.openGroup = function(gid) { 
-            if (!gid || typeof gid !== 'string') { window.goHome(); return; }
-            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', `${BASE_URL}?group=${gid}`); } catch(e) {} 
-            state.currentGroupId = gid; state.view = 'group';
-            if (state.unsubGroup) { state.unsubGroup(); state.unsubGroup = null; }
-            if (state.unsubMembers) { state.unsubMembers(); state.unsubMembers = null; }
-            safeRender(); 
-            if (window.fs && window.db) {
-                state.unsubGroup = window.fs.onSnapshot(window.fs.doc(window.db, "groups", gid), (doc) => { if (doc.exists()) { state.groups[gid] = doc.data(); safeRender(); } else { window.goHome(); } });
-                state.unsubMembers = window.fs.onSnapshot(window.fs.collection(window.db, "groups", gid, "members"), (snapshot) => {
-                    const members = []; snapshot.forEach((doc) => { members.push({ ...doc.data(), id: doc.id }); });
-                    members.sort((a, b) => a.joinedAt - b.joinedAt); state.members[gid] = members; safeRender();
-                });
+            const savedScroll = app.scrollTop;
+            let content = '';
+            if (state.view === 'home') {
+                content = getHomeHtml();
             }
-        };
+            if (content !== lastRenderedHTML) {
+                app.innerHTML = content;
+                lastRenderedHTML = content;
+                if(window.lucide) window.lucide.createIcons();
+                // requestAnimationFrame(() => { app.scrollTop = savedScroll; }); // Optional: maintain scroll
+            }
+        }
 
-        window.goHome = function() { 
-            if (state.unsubGroup) { state.unsubGroup(); state.unsubGroup = null; }
-            if (state.unsubMembers) { state.unsubMembers(); state.unsubMembers = null; }
-            if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
-            try { if (window.location.protocol !== 'blob:') history.pushState({}, '', BASE_URL); } catch(e) {} 
-            AUTO_JOIN_TRIGGERED = false; state.view = 'home'; state.currentGroupId = null; state.isFirstLoadAfterCreation = false; safeRender(); 
-        };
-
-        function initSimulatedBackend() {
-            if (!window.fs || !window.db) return;
-            window.fs.onSnapshot(window.fs.collection(window.db, 'groups'), (snap) => {
-                snap.docChanges().forEach(change => {
-                    if (change.type === 'added') {
-                        const data = change.doc.data();
-                        if (!data.expiresAt && data.createdAt) {
-                            setTimeout(() => {
-                                window.fs.updateDoc(change.doc.ref, {
-                                    expiresAt: Date.now() + 10800000, 
-                                    memberCount: 1 // 🔴 Ensure memberCount is initialized
-                                });
-                            }, 1000);
-                        }
-                    }
-                });
-            });
+        function updateTimerUI() {
+            const el = document.getElementById('cutoff-timer');
+            if (el) {
+                el.innerText = getCutoffRemaining();
+            }
         }
 
         function init() {
-            if (JODO_INITIALIZED) return; JODO_INITIALIZED = true;
-            const params = new URLSearchParams(window.location.search);
-            const gid = params.get('group');
-            if (gid) { 
-                IS_JOIN_LINK = true; 
-                state.user = { name: '', phone: '', joinedGroupIds: [] }; 
-                JOIN_SESSION_PHONE = null; 
-                state.view = 'group'; 
-                state.currentGroupId = gid; 
-            } else { 
-                loadData(); 
-                IS_JOIN_LINK = false; 
-                state.view = 'home'; 
-            }
-            const startApp = () => { 
-                initSimulatedBackend(); 
-                if (IS_JOIN_LINK && state.currentGroupId) { safeRender(); window.openGroup(state.currentGroupId); } else { initHomeListeners(); safeRender(); } 
-            };
-            if (window.db) startApp(); else window.addEventListener('firebase-ready', startApp);
-            window.addEventListener('popstate', () => { const params = new URLSearchParams(location.search); const gid = params.get('group'); if (gid) window.openGroup(gid); else window.goHome(); });
+            // URL Parsing for Referrer
+            const urlParams = new URLSearchParams(window.location.search);
+            const ref = urlParams.get('referrer');
+            if (ref) state.referrerId = ref;
+
+            loadUser();
+            listenToCycleGroup();
+            render();
+            // Critical Fix 3: Optimize performance by only updating the timer text, not full re-render
+            setInterval(updateTimerUI, 1000);
         }
-        
-        document.addEventListener('DOMContentLoaded', init);
+
+        if (window.db) init();
+        else window.addEventListener('firebase-ready', init);
+
     </script>
 </body>
 </html>
