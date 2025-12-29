@@ -17,25 +17,22 @@
                             textPrimary: '#111827',
                             textSecondary: '#4B5563',
                             ctaPrimary: '#15803D',
-                            ctaSuccess: '#15803D',    
-                            bonus: '#F3F4F6',        
-                            bonusText: '#374151',    
-                            urgency: '#4B5563',        
-                            border: '#E5E7EB',        
-                            error: '#DC2626',        
+                            ctaSuccess: '#15803D',      
+                            bonus: '#F3F4F6',          
+                            bonusText: '#374151',       
+                            urgency: '#4B5563',         
+                            border: '#E5E7EB',          
+                            error: '#DC2626',           
                         }
                     },
                     fontFamily: {
                         sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
                     },
                     animation: {
-                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                         'fade-in-up': 'fadeInUp 0.5s ease-out',
-                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'slide-up': 'slideUp 0.3s ease-out forwards'
                     },
                     keyframes: {
-                        pop: { '0%': { transform: 'scale(0.95)' }, '100%': { transform: 'scale(1)' } },
                         fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
                         slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
                     }
@@ -46,24 +43,14 @@
     <style>
         body { background: #FFFFFF; color: #111827; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; }
         #app { width: 100%; max-width: 448px; background: #FFFFFF; min-height: 100dvh; position: relative; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
-        .btn-press { transition: transform 0.1s; cursor: pointer; user-select: none; }
-        .btn-press:active:not(:disabled) { transform: scale(0.96); }
+        .btn-press { transition: opacity 0.1s; cursor: pointer; user-select: none; }
+        .btn-press:active:not(:disabled) { opacity: 0.8; }
         .card-modern { background: #FFFFFF; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #E5E7EB; }
         .glass-header { background: rgba(255, 255, 255, 0.98); border-bottom: 1px solid #E5E7EB; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .fade-in { animation: fadeInUp 0.5s ease-out forwards; }
-        .tilt-card { transition: transform 0.15s ease-out; transform-style: preserve-3d; }
         .price-anchor { color: #15803D; font-weight: 700; letter-spacing: -0.01em; }
-        
-        /* Loading skeleton shimmer */
-        .skeleton {
-            background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
 <body class="antialiased">
@@ -74,7 +61,7 @@
         <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[1.5rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden pb-safe"></div>
     </div>
 
-    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe text-center w-max max-w-[90%]"></div>
+    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none pt-safe text-center w-max max-w-[90%]"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -89,7 +76,9 @@
           onSnapshot,
           collection,
           runTransaction,
-          serverTimestamp
+          serverTimestamp,
+          query,
+          where
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = JSON.parse(__firebase_config);
@@ -99,10 +88,12 @@
         const db = getFirestore(app);
         
         window.db = db;
-        window.fs = { doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, collection, runTransaction, serverTimestamp };
+        // Expose query/where/collection for robust lookups
+        window.fs = { doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, collection, runTransaction, serverTimestamp, query, where };
         window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
-        console.log("🔥 FIREBASE PROJECT:", window.db._databaseId ? window.db._databaseId.projectId : "Unknown");
+        // 🔒 GLOBAL READY FLAG
+        window.FIREBASE_READY = false;
 
         const initAuth = async () => {
             try {
@@ -113,6 +104,8 @@
                     await signInAnonymously(auth);
                     console.log("✅ Authenticated Anonymously");
                 }
+                // 🔒 Critical Fix 1: Set flag before dispatch
+                window.FIREBASE_READY = true;
                 window.dispatchEvent(new Event('firebase-ready'));
             } catch (err) {
                 console.error("Authentication failed", err);
@@ -122,71 +115,53 @@
     </script>
     
     <script>
+        // 🔒 BOOTSTRAP GUARD (Must be first)
+        var JODO_INITIALIZED = false;
+        var renderScheduled = false;
+
         // --- CONSTANTS & CONFIG ---
         var COMPANY_PHONE = "918500742671"; 
         var BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp';
-        var MIN_GROUP_SIZE = 2; 
-
-        // 🔥 LOGIC: STRICT INVENTORY
-        var HARD_LIMIT_KG = 10; 
         
-        // 🔥 DATA: MULTIPLE PRODUCTS
+        var MIN_GROUP_SIZE = 2; 
+        
+        var PRODUCT_LIMITS = {
+            tomato: 10,
+            onion: 10,
+            chilli: 2
+        };
+
         var PRODUCTS = [
-            { 
-                id: 'tomato', 
-                name: 'Fresh Tomatoes', 
-                nameTe: 'టమాటాలు', 
-                unit: '1kg', 
-                baseWeight: 1, 
-                step: 0.25, 
-                weightUnit: 'kg', 
-                price1: 40, // Market Price
-                price5: 20, // Group Price
-                icon: 'circle-dot', 
-                imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80' 
-            },
-            { 
-                id: 'onion', 
-                name: 'Red Onions', 
-                nameTe: 'ఉల్లిపాయలు', 
-                unit: '1kg', 
-                baseWeight: 1, 
-                step: 0.25,
-                weightUnit: 'kg', 
-                price1: 60, // Market Price
-                price5: 35, // Group Price
-                icon: 'layers', 
-                imageSrc: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=800&q=80' 
-            },
-            { 
-                id: 'chilli', 
-                name: 'Green Chillies', 
-                nameTe: 'పచ్చి మిరపకాయలు', 
-                unit: '250g', 
-                baseWeight: 0.25, 
-                step: 0.25,
-                weightUnit: 'g', 
-                price1: 80, // Market Price (per kg)
-                price5: 50, // Group Price (per kg)
-                icon: 'zap', 
-                imageSrc: 'https://images.unsplash.com/photo-1577218349272-37eb645284eb?auto=format&fit=crop&w=800&q=80' 
-            }
+            { id: 'tomato', name: 'Fresh Tomatoes', nameTe: 'టమాటాలు', unit: '1kg', baseWeight: 1, step: 0.25, weightUnit: 'kg', price1: 40, price5: 20, icon: 'circle-dot', imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80' },
+            { id: 'onion', name: 'Red Onions', nameTe: 'ఉల్లిపాయలు', unit: '1kg', baseWeight: 1, step: 0.25, weightUnit: 'kg', price1: 60, price5: 35, icon: 'layers', imageSrc: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=800&q=80' },
+            { id: 'chilli', name: 'Green Chillies', nameTe: 'పచ్చి మిరపకాయలు', unit: '250g', baseWeight: 0.25, step: 0.25, weightUnit: 'g', price1: 80, price5: 50, icon: 'zap', imageSrc: 'https://images.unsplash.com/photo-1577218349272-37eb645284eb?auto=format&fit=crop&w=800&q=80' }
         ];
 
         var GROUPS_KEY = 'jodo_groups_joined_v1';
         
-        // --- HELPER FOR CUTOFF (9 PM TODAY) ---
-        function getTodayCutoffTimestamp() {
-          const now = new Date();
-          now.setHours(21, 0, 0, 0); 
-          return now.getTime();
+        function formatQty(qty) {
+            return qty < 1 
+                ? (qty * 1000).toFixed(0) + 'g' 
+                : qty + 'kg';
+        }
+
+        // 🔥 SPEC FIX 5: Pricing depends on unlockedAt, nothing else.
+        function getPrice(product, isUnlocked) {
+            return isUnlocked ? product.price5 : product.price1;
         }
         
+        // --- HELPER FOR CUTOFF ---
+        function getTodayCutoffTimestamp() {
+            const now = new Date();
+            now.setHours(21, 0, 0, 0); 
+            return now.getTime();
+        }
+
         function isPastCutoff() {
             return Date.now() > getTodayCutoffTimestamp();
         }
-
-        let cutoffTimerInterval = null;
+        
+        var cutoffTimerInterval = null;
 
         function formatRemaining(ms) {
             if (ms <= 0) return "Closed";
@@ -201,17 +176,19 @@
         function startCutoffTimer(updateFn) {
             if (cutoffTimerInterval) clearInterval(cutoffTimerInterval);
             const tick = () => {
-                const remaining = getTodayCutoffTimestamp() - Date.now();
+                const now = Date.now();
+                const cutoff = getTodayCutoffTimestamp();
+                const remaining = cutoff - now;
                 updateFn(remaining);
-                if (remaining <= 0 && cutoffTimerInterval) clearInterval(cutoffTimerInterval);
             };
-            tick();
+            tick(); 
             cutoffTimerInterval = setInterval(tick, 1000);
         }
 
-        // State now includes cart
-        const state = { 
+        // 🔥 FIX 3: HARD DEFAULT VIEW
+        var state = { 
             view: 'home', 
+            mode: 'HOME', // HOME, JOIN, GROUP
             currentGroupId: null, 
             groups: {}, 
             members: {}, 
@@ -221,14 +198,14 @@
             lastMemberCount: 0,
             unsubGroup: null,
             unsubMembers: null,
-            homeListeners: [] 
+            homeListeners: [],
+            invitingGroup: null,
+            pendingJoinId: null
         };
 
-        let JODO_INITIALIZED = false;
-        let renderScheduled = false;
-        let IS_JOIN_LINK = false;
-        let JOIN_SESSION_PHONE = null;
-        let AUTO_JOIN_TRIGGERED = false;
+        var IS_JOIN_LINK = false;
+        var JOIN_SESSION_PHONE = null;
+        var AUTO_JOIN_TRIGGERED = false;
 
         function loadData() {
             try {
@@ -267,10 +244,7 @@
         function toast(msg, icon) { 
             const t = document.getElementById('toast'); 
             const iconColor = icon === 'share-2' ? 'text-white' : 'text-green-400';
-            t.className = icon === 'share-2' 
-                ? "fixed top-24 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe"
-                : "fixed top-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none animate-pop pt-safe";
-            
+            t.className = "fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none pt-safe text-center w-max max-w-[90%]";
             t.innerHTML = `<i data-lucide="${icon}" size="16" class="${iconColor}"></i> ${msg}`; 
             t.classList.remove('hidden'); 
             if(window.lucide) window.lucide.createIcons(); 
@@ -375,8 +349,10 @@
             newQty = Math.round(newQty * 100) / 100;
 
             if (newQty < 0) newQty = 0;
-            if (newQty > HARD_LIMIT_KG) {
-                toast(`Max ${HARD_LIMIT_KG}kg per item`, "alert-circle");
+            
+            const maxLimit = PRODUCT_LIMITS[productId] || Infinity;
+            if (newQty > maxLimit) {
+                toast(`Limit ${maxLimit}kg for this item`, "alert-circle");
                 return;
             }
 
@@ -391,10 +367,15 @@
             if (IS_JOIN_LINK) {
                 state.user.name = '';
                 state.user.phone = '';
+                state.user.joinedGroupIds = state.user.joinedGroupIds || []; 
                 JOIN_SESSION_PHONE = null; 
             }
-            const g = state.groups[gid];
-            if (!g) { toast("Loading...", "loader"); return; }
+            
+            const g = state.groups[gid] || state.invitingGroup;
+            if (!g) { 
+                toast("Loading group...", "loader"); 
+                return; 
+            }
             if (isPastCutoff()) { toast("Orders closed for today", "clock"); return; }
 
             window.openCheckoutModal(gid);
@@ -407,28 +388,38 @@
                 return;
             }
 
-            // Ensure cart has items if creating
-            // For joining, we allow empty cart so they can fill it inside the modal
+            const existingMembers = joinGroupId ? (state.members[joinGroupId] || []) : [];
+            const me = existingMembers.find(m => m.phone === JOIN_SESSION_PHONE);
+            
+            const isEditing = joinGroupId && JOIN_SESSION_PHONE && me;
+
+            if (isEditing) {
+                state.cart = { ...(me.cart || {}) };
+                if (Object.keys(state.cart).length === 0 && me.quantity) {
+                    state.cart['tomato'] = me.quantity;
+                }
+            } else if (joinGroupId) {
+                state.cart = {}; 
+            }
+            
             if (!joinGroupId && Object.keys(state.cart).length === 0) {
                 toast("Please select items first", "shopping-bag");
                 return;
             }
 
             const user = state.user;
-            
-            const isEditing = joinGroupId && JOIN_SESSION_PHONE && state.members[joinGroupId] && state.members[joinGroupId].some(m => m.phone === JOIN_SESSION_PHONE);
             const oldPhone = JOIN_SESSION_PHONE; 
-
             const title = "Smart Choice"; 
-            const btnText = isEditing ? "Update Order" : (joinGroupId ? "Confirm & Join" : "Start Group Deal");
+            
+            const btnText = isEditing ? "Update Order" : (joinGroupId ? "Join & get lower price" : "Start saving today");
 
             let totalJodo = 0;
             let totalMarket = 0;
 
-            // 🔥 CHANGED: Map ALL PRODUCTS without filtering by qty > 0
             const itemsHtml = PRODUCTS.map(p => {
                 const qty = state.cart[p.id] || 0;
                 
+                // Visual only: Shows target price in checkout to encourage signup
                 const jodoPrice = p.price5;
                 const marketPrice = p.price1;
                 
@@ -440,7 +431,7 @@
                     totalMarket += itemTotalMarket;
                 }
 
-                const qtyLabel = qty < 1 ? (qty * 1000).toFixed(0) + 'g' : qty + 'kg';
+                const qtyLabel = formatQty(qty);
                 const isSelected = qty > 0;
                 
                 return `
@@ -487,7 +478,7 @@
                             <div class="text-6xl font-black text-green-600 tracking-tighter mb-3 leading-none" id="summary-savings">₹${Math.round(totalSavings)}</div>
                             <div class="bg-gray-50 rounded-lg py-2 px-3 border border-gray-100 inline-block">
                                 <div class="text-xs text-gray-500 font-medium">
-                                    Buying elsewhere is a <span class="text-red-600 font-bold">loss of ₹<span id="loss-amount">${Math.round(totalSavings)}</span></span>
+                                    Buying elsewhere is a <span class="text-red-700 font-bold">loss of ₹<span id="loss-amount">${Math.round(totalSavings)}</span></span>
                                 </div>
                             </div>
                         </div>
@@ -531,7 +522,7 @@
                     
                     // Update Item Row UI
                     const qtyEl = document.getElementById(`checkout-qty-${p.id}`);
-                    if(qtyEl) qtyEl.innerText = qty < 1 ? (qty * 1000).toFixed(0) + 'g' : qty + 'kg';
+                    if(qtyEl) qtyEl.innerText = formatQty(qty);
                     
                     const priceEl = document.getElementById(`checkout-price-${p.id}`);
                     if(priceEl) {
@@ -548,7 +539,7 @@
                     const rowImg = rowContainer ? rowContainer.querySelector('img') : null;
                     if(rowImg) {
                         if(qty > 0) {
-                            rowImg.parentElement.classList.remove('opacity-60', 'grayscale');
+                            rowImg.classList.remove('grayscale', 'opacity-60');
                         } else {
                             rowImg.parentElement.classList.add('opacity-60', 'grayscale');
                         }
@@ -574,15 +565,12 @@
             actionBtn.onclick = async () => {
                 if (!navigator.onLine) { toast("No internet connection", "wifi-off"); return; }
                 
-                const cartHasItems = Object.values(state.cart).some(q => q > 0);
-                if (!cartHasItems) { toast("Please add at least one item", "shopping-bag"); return; }
-
                 const name = safeVal(node.querySelector('#inp-name'));
                 const phone = safeVal(node.querySelector('#inp-phone'));
                 
                 if (!name || !/^[6-9]\d{9}$/.test(phone)) {
                     resetActionButton(actionBtn, btnText);
-                    toast('Please enter name and mobile number', 'alert-circle');
+                    toast('Please enter name and valid mobile number', 'alert-circle');
                     return;
                 }
                 
@@ -591,9 +579,10 @@
                 actionBtn.innerHTML = `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>`;
                 
                 saveUser(name, phone);
-                const finalGroupId = joinGroupId || ('g-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+                const finalGroupId = joinGroupId || window.fs.doc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups")).id;
                 
                 try {
+                    // Create group doc if needed
                     if (!joinGroupId) {
                         const groupData = { 
                             id: finalGroupId, 
@@ -601,10 +590,11 @@
                             expiresAt: getTodayCutoffTimestamp(), 
                             createdAt: Date.now(), 
                             type: 'multi', 
-                            memberCount: 1, 
+                            memberCount: 0, 
+                            totalQty: 0, 
                             unlockedAt: null
                         };
-                        await window.fs.setDoc(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId), groupData);
+                         await window.fs.setDoc(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId), groupData);
                     }
 
                     let didUnlock = false;
@@ -614,38 +604,70 @@
                         if (!groupSnap.exists()) throw "GROUP_NOT_FOUND";
                         
                         const gData = groupSnap.data();
-                        const currentCount = gData.memberCount || 0;
                         
-                        if (isEditing && oldPhone !== phone) {
-                            const oldMemberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", oldPhone);
+                        const currentMembers = state.members[finalGroupId] || [];
+                        
+                        const existingMember = currentMembers.find(m => m.phone === phone);
+                        const oldMember = currentMembers.find(m => m.phone === oldPhone);
+
+                        let memberId = existingMember ? existingMember.id : crypto.randomUUID();
+                        
+                        if (isEditing && oldPhone !== phone && oldMember) {
+                            const oldMemberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", oldMember.id);
                             transaction.delete(oldMemberRef);
                         }
 
-                        const memberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", phone);
+                        const cartQty = Object.values(state.cart).reduce((a,b) => a+b, 0);
+
+                        const memberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", memberId);
+                        
+                        let currentTotal = gData.totalQty || 0;
+                        let currentCount = gData.memberCount || 0;
+
                         const memberSnap = await transaction.get(memberRef);
                         
-                        let newCount = currentCount;
-                        if (!memberSnap.exists() && joinGroupId && (!isEditing || oldPhone !== phone)) {
-                            newCount = currentCount + 1;
+                        if (memberSnap.exists()) {
+                            const oldData = memberSnap.data();
+                            const oldCart = oldData.cart || {};
+                            const oldQty = Object.values(oldCart).reduce((a,b)=>a+b, 0) + (oldData.quantity || 0); // legacy fallback
+                            currentTotal -= oldQty;
+                        } else {
+                            currentCount += 1;
                         }
+                        
+                        currentTotal += cartQty;
+                        currentTotal = Math.round(currentTotal * 100) / 100;
 
-                        let updates = { memberCount: newCount };
-                        if (newCount >= MIN_GROUP_SIZE && !gData.unlockedAt) {
+                        let updates = { 
+                            memberCount: currentCount,
+                            totalQty: currentTotal
+                        }; 
+
+                        // 🔥 SPEC FIX 3: EXACT UNLOCK CODE (DO NOT MODIFY)
+                        // Unlock condition: memberCount >= MIN_GROUP_SIZE
+                        if (currentCount >= MIN_GROUP_SIZE && !gData.unlockedAt) {
                             didUnlock = true;
                             updates.unlockedAt = window.fs.serverTimestamp();
                         }
 
                         transaction.set(memberRef, {
-                            memberId: phone,
+                            memberId: memberId,
                             name,
                             phone,
                             cart: state.cart,
                             joinedAt: Date.now(),
-                            isLeader: (!joinGroupId) || (isEditing && gData.ownerName === name)
+                            isLeader: (!joinGroupId && !memberSnap.exists()) || (isEditing && gData.ownerName === name)
                         });
                         
-                        if (joinGroupId) transaction.update(groupRef, updates);
+                        transaction.update(groupRef, updates);
                     });
+
+                    // 🔥 SPEC FIX 7: STATE CLEANUP AFTER JOIN
+                    if (joinGroupId) {
+                        state.pendingJoinId = null;
+                        state.invitingGroup = null;
+                        IS_JOIN_LINK = false;
+                    }
 
                     saveJoinedGroup(finalGroupId);
                     state.cart = {}; 
@@ -669,18 +691,9 @@
         };
 
         window.editOrder = function(gid) {
-            if (isPastCutoff()) { 
-                toast("Orders closed for today", "clock"); 
-                return; 
-            }
             const members = state.members[gid] || [];
             const me = members.find(m => m.phone === JOIN_SESSION_PHONE);
-            
             if (me) {
-                state.cart = me.cart || {};
-                if (!me.cart && me.quantity) {
-                    state.cart['tomato'] = me.quantity; 
-                }
                 openCheckoutModal(gid);
             } else {
                 toast("Member profile not found", "alert-circle");
@@ -693,6 +706,20 @@
         };
 
         function renderHome(el) {
+            const isClosedGlobally = isPastCutoff();
+            
+            // 🔥 FIX 2: Better Fallback UI (Corrected Guard)
+            if (state.pendingJoinId && !state.invitingGroup) {
+                  el.innerHTML = `
+                  <div class="min-h-screen flex items-center justify-center text-gray-400">
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-6 h-6 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin"></div>
+                        <span>Loading group…</span>
+                    </div>
+                  </div>`;
+                return;
+            }
+
             if (cutoffTimerInterval) { clearInterval(cutoffTimerInterval); cutoffTimerInterval = null; }
 
             const activeUserGroups = [];
@@ -701,7 +728,6 @@
             });
             activeUserGroups.sort((a, b) => b.createdAt - a.createdAt);
             
-            // 🔥 NEW: INVITATION BANNER FOR JOINERS
             let invitationHtml = '';
             let headerTitle = `
                 <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
@@ -710,7 +736,6 @@
 
             if (state.invitingGroup) {
                 const ig = state.invitingGroup;
-                // 🔥 UPDATED: Dynamic JODO x Creator Header
                 headerTitle = `
                 <div class="flex flex-col">
                     <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1 flex items-baseline gap-1">
@@ -749,8 +774,9 @@
             if (activeUserGroups.length > 0) {
                 const cardsHtml = activeUserGroups.map(g => {
                     const members = state.members[g.id] || []; 
-                    const isUnlocked = members.length >= MIN_GROUP_SIZE;
-                    const statusLabel = isUnlocked ? 'Active' : 'Waiting for others';
+                    const isUnlocked = !!g.unlockedAt;
+                    // 🔥 UPDATED: Show member count status
+                    const statusLabel = isUnlocked ? 'Active' : `${g.memberCount || 0}/${MIN_GROUP_SIZE} joined`;
                     const statusClass = isUnlocked ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-gray-50 border-gray-200';
                     return `<div onclick="openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
                         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 relative overflow-hidden h-full">
@@ -763,8 +789,6 @@
                 }).join('');
                 heroContent = `<div class="mt-6 mb-4"><div class="px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">${cardsHtml}</div></div>`;
             }
-            
-            const isClosedGlobally = isPastCutoff();
             
             let cartCount = 0;
             let cartTotal = 0;
@@ -798,41 +822,40 @@
                         
                         ${PRODUCTS.map(p => {
                             const qty = state.cart[p.id] || 0;
-                            const qtyLabel = qty < 1 ? (qty * 1000).toFixed(0) + 'g' : qty + 'kg';
+                            const qtyLabel = formatQty(qty);
                             const itemPrice = Math.round(qty * p.price5);
                             
                             return `
                             <div class="bg-white p-4 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden transition-all duration-200 mb-3 ${isClosedGlobally ? 'opacity-70 grayscale-[0.5]' : ''}">
                                 <div class="flex gap-4">
-                                    <div class="w-24 h-24 bg-gray-50 rounded-xl shrink-0 relative overflow-hidden border border-gray-100">
+                                    <div class="w-20 h-20 bg-gray-50 rounded-xl shrink-0 relative overflow-hidden border border-gray-100">
                                          <img src="${p.imageSrc}" class="w-full h-full object-cover" alt="${p.name}" loading="lazy">
                                          ${isClosedGlobally ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="text-white font-bold text-xs bg-black/50 px-2 py-1 rounded">CLOSED</span></div>' : ''}
                                     </div>
 
                                     <div class="flex-1 flex flex-col justify-between py-1">
                                          <div>
-                                             <h3 class="font-bold text-lg text-gray-900 leading-tight mb-1">${p.name}</h3>
-                                             <p class="text-sm text-gray-500">${p.nameTe}</p>
+                                            <h3 class="font-bold text-lg text-gray-900 leading-tight mb-1">${p.name}</h3>
+                                            <p class="text-sm text-gray-500">${p.nameTe}</p>
                                          </div>
                                          
                                          <div class="mt-2 flex items-center justify-between">
-                                             <div class="bg-green-50 rounded-lg px-2 py-1 border border-green-100 flex flex-col">
-                                                 <span class="text-[10px] font-bold text-green-700 uppercase">Group Price</span>
-                                                 <span class="text-sm font-bold text-green-700">₹${p.price5}<span class="text-[10px] font-medium">/kg</span></span>
-                                             </div>
-                                             
-                                             <!-- Add/Qty Control -->
-                                             ${qty === 0 ? `
+                                            <div class="bg-green-50 rounded-lg px-2 py-1 border border-green-100 flex flex-col">
+                                                <span class="text-[10px] font-bold text-green-700 uppercase">Group Price</span>
+                                                <span class="text-lg font-bold text-green-700">₹${p.price5}<span class="text-[10px] font-medium">/${p.unit}</span></span>
+                                            </div>
+                                            
+                                            ${qty === 0 ? `
                                                 <button onclick="updateCart('${p.id}', ${p.step})" class="bg-white border border-gray-300 text-gray-700 font-bold px-4 py-2 rounded-xl text-sm shadow-sm active:bg-gray-50 btn-press">
-                                                    ADD +
+                                                    Add
                                                 </button>
-                                             ` : `
+                                            ` : `
                                                 <div class="flex items-center bg-gray-900 rounded-xl px-1 py-1 shadow-md">
                                                     <button onclick="updateCart('${p.id}', -${p.step})" class="w-8 h-8 flex items-center justify-center text-white active:text-gray-300"><i data-lucide="minus" size="14"></i></button>
                                                     <div class="w-12 text-center text-sm font-bold text-white leading-none">${qtyLabel}</div>
                                                     <button onclick="updateCart('${p.id}', ${p.step})" class="w-8 h-8 flex items-center justify-center text-white active:text-gray-300"><i data-lucide="plus" size="14"></i></button>
                                                 </div>
-                                             `}
+                                            `}
                                          </div>
                                     </div>
                                 </div>
@@ -849,7 +872,7 @@
                                 <span class="text-lg leading-none">₹${Math.round(cartTotal)}</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                ${state.pendingJoinId ? 'Join Group' : 'Start Group Order'} <i data-lucide="arrow-right" size="20"></i>
+                                ${state.pendingJoinId ? 'Join & get lower price' : 'Start saving today'} <i data-lucide="arrow-right" size="20"></i>
                             </div>
                         </button>
                     </div>
@@ -861,10 +884,9 @@
             const homeTimer = document.getElementById('home-timer');
             if (homeTimer) {
                 startCutoffTimer((remaining) => {
-                    homeTimer.textContent = 
-                      remaining > 0 
-                        ? `⏰ ${formatRemaining(remaining)} • ఇప్పుడే చేయకపోతే ధర పెరుగుతుంది` 
-                        : "⛔ Missed today — price is back to normal";
+                    homeTimer.textContent = remaining > 0 
+                      ? `⏰ ${formatRemaining(remaining)} • ఇప్పుడే చేయకపోతే ధర పెరుగుతుంది` 
+                      : "⛔ Missed today — price is back to normal";
                 });
             }
         }
@@ -885,8 +907,10 @@
             }
             
             const members = state.members[g.id] || []; 
-            const count = members.length;
-            const isUnlocked = count >= MIN_GROUP_SIZE;
+            // 🔥 SPEC FIX 2: SINGLE SOURCE OF TRUTH (g.memberCount)
+            const count = g.memberCount || members.length;
+            const totalKg = g.totalQty || 0;
+            const isUnlocked = !!g.unlockedAt;
             const isExpired = Date.now() > g.expiresAt || isPastCutoff();
             const hasJoinedThisGroup = !IS_JOIN_LINK && JOIN_SESSION_PHONE && members.some(m => m.phone === JOIN_SESSION_PHONE);
             const isCreator = JOIN_SESSION_PHONE && g.ownerName && members.some(m => m.phone === JOIN_SESSION_PHONE && m.isLeader === true);
@@ -894,6 +918,10 @@
             const mustForceShare = (isCreator || hasJoinedThisGroup) && !isUnlocked;
             const isFull = false; 
             
+            // 🔥 SPEC FIX 6: UI PROGRESS & MESSAGES (MATCH THE LOGIC)
+            const remainingMembers = Math.max(0, MIN_GROUP_SIZE - count);
+            const progressPct = Math.min(100, (count / MIN_GROUP_SIZE) * 100);
+
             const backButtonHtml = mustForceShare 
                 ? `<div class="font-bold text-sm text-red-600 animate-pulse">Share to confirm order</div>`
                 : `<div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="goHome()">
@@ -935,19 +963,16 @@
                             </p>
                         </div>` : ''}
 
-                        ${isExpired ? `
-                        <div class="bg-red-50 text-red-700 p-4 mb-6 rounded-xl text-center border border-red-100 flex flex-col items-center justify-center gap-1">
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="lock" size="18"></i>
-                                <div class="font-bold text-sm uppercase">Order Closed</div>
-                            </div>
-                        </div>` : ''}
-
                         <div class="space-y-3 mb-8">
                             <div class="flex justify-between items-end mb-4">
                                 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">${isCreator ? 'People in Your Group' : 'People Joined'}</h3>
                                 <div class="flex flex-col items-end">
-                                   ${!isUnlocked ? `<span class="text-xs font-bold text-jodo-ctaPrimary animate-pulse">Waiting for 1 more</span>` : '<span class="text-xs font-bold text-green-600">Unlocked!</span>'}
+                                   ${!isUnlocked 
+                                     ? `<span class="text-xs font-bold text-orange-800 bg-orange-100 px-2 py-0.5 rounded animate-pulse">Need ${remainingMembers} more person${remainingMembers === 1 ? '' : 's'}</span>` 
+                                     : '<span class="text-xs font-bold text-green-800 bg-green-100 px-2 py-0.5 rounded">Unlocked!</span>'}
+                                    <div class="w-24 h-1.5 bg-gray-100 rounded-full mt-1 overflow-hidden">
+                                        <div class="h-full ${isUnlocked ? 'bg-green-500' : 'bg-orange-400'} transition-all duration-500" style="width: ${progressPct}%"></div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -961,15 +986,19 @@
                                     for(const [pid, qty] of Object.entries(member.cart)) {
                                         const p = PRODUCTS.find(x => x.id === pid);
                                         if(p && qty > 0) {
-                                            totalVal += qty * p.price5;
-                                            const l = qty < 1 ? (qty*1000).toFixed(0)+'g' : qty+'kg';
+                                            // 🔥 SPEC FIX 5: PRICING RULE (TIED ONLY TO UNLOCK STATUS)
+                                            // Use getPrice(p, isUnlocked) instead of p.price5
+                                            const activePrice = getPrice(p, isUnlocked);
+                                            totalVal += qty * activePrice;
+                                            const l = formatQty(qty);
                                             parts.push(`${l} ${p.name}`);
                                         }
                                     }
                                     itemsText = parts.join(", ");
                                 } else if (member.quantity) {
                                     const p = PRODUCTS.find(x => x.id === 'tomato'); 
-                                    totalVal = member.quantity * p.price5;
+                                    const activePrice = getPrice(p, isUnlocked);
+                                    totalVal = member.quantity * activePrice;
                                     itemsText = `${member.quantity}kg ${p.name}`;
                                 }
 
@@ -1003,15 +1032,10 @@
                                 if (hasJoinedThisGroup) {
                                     return `
                                     <div class="text-center text-[10px] text-gray-400 font-medium mb-1">${!isUnlocked ? 'Share to help everyone unlock price' : 'Deal unlocked!'}</div>
-                                    <div class="flex gap-3">
-                                        <button onclick="editOrder('${g.id}')" class="flex-1 bg-white border border-gray-300 text-gray-700 h-[56px] rounded-xl font-bold text-lg shadow-sm btn-press">
-                                            Edit
-                                        </button>
-                                        <button onclick="shareGroup('${g.id}', ${isUnlocked})" class="flex-[2] bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2">
-                                            <i data-lucide="share-2" size="20"></i>
-                                            <span>Invite</span>
-                                        </button>
-                                    </div>`;
+                                    <button onclick="shareGroup('${g.id}', ${isUnlocked})" class="w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold text-lg text-center shadow-sm btn-press gap-2">
+                                        <i data-lucide="share-2" size="20"></i>
+                                        <span>Invite</span>
+                                    </button>`;
                                 }
 
                                 if (isFull) {
@@ -1043,6 +1067,11 @@
             const app = document.getElementById('app');
             if (!app) return;
             
+            // 🔥 FIX 3: Default View Guard
+            if (!state.view) {
+                state.view = 'home';
+            }
+
             if (state.view === 'home') renderHome(app);
             else renderGroup(app);
             
@@ -1081,6 +1110,7 @@
         }
 
         function initHomeListeners() {
+            // 🔥 SPEC FIX 8: LISTENER DISCIPLINE
             state.homeListeners.forEach(u => u());
             state.homeListeners = [];
             state.user.joinedGroupIds.forEach(gid => {
@@ -1150,6 +1180,8 @@
                 }
             } catch(e) {} 
             AUTO_JOIN_TRIGGERED = false;
+            state.invitingGroup = null;
+            state.pendingJoinId = null;
             state.view = 'home'; 
             state.currentGroupId = null; 
             safeRender(); 
@@ -1164,7 +1196,9 @@
 
             if (gid) {
                 IS_JOIN_LINK = true;
-                state.user = { name: '', phone: '', joinedGroupIds: [] };
+                state.user.name = '';
+                state.user.phone = '';
+                state.user.joinedGroupIds = state.user.joinedGroupIds || [];
                 JOIN_SESSION_PHONE = null;
                 state.view = 'home';
                 state.pendingJoinId = gid; 
@@ -1177,28 +1211,53 @@
             const startApp = async () => {
                 if (IS_JOIN_LINK && state.pendingJoinId) {
                     try {
-                        const docRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", state.pendingJoinId);
+                        const docRef = window.fs.doc(
+                            window.db, 
+                            'artifacts', 
+                            window.appId, 
+                            'public', 
+                            'data', 
+                            "groups", 
+                            state.pendingJoinId
+                        );
                         const snap = await window.fs.getDoc(docRef);
+                        
                         if (snap.exists()) {
-                            state.invitingGroup = snap.data();
-                            state.view = 'home'; 
-                            safeRender();
+                            const g = snap.data();
+                            state.invitingGroup = g;
+                            
+                            state.groups[state.pendingJoinId] = g;
+                            state.members[state.pendingJoinId] = []; 
+                            
+                            // 🔥 FIX 4: Start listeners for join link group
+                            listenToGroupForHome(state.pendingJoinId);
+
+                            state.view = 'home';
                         } else {
                             toast("Group not found", "alert-circle");
                             window.goHome();
+                            return; 
                         }
                     } catch (e) {
-                        console.error("Error fetching inviting group", e);
-                        state.view = 'home';
-                        safeRender();
+                        console.error("Invite load error", e);
+                        window.goHome();
+                        return;
                     }
-                } else {
-                    initHomeListeners(); 
-                    safeRender();
                 }
+                
+                if (IS_JOIN_LINK) loadData(); 
+                if (!IS_JOIN_LINK) {
+                    initHomeListeners(); 
+                }          
+                safeRender();
             };
 
-            window.addEventListener('firebase-ready', startApp);
+            // 🔥 FIX 1: Idempotent Startup
+            if (window.FIREBASE_READY) {
+                startApp();
+            } else {
+                window.addEventListener('firebase-ready', startApp);
+            }
 
             window.addEventListener('popstate', () => {
                 const params = new URLSearchParams(location.search);
