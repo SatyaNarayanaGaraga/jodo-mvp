@@ -3,14 +3,15 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
-    <title>JODO - Group Buying</title>
+    <title>JODO</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     
+    <!-- ✅ FIREBASE INITIALIZATION (SAFE FOR GITHUB PAGES) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-      import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
       import {
         getFirestore,
         doc,
@@ -26,56 +27,55 @@
         where
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-      // --- ENVIRONMENT SETUP ---
-      // Uses the environment's config if available, otherwise falls back to a placeholder for export safety.
-      const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", authDomain: "demo" };
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      // 1. HARDCODED CONFIG (Required for GitHub Pages)
+      const firebaseConfig = {
+        apiKey: "AIzaSyAHsRiYhNea5tFpKVSU7YA9nsR6qINtQdA",
+        authDomain: "jodo-prod-v2.firebaseapp.com",
+        projectId: "jodo-prod-v2",
+        storageBucket: "jodo-prod-v2.firebasestorage.app",
+        messagingSenderId: "577075664016",
+        appId: "1:577075664016:web:dcf613e7650217cc94b415"
+      };
 
-      // 1. INITIALIZE FIREBASE
+      // 2. INITIALIZE
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
 
-      // 2. EXPOSE GLOBALS
+      // 3. EXPOSE GLOBALS (Safe assignment)
       window.db = db;
       window.auth = auth;
-      window.appId = appId; 
+      window.appId = "jodo-prod-v2"; // Hardcoded Project ID for pathing
       
-      // Namespace for Firestore functions
+      // Namespace for Firestore functions to avoid top-level destructuring
       window.fs = {
         doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot,
         collection, runTransaction, serverTimestamp, query, where
       };
       
-      console.log("🚀 JODO Initialized", { appId });
+      console.log("🚀 JODO v5.4 - Instant Bootstrap + Auth Safety");
 
-      // 3. AUTH & BOOTSTRAP
-      // We wrap this in an async function to ensure Auth is ready before App logic starts
-      async function initAuth() {
-        try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-            // Once auth is done, signal the app to start
-            if (window.JodoApp && window.JodoApp.Actions) {
-                window.JodoApp.Actions.initApp();
-            }
-        } catch (error) {
-            console.error("Auth Failed:", error);
-            document.getElementById('app').innerHTML = `<div class="p-4 text-center text-red-600 font-bold">Authentication failed. Please refresh.</div>`;
-        }
-      }
-
-      initAuth();
+      // 4. AUTHENTICATE (Background Process)
+      // We do not block UI rendering on this. The SDK queues requests.
+      signInAnonymously(auth).catch((error) => {
+          console.warn("Auth Error (Public Mode):", error);
+      });
     </script>
 
     <script>
         // --- GLOBAL ERROR HANDLER ---
         window.onerror = function(msg, url, lineNo, columnNo, error) {
             if (msg.includes("ResizeObserver")) return;
-            console.error("Global Error:", msg, error);
+            const appEl = document.getElementById('app');
+            if (appEl) {
+                appEl.innerHTML = `
+                    <div style="padding: 20px; color: #DC2626; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; justify-content: center; text-align: center;">
+                        <h2 style="font-weight: bold; font-size: 1.25rem;">Connection Error</h2>
+                        <p style="margin-top: 10px; background: #fee2e2; padding: 10px; border-radius: 8px; font-family: monospace; text-align: left;">${msg}</p>
+                        <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #333; color: #fff; border-radius: 8px; border: none;">Retry</button>
+                    </div>
+                `;
+            }
             return false;
         };
 
@@ -122,7 +122,7 @@
     <div id="app">
         <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; color: #333;">
             <div class="spinner-fallback"></div>
-            <div style="margin-top: 16px; font-family: sans-serif; font-size: 14px; font-weight: 600;">Connecting...</div>
+            <div style="margin-top: 16px; font-family: sans-serif; font-size: 14px; font-weight: 600;">Connecting to JODO...</div>
         </div>
     </div>
 
@@ -136,18 +136,23 @@
 
     <script type="module">
         /*
-         * JODO APP ARCHITECTURE v5.1
+         * JODO APP ARCHITECTURE v5.0
+         * 1. CONSTANTS - Config & Static Data
+         * 2. STORE - Centralized State Management
+         * 3. SERVICES - Firebase & Logic Abstraction
+         * 4. ACTIONS - Business Logic
+         * 5. UI - Rendering Logic
          */
 
         // ==========================================
         // 1. CONSTANTS
         // ==========================================
         const CONSTANTS = {
-            PUBLIC_SHARE_URL: window.location.href.split('?')[0],
+            PUBLIC_SHARE_URL: "https://satyanarayanagaraga.github.io/jodo-mvp/",
             MIN_GROUP_SIZE: 2,
             GROUP_MAX_KG: 20,
             GROUPS_STORAGE_KEY: 'jodo_groups_joined_v1',
-            CUTOFF_HOUR: 22, // 10 PM
+            CUTOFF_HOUR: 21, // 9 PM
             PRODUCTS: [
                 { 
                     id: 'tomato', name: 'Fresh Tomatoes', nameTe: 'టమాటాలు', unit: '1kg', baseWeight: 1, step: 0.25, weightUnit: 'kg', 
@@ -222,11 +227,15 @@
         const Services = {
             // Subscription Manager to prevent listener leaks
             Subscriptions: {
-                active: {}, 
+                active: {}, // Stores unsubscribe functions
                 
                 add(key, unsubscribeFn) {
+                    // If a listener exists for this key, don't overwrite it, 
+                    // or unsubscribe first if we are replacing it.
                     if (this.active[key]) {
-                        return; // Listener already active
+                        // For this app, we usually want to keep home listeners active.
+                        // But if we explicitly want to replace, we call remove first.
+                        return;
                     }
                     this.active[key] = unsubscribeFn;
                 },
@@ -264,8 +273,11 @@
             Pricing: {
                 // Determine price based on member count tiers
                 getPrice(product, memberCount = 1) {
+                    // Find the highest tier met by memberCount
+                    // Tiers are sorted by minMembers usually, but let's be safe
                     const validTiers = product.tiers.filter(t => memberCount >= t.minMembers);
                     if (validTiers.length === 0) return product.tiers[0].price;
+                    // Sort descending by minMembers to get best price
                     validTiers.sort((a,b) => b.minMembers - a.minMembers);
                     return validTiers[0].price;
                 },
@@ -276,10 +288,7 @@
             },
 
             Data: {
-                // Strict path construction
-                getGroupsCol() {
-                    return window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'groups');
-                },
+                // Strict path construction to adhere to environment rules
                 getGroupRef(gid) {
                     return window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid);
                 },
@@ -287,11 +296,13 @@
                     return window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members");
                 },
                 
-                listenToGroup(gid) {
-                    if (!gid) return;
+                listenToGroup(gid, isHomeContext = false) {
                     const keyG = `group_${gid}`;
                     const keyM = `members_${gid}`;
 
+                    // If viewing group details, we might want to refresh listeners or keep them separate?
+                    // For MVP, sharing listeners is fine if keys are unique.
+                    
                     if (!Services.Subscriptions.active[keyG]) {
                         const unsubG = window.fs.onSnapshot(this.getGroupRef(gid), (snap) => {
                             if (snap.exists()) {
@@ -334,6 +345,7 @@
                 Store.state.user.joinedGroupIds.forEach(id => Services.Data.listenToGroup(id));
 
                 if (gid) {
+                    // FIX 2: FORCE HOME VIEW ON INVITE
                     Store.update('view', 'home');
                     Store.update('pendingJoinId', gid);
                     this.fetchInviteGroup(gid);
@@ -406,6 +418,7 @@
                     return false;
                 }
 
+                // 🔥 SAFETY: AUTH GUARD
                 if (!window.auth.currentUser) {
                     UI.toast("Connecting to network... please retry.", "wifi");
                     return false;
@@ -415,7 +428,8 @@
                 Store.updateUser('phone', phone);
                 
                 const cart = { ...Store.state.cart };
-                const groupsCol = Services.Data.getGroupsCol();
+                // Ensure strict path compliance
+                const groupsCol = window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups");
                 const finalGroupId = joinGroupId || window.fs.doc(groupsCol).id;
 
                 try {
@@ -445,7 +459,7 @@
                         if (!groupSnap.exists()) throw "GROUP_NOT_FOUND";
                         
                         const gData = groupSnap.data();
-                        const memberRef = window.fs.doc(Services.Data.getMembersCol(finalGroupId), phone);
+                        const memberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", phone);
                         const memberSnap = await transaction.get(memberRef);
 
                         const isNewMember = !memberSnap.exists();
@@ -468,10 +482,10 @@
                         }
                         const qtyChange = currentCartQty - oldQty;
 
-                        // capacity check
+                        // capacity check (still valid)
                         const maxKg = gData.maxKg || CONSTANTS.GROUP_MAX_KG;
                         if (qtyChange > 0 && (newPending + newUsed + qtyChange) > maxKg) {
-                            throw `Sold Out! Only ${Math.max(0, maxKg - (newPending + newUsed)).toFixed(2)}kg left.`;
+                            throw `Sold Out! Only ${Math.max(0, maxKg - (newPending + newUsed))}kg left.`;
                         }
 
                         // apply qty
@@ -508,6 +522,7 @@
                     if (joinGroupId) {
                         Store.update('pendingJoinId', null);
                         Store.update('invitingGroup', null);
+                        // FIX 1: REMOVE navigateToHome() TO PREVENT RACE CONDITION
                     }
                     
                     // Add to local list
@@ -531,7 +546,7 @@
 
                 } catch (e) {
                     console.error("Order Error", e);
-                    UI.toast(typeof e === 'string' ? e : "Transaction failed. Try again.", "alert-triangle");
+                    UI.toast(typeof e === 'string' ? e : "Transaction failed", "alert-triangle");
                     return false;
                 }
             }
@@ -581,7 +596,7 @@
                     const qty = cart[pid]; 
                     if (qty > 0) { 
                         cartCount++; 
-                        // Base price for cart preview (using Best Price for estimation)
+                        // Base price for cart preview
                         cartTotal += qty * CONSTANTS.PRODUCTS.find(p => p.id === pid).tiers[1].price; 
                     }
                 });
@@ -591,7 +606,7 @@
                     <div class="glass-header sticky top-0 z-40 px-4 pt-safe pb-3 flex justify-between items-end min-h-[88px]">
                         <div class="flex flex-col justify-end pb-0.5 w-full">
                             <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
-                            <span class="text-[10px] text-gray-500 font-bold tracking-wide">Group orders for ${new Date().toLocaleDateString('en-US', {weekday:'long'})}</span>
+                            <span class="text-[10px] text-gray-500 font-bold tracking-wide">Group orders for Duvva</span>
                             <div id="home-timer" class="text-[10px] font-bold text-red-600 mt-1">Loading…</div>
                         </div>
                     </div>
@@ -689,12 +704,18 @@
                 const myPhone = Store.state.user.phone;
                 const hasJoined = myPhone && memberList.some(m => m.phone === myPhone);
                 
+                // Calculate current pricing based on member count
+                // If unlocked, use max pricing tier. If not, calculate current tier?
+                // Actually, logic says: Locked = Tier 0, Unlocked = Tier 1 (Best).
+                // But let's use the dynamic function.
+                
                 const memberHtml = memberList.map(m => {
                     const isMe = myPhone === m.phone;
                     let totalVal = 0;
                     const parts = Object.entries(m.cart || {}).map(([pid, qty]) => {
                         const p = CONSTANTS.PRODUCTS.find(x => x.id === pid); 
                         if(!p || qty <= 0) return null;
+                        // Use pricing service
                         const price = Services.Pricing.getPrice(p, g.memberCount); // Dynamic!
                         totalVal += qty * price;
                         return `${Services.Pricing.formatQty(qty)} ${p.name}`;
@@ -747,6 +768,7 @@
                          // Sync to store for reactive updates
                          Store.update('cart', activeCart);
                      } else {
+                         // FIX 3: Block empty join for new members
                          if (Object.keys(Store.state.cart).length === 0) {
                              this.toast("Please select items before joining", "shopping-bag");
                              return;
@@ -947,7 +969,7 @@
                 if (this._timerInterval) clearInterval(this._timerInterval);
                 const tick = () => {
                     const rem = Services.Time.getCutoffTimestamp() - Date.now();
-                    el.textContent = rem > 0 ? `⏰ ${Services.Time.isPastCutoff() ? "Closed" : Services.Pricing.formatQty(rem/3600000).replace('kg','h') + " left"}` : "⛔ Today's orders closed"; 
+                    el.textContent = rem > 0 ? `⏰ ${Services.Time.isPastCutoff() ? "Closed" : Services.Pricing.formatQty(rem/3600000).replace('kg','h') + " left"}` : "⛔ Today's orders closed"; // Hacky format, better to just use helper
                     
                     if (rem > 0) {
                         const h = Math.floor(rem/3600000);
@@ -961,10 +983,20 @@
         };
 
         // ==========================================
-        // EXPOSE
+        // EXPOSE & BOOTSTRAP
         // ==========================================
         
+        // Expose to window for HTML event attributes (onclick="...")
         window.JodoApp = { Actions, UI };
+
+        // Start
+        function bootstrap() {
+             Actions.initApp();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+             bootstrap();
+        });
 
     </script>
 </body>
