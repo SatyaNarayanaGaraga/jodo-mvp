@@ -18,11 +18,11 @@
                             textSecondary: '#4B5563',
                             ctaPrimary: '#15803D',
                             ctaSuccess: '#15803D',      
-                            bonus: '#F3F4F6',          
-                            bonusText: '#374151',       
-                            urgency: '#4B5563',         
+                            bonus: '#F3F4F6',            
+                            bonusText: '#374151',        
+                            urgency: '#4B5563',          
                             border: '#E5E7EB',          
-                            error: '#DC2626',           
+                            error: '#DC2626',            
                         }
                     },
                     fontFamily: {
@@ -30,11 +30,13 @@
                     },
                     animation: {
                         'fade-in-up': 'fadeInUp 0.5s ease-out',
-                        'slide-up': 'slideUp 0.3s ease-out forwards'
+                        'slide-up': 'slideUp 0.3s ease-out forwards',
+                        'pop': 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                     },
                     keyframes: {
                         fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-                        slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        popIn: { '0%': { opacity: '0', transform: 'scale(0.9)' }, '100%': { opacity: '1', transform: 'scale(1)' } }
                     }
                 }
             }
@@ -51,11 +53,28 @@
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .price-anchor { color: #15803D; font-weight: 700; letter-spacing: -0.01em; }
+        
+        /* Fallback Spinner Styles */
+        .spinner-fallback {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #E5E7EB;
+            border-top: 3px solid #15803D;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="antialiased">
 
-    <div id="app"></div>
+    <!-- Robust Loading Screen with Inline Styles (No Tailwind Dependency) -->
+    <div id="app">
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; color: #333;">
+            <div class="spinner-fallback"></div>
+            <div style="margin-top: 16px; font-family: sans-serif; font-size: 14px; font-weight: 600;">Loading JODO...</div>
+        </div>
+    </div>
 
     <div id="modal-overlay" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-300">
         <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-[1.5rem] shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden pb-safe"></div>
@@ -65,7 +84,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import {
           getFirestore,
           doc,
@@ -81,49 +100,87 @@
           where
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        const firebaseConfig = JSON.parse(__firebase_config);
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        
-        // Expose db for convenience if needed, but we will use 'db' directly in module scope
-        window.db = db;
-        // window.fs = { ... }  <-- DELETED: Removed as per instruction to fix white screen crash
-        window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        
-        // 🔒 GLOBAL READY FLAG
-        window.FIREBASE_READY = false;
+        let firebaseConfig;
+        let app, auth, db;
 
+        // Error-Resilient Config Loading
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } else {
+                console.warn("Using fallback config");
+                // ⚠️ REPLACE WITH YOUR REAL FIREBASE CONFIG BEFORE DEPLOYING TO GITHUB
+                firebaseConfig = {
+                    apiKey: "YOUR_API_KEY_HERE",
+                    authDomain: "YOUR_PROJECT.firebaseapp.com",
+                    projectId: "YOUR_PROJECT_ID",
+                    storageBucket: "YOUR_PROJECT.appspot.com",
+                    messagingSenderId: "SENDER_ID",
+                    appId: "APP_ID"
+                };
+            }
+            
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            window.db = db; 
+            window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            window.FIREBASE_READY = false;
+
+        } catch (e) {
+            console.error("🔥 Init Failed:", e);
+            document.getElementById("app").innerHTML = `
+                <div style="padding: 2rem; text-align: center; color: #DC2626; height: 100vh; display: flex; flex-direction: column; justify-content: center; font-family: sans-serif;">
+                    <h3 style="font-weight: bold; margin-bottom: 0.5rem;">Connection Error</h3>
+                    <p>${e.message}</p>
+                </div>
+            `;
+            throw e;
+        }
+
+        // --- AUTHENTICATION FLOW ---
         const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
-                    console.log("✅ Authenticated with Custom Token");
                 } else {
-                    await signInAnonymously(auth);
-                    console.log("✅ Authenticated Anonymously");
+                    if (!auth.currentUser) {
+                        await signInAnonymously(auth);
+                    }
                 }
-                // 🔒 Critical Fix 1: Set flag before dispatch
                 window.FIREBASE_READY = true;
                 window.dispatchEvent(new Event('firebase-ready'));
             } catch (err) {
                 console.error("Authentication failed", err);
+                document.getElementById("app").innerHTML = `<div style="padding:20px; text-align:center; color:red; margin-top: 50px;">Authentication Failed.<br><small>${err.message}</small></div>`;
             }
         };
         initAuth();
 
         // ==========================================
-        // APP LOGIC MERGED INTO MODULE SCOPE
+        // APP LOGIC
         // ==========================================
 
-        // 🔒 BOOTSTRAP GUARD (Must be first)
         var JODO_INITIALIZED = false;
         var renderScheduled = false;
-
-        // --- CONSTANTS & CONFIG ---
         var COMPANY_PHONE = "918500742671"; 
-        var BASE_URL = 'https://satyanarayanagaraga.github.io/jodo-mvp';
+        
+        // Safe URL Parsing for Navigation State
+        var BASE_URL;
+        try {
+            var _urlObj = new URL(window.location.href);
+            _urlObj.search = '';
+            _urlObj.hash = '';
+            BASE_URL = _urlObj.toString();
+            if (BASE_URL.endsWith('index.html')) BASE_URL = BASE_URL.replace('index.html', '');
+            if (!BASE_URL.endsWith('/') && !BASE_URL.match(/\.[a-zA-Z0-9]+$/)) BASE_URL += '/';
+        } catch(e) {
+            console.warn("URL Parse Error, using default");
+            BASE_URL = window.location.origin + "/";
+        }
+
+        // 🔥 HARDCODED PRODUCTION URL FOR SHARING
+        var PUBLIC_SHARE_URL = "https://satyanarayanagaraga.github.io/jodo-mvp/";
         
         var MIN_GROUP_SIZE = 2; 
         
@@ -142,17 +199,13 @@
         var GROUPS_KEY = 'jodo_groups_joined_v1';
         
         function formatQty(qty) {
-            return qty < 1 
-                ? (qty * 1000).toFixed(0) + 'g' 
-                : qty + 'kg';
+            return qty < 1 ? (qty * 1000).toFixed(0) + 'g' : qty + 'kg';
         }
 
-        // 🔥 SPEC FIX 5: Pricing depends on unlockedAt, nothing else.
         function getPrice(product, isUnlocked) {
             return isUnlocked ? product.price5 : product.price1;
         }
         
-        // --- HELPER FOR CUTOFF ---
         function getTodayCutoffTimestamp() {
             const now = new Date();
             now.setHours(21, 0, 0, 0); 
@@ -187,10 +240,9 @@
             cutoffTimerInterval = setInterval(tick, 1000);
         }
 
-        // 🔥 FIX 3: HARD DEFAULT VIEW
         var state = { 
             view: 'home', 
-            mode: 'HOME', // HOME, JOIN, GROUP
+            mode: 'HOME', 
             currentGroupId: null, 
             groups: {}, 
             members: {}, 
@@ -227,7 +279,6 @@
             JOIN_SESSION_PHONE = phone;
         }
 
-        // Exposed to Window
         window.logout = function() {
             localStorage.removeItem('jodo_user_name');
             localStorage.removeItem('jodo_user_phone');
@@ -284,7 +335,6 @@
             if(window.lucide) window.lucide.createIcons(); 
         }
 
-        // Exposed to Window
         window.closeModal = () => {
             const overlay = document.getElementById('modal-overlay');
             const content = document.getElementById('modal-content');
@@ -318,22 +368,20 @@
             });
         }
 
-        // Exposed to Window
         window.openSupportOptions = function() {
             window.open("https://wa.me/" + COMPANY_PHONE, "_blank");
         };
 
         function generateInviteLink(groupId, isUnlocked) {
-            const currentUrl = `${BASE_URL}?group=${groupId}`;
+            const currentUrl = `${PUBLIC_SHARE_URL}?group=${groupId}`;
             const inviteMsg = isUnlocked 
                 ? `ఈరోజు గ్రూప్ డీల్ అన్‌లాక్ అయ్యింది ✅\n\nమా గ్రూప్‌లో అందరూ తక్కువ ధరకే కొంటున్నారు\nఇప్పుడే జాయిన్ అయితే నీకూ అదే రేట్\n\n👉 ${currentUrl}`
                 : `ఈరోజు ఆర్డర్ మొదలైంది\n\nఇది ఆగిపోతే అందరం షాపు ధరకే కొనాలి\nనేనే మొదలుపెట్టాను, నువ్వే చివరివాడు\n\n👉 ${currentUrl}`;
             return `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
         }
         
-        // Exposed to Window
         window.shareGroup = function(groupId, isUnlocked) {
-            const currentUrl = `${BASE_URL}?group=${groupId}`;
+            const currentUrl = `${PUBLIC_SHARE_URL}?group=${groupId}`;
             const text = isUnlocked 
                 ? `ఈరోజు గ్రూప్ డీల్ అన్‌లాక్ అయ్యింది ✅\n\nమా గ్రూప్‌లో అందరూ తక్కువ ధరకే కొంటున్నారు\nఇప్పుడే జాయిన్ అయితే నీకూ అదే రేట్`
                 : `ఈరోజు ఆర్డర్ మొదలైంది\n\nఇది ఆగిపోతే అందరం షాపు ధరకే కొనాలి\nనేనే మొదలుపెట్టాను, నువ్వే చివరివాడు`;
@@ -343,7 +391,6 @@
         };
 
         // --- CART ACTIONS ---
-        // Exposed to Window
         window.updateCart = function(productId, delta) {
             if (isPastCutoff()) {
                 toast("Orders closed for today", "clock");
@@ -370,7 +417,6 @@
             safeRender();
         };
 
-        // Exposed to Window
         window.openJoinFlow = function(gid) {
             if (IS_JOIN_LINK) {
                 state.user.name = '';
@@ -389,8 +435,6 @@
             window.openCheckoutModal(gid);
         };
 
-        // 🔥 CHECKOUT MODAL
-        // Exposed to Window
         window.openCheckoutModal = function(joinGroupId = null) {
             if (isPastCutoff()) {
                 toast("Orders closed.", "clock");
@@ -407,9 +451,8 @@
                 if (Object.keys(state.cart).length === 0 && me.quantity) {
                     state.cart['tomato'] = me.quantity;
                 }
-            } else if (joinGroupId) {
-                state.cart = {}; 
-            }
+            } 
+            // 🔥 PRESERVE CART for Joiners
             
             if (!joinGroupId && Object.keys(state.cart).length === 0) {
                 toast("Please select items first", "shopping-bag");
@@ -428,7 +471,6 @@
             const itemsHtml = PRODUCTS.map(p => {
                 const qty = state.cart[p.id] || 0;
                 
-                // Visual only: Shows target price in checkout to encourage signup
                 const jodoPrice = p.price5;
                 const marketPrice = p.price1;
                 
@@ -481,7 +523,7 @@
                     </div>
                     <div class="p-5 overflow-y-auto flex-1 relative bg-gray-50/30">
                         
-                        <!-- PSYCHOLOGICAL SAVINGS BANNER -->
+                        <!-- SAVINGS BANNER -->
                         <div class="bg-white border border-green-200 rounded-xl p-6 mb-6 shadow-sm text-center relative transition-all" id="savings-banner">
                             <div class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Savings</div>
                             <div class="text-6xl font-black text-green-600 tracking-tighter mb-3 leading-none" id="summary-savings">₹${Math.round(totalSavings)}</div>
@@ -517,8 +559,6 @@
             `);
             showModalNode(node);
 
-            // Re-render logic for inside modal (Update specific IDs)
-            // Exposed to Window
             window.renderCheckoutTotal = () => {
                 let totalJodo = 0;
                 let totalMarket = 0;
@@ -530,7 +570,6 @@
                         totalMarket += Math.round(qty * p.price1);
                     }
                     
-                    // Update Item Row UI
                     const qtyEl = document.getElementById(`checkout-qty-${p.id}`);
                     if(qtyEl) qtyEl.innerText = formatQty(qty);
                     
@@ -544,7 +583,6 @@
                             : `Rate: ₹${p.price5}/kg`;
                     }
                     
-                    // Update image opacity/grayscale
                     const rowContainer = document.getElementById(`row-${p.id}`);
                     const rowImg = rowContainer ? rowContainer.querySelector('img') : null;
                     if(rowImg) {
@@ -558,7 +596,6 @@
 
                 const totalSavings = totalMarket - totalJodo;
 
-                // Update UI elements
                 const savEl = document.getElementById('summary-savings');
                 if(savEl) savEl.innerText = `₹${Math.round(totalSavings)}`;
                 
@@ -583,17 +620,25 @@
                     toast('Please enter name and valid mobile number', 'alert-circle');
                     return;
                 }
+
+                // 🔥 FIX: Validate that cart is not empty
+                const totalQty = Object.values(state.cart).reduce((a, b) => a + b, 0);
+                if (totalQty <= 0) {
+                    resetActionButton(actionBtn, btnText);
+                    toast('Please select at least one item', 'shopping-bag');
+                    return;
+                }
                 
                 if (actionBtn.disabled) return;
                 actionBtn.disabled = true;
                 actionBtn.innerHTML = `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>`;
                 
                 saveUser(name, phone);
-                // FIX: Use `doc` and `collection` directly
+                
+                // --- FIRESTORE LOGIC ---
                 const finalGroupId = joinGroupId || doc(collection(db, 'artifacts', window.appId, 'public', 'data', "groups")).id;
                 
                 try {
-                    // Create group doc if needed
                     if (!joinGroupId) {
                         const groupData = { 
                             id: finalGroupId, 
@@ -605,14 +650,11 @@
                             totalQty: 0, 
                             unlockedAt: null
                         };
-                         // FIX: Use `setDoc` and `doc` directly
                          await setDoc(doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId), groupData);
                     }
 
                     let didUnlock = false;
-                    // FIX: Use `runTransaction` directly
                     await runTransaction(db, async (transaction) => {
-                        // FIX: Use `doc` directly
                         const groupRef = doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId);
                         const groupSnap = await transaction.get(groupRef);
                         if (!groupSnap.exists()) throw "GROUP_NOT_FOUND";
@@ -620,21 +662,17 @@
                         const gData = groupSnap.data();
                         
                         const currentMembers = state.members[finalGroupId] || [];
-                        
                         const existingMember = currentMembers.find(m => m.phone === phone);
                         const oldMember = currentMembers.find(m => m.phone === oldPhone);
 
                         let memberId = existingMember ? existingMember.id : crypto.randomUUID();
                         
                         if (isEditing && oldPhone !== phone && oldMember) {
-                            // FIX: Use `doc` directly
                             const oldMemberRef = doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", oldMember.id);
                             transaction.delete(oldMemberRef);
                         }
 
                         const cartQty = Object.values(state.cart).reduce((a,b) => a+b, 0);
-
-                        // FIX: Use `doc` directly
                         const memberRef = doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", memberId);
                         
                         let currentTotal = gData.totalQty || 0;
@@ -645,7 +683,7 @@
                         if (memberSnap.exists()) {
                             const oldData = memberSnap.data();
                             const oldCart = oldData.cart || {};
-                            const oldQty = Object.values(oldCart).reduce((a,b)=>a+b, 0) + (oldData.quantity || 0); // legacy fallback
+                            const oldQty = Object.values(oldCart).reduce((a,b)=>a+b, 0) + (oldData.quantity || 0); 
                             currentTotal -= oldQty;
                         } else {
                             currentCount += 1;
@@ -659,11 +697,8 @@
                             totalQty: currentTotal
                         }; 
 
-                        // 🔥 SPEC FIX 3: EXACT UNLOCK CODE (DO NOT MODIFY)
-                        // Unlock condition: memberCount >= MIN_GROUP_SIZE
                         if (currentCount >= MIN_GROUP_SIZE && !gData.unlockedAt) {
                             didUnlock = true;
-                            // FIX: Use `serverTimestamp` directly
                             updates.unlockedAt = serverTimestamp();
                         }
 
@@ -679,11 +714,11 @@
                         transaction.update(groupRef, updates);
                     });
 
-                    // 🔥 SPEC FIX 7: STATE CLEANUP AFTER JOIN
                     if (joinGroupId) {
                         state.pendingJoinId = null;
                         state.invitingGroup = null;
                         IS_JOIN_LINK = false;
+                        state.mode = 'HOME';
                     }
 
                     saveJoinedGroup(finalGroupId);
@@ -707,7 +742,6 @@
             };
         };
 
-        // Exposed to Window
         window.editOrder = function(gid) {
             const members = state.members[gid] || [];
             const me = members.find(m => m.phone === JOIN_SESSION_PHONE);
@@ -718,7 +752,6 @@
             }
         };
 
-        // Exposed to Window
         window.openEditMemberModal = function() {
             toast("Order is final. No edits allowed.", "lock");
             return;
@@ -727,13 +760,15 @@
         function renderHome(el) {
             const isClosedGlobally = isPastCutoff();
             
-            // 🔥 FIX 2: Better Fallback UI (Corrected Guard)
-            if (state.pendingJoinId && !state.invitingGroup) {
+            // 🔥 CRITICAL FIX: Block render if in JOIN mode but data not ready
+            // Old: if (state.pendingJoinId && !state.invitingGroup)
+            // New: Uses explicit mode check
+            if (state.mode === 'JOIN' && !state.invitingGroup) {
                   el.innerHTML = `
                   <div class="min-h-screen flex items-center justify-center text-gray-400">
                     <div class="flex flex-col items-center gap-2">
-                        <div class="w-6 h-6 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin"></div>
-                        <span>Loading group…</span>
+                        <div class="spinner-fallback"></div>
+                        <span style="margin-top:10px;font-size:14px;font-weight:600">Loading group…</span>
                     </div>
                   </div>`;
                 return;
@@ -794,7 +829,6 @@
                 const cardsHtml = activeUserGroups.map(g => {
                     const members = state.members[g.id] || []; 
                     const isUnlocked = !!g.unlockedAt;
-                    // 🔥 UPDATED: Show member count status
                     const statusLabel = isUnlocked ? 'Active' : `${g.memberCount || 0}/${MIN_GROUP_SIZE} joined`;
                     const statusClass = isUnlocked ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-gray-50 border-gray-200';
                     return `<div onclick="openGroup('${g.id}')" class="shrink-0 w-[85%] max-w-[280px] snap-center cursor-pointer card-modern tilt-card">
@@ -842,7 +876,6 @@
                         ${PRODUCTS.map(p => {
                             const qty = state.cart[p.id] || 0;
                             const qtyLabel = formatQty(qty);
-                            const itemPrice = Math.round(qty * p.price5);
                             
                             return `
                             <div class="bg-white p-4 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden transition-all duration-200 mb-3 ${isClosedGlobally ? 'opacity-70 grayscale-[0.5]' : ''}">
@@ -863,7 +896,7 @@
                                                 <span class="text-[10px] font-bold text-green-700 uppercase">Group Price</span>
                                                 <span class="text-lg font-bold text-green-700">₹${p.price5}<span class="text-[10px] font-medium">/${p.unit}</span></span>
                                             </div>
-                                            
+                                             
                                             ${qty === 0 ? `
                                                 <button onclick="updateCart('${p.id}', ${p.step})" class="bg-white border border-gray-300 text-gray-700 font-bold px-4 py-2 rounded-xl text-sm shadow-sm active:bg-gray-50 btn-press">
                                                     Add
@@ -926,24 +959,21 @@
             }
             
             const members = state.members[g.id] || []; 
-            // 🔥 SPEC FIX 2: SINGLE SOURCE OF TRUTH (g.memberCount)
             const count = g.memberCount || members.length;
             const totalKg = g.totalQty || 0;
             const isUnlocked = !!g.unlockedAt;
             const isExpired = Date.now() > g.expiresAt || isPastCutoff();
             const hasJoinedThisGroup = !IS_JOIN_LINK && JOIN_SESSION_PHONE && members.some(m => m.phone === JOIN_SESSION_PHONE);
             const isCreator = JOIN_SESSION_PHONE && g.ownerName && members.some(m => m.phone === JOIN_SESSION_PHONE && m.isLeader === true);
-            const inviteLink = generateInviteLink(g.id, isUnlocked);
             const mustForceShare = (isCreator || hasJoinedThisGroup) && !isUnlocked;
             const isFull = false; 
             
-            // 🔥 SPEC FIX 6: UI PROGRESS & MESSAGES (MATCH THE LOGIC)
             const remainingMembers = Math.max(0, MIN_GROUP_SIZE - count);
             const progressPct = Math.min(100, (count / MIN_GROUP_SIZE) * 100);
 
             const backButtonHtml = mustForceShare 
                 ? `<div class="font-bold text-sm text-red-600 animate-pulse">Share to confirm order</div>`
-                : `<div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="goHome()">
+                : `<div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="goHome(false)">
                        <i data-lucide="arrow-left" size="24" class="text-gray-700"></i>
                        <span class="font-bold text-base tracking-wide text-gray-800">Back</span>
                    </div>`;
@@ -1005,8 +1035,6 @@
                                     for(const [pid, qty] of Object.entries(member.cart)) {
                                         const p = PRODUCTS.find(x => x.id === pid);
                                         if(p && qty > 0) {
-                                            // 🔥 SPEC FIX 5: PRICING RULE (TIED ONLY TO UNLOCK STATUS)
-                                            // Use getPrice(p, isUnlocked) instead of p.price5
                                             const activePrice = getPrice(p, isUnlocked);
                                             totalVal += qty * activePrice;
                                             const l = formatQty(qty);
@@ -1086,7 +1114,6 @@
             const app = document.getElementById('app');
             if (!app) return;
             
-            // 🔥 FIX 3: Default View Guard
             if (!state.view) {
                 state.view = 'home';
             }
@@ -1109,14 +1136,12 @@
         function listenToGroupForHome(gid) {
             if (!db) return;
             
-            // FIX: Use `doc` and `onSnapshot` directly
             const unsubG = onSnapshot(
                 doc(db, 'artifacts', window.appId, 'public', 'data', "groups", gid),
                 (doc) => { if (doc.exists()) { state.groups[gid] = doc.data(); safeRender(); } }
             );
             state.homeListeners.push(unsubG);
 
-            // FIX: Use `collection` and `onSnapshot` directly
             const unsubM = onSnapshot(
                 collection(db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"),
                 (snap) => {
@@ -1131,7 +1156,6 @@
         }
 
         function initHomeListeners() {
-            // 🔥 SPEC FIX 8: LISTENER DISCIPLINE
             state.homeListeners.forEach(u => u());
             state.homeListeners = [];
             state.user.joinedGroupIds.forEach(gid => {
@@ -1139,7 +1163,6 @@
             });
         }
 
-        // Exposed to Window
         window.openGroup = function(gid) { 
             if (!gid || typeof gid !== 'string') {
                 toast('Invalid group link', 'alert-circle');
@@ -1160,7 +1183,6 @@
             safeRender(); 
 
             if (db) {
-                // FIX: Use `doc` and `onSnapshot` directly
                 state.unsubGroup = onSnapshot(
                     doc(db, 'artifacts', window.appId, 'public', 'data', "groups", gid),
                     (doc) => {
@@ -1175,7 +1197,6 @@
                     (error) => { console.error("Group Listen Error:", error); }
                 );
 
-                // FIX: Use `collection` and `onSnapshot` directly
                 state.unsubMembers = onSnapshot(
                     collection(db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"),
                     (snapshot) => {
@@ -1193,8 +1214,10 @@
             }
         };
 
-        // Exposed to Window
-        window.goHome = function() { 
+        // 🔥 CRITICAL FIX: Explicit State Management
+        // Only clear join state if explicitly asked (clearJoin = true)
+        // This prevents back-button from breaking pending joins.
+        window.goHome = function(clearJoin = true) { 
             if (state.timerInterval) clearInterval(state.timerInterval);
             if (cutoffTimerInterval) { clearInterval(cutoffTimerInterval); cutoffTimerInterval = null; }
             if (state.unsubGroup) { state.unsubGroup(); state.unsubGroup = null; }
@@ -1204,23 +1227,33 @@
                     history.pushState({}, '', BASE_URL);
                 }
             } catch(e) {} 
+            
             AUTO_JOIN_TRIGGERED = false;
-            state.invitingGroup = null;
-            state.pendingJoinId = null;
+            
+            if (clearJoin) {
+                state.invitingGroup = null;
+                state.pendingJoinId = null;
+                IS_JOIN_LINK = false;
+                state.mode = 'HOME';
+            }
+
             state.view = 'home'; 
             state.currentGroupId = null; 
             safeRender(); 
         };
 
-        function init() {
+        // --- APP ENTRY POINT ---
+        function startApp() {
             if (JODO_INITIALIZED) return; 
             JODO_INITIALIZED = true;
             
             const params = new URLSearchParams(window.location.search);
             const gid = params.get('group');
 
+            // 🔥 FIX 5: Hard Join State
             if (gid) {
                 IS_JOIN_LINK = true;
+                state.mode = 'JOIN';
                 state.user.name = '';
                 state.user.phone = '';
                 state.user.joinedGroupIds = state.user.joinedGroupIds || [];
@@ -1233,10 +1266,9 @@
                 state.view = 'home';
             }
             
-            const startApp = async () => {
+            const runAppLogic = async () => {
                 if (IS_JOIN_LINK && state.pendingJoinId) {
                     try {
-                        // FIX: Use `doc` and `getDoc` directly
                         const docRef = doc(
                             db, 
                             'artifacts', 
@@ -1255,7 +1287,6 @@
                             state.groups[state.pendingJoinId] = g;
                             state.members[state.pendingJoinId] = []; 
                             
-                            // 🔥 FIX 4: Start listeners for join link group
                             listenToGroupForHome(state.pendingJoinId);
 
                             state.view = 'home';
@@ -1274,25 +1305,31 @@
                 if (IS_JOIN_LINK) loadData(); 
                 if (!IS_JOIN_LINK) {
                     initHomeListeners(); 
-                }          
+                }           
                 safeRender();
             };
 
-            // 🔥 FIX 1: Idempotent Startup
-            if (window.FIREBASE_READY) {
-                startApp();
-            } else {
-                window.addEventListener('firebase-ready', startApp);
-            }
+            runAppLogic();
 
             window.addEventListener('popstate', () => {
                 const params = new URLSearchParams(location.search);
                 const gid = params.get('group');
-                if (gid) window.openGroup(gid); else window.goHome();
+                // Use false here to prevent clearing pending join if just navigating history
+                if (gid) window.openGroup(gid); else window.goHome(false);
             });
         }
         
-        document.addEventListener('DOMContentLoaded', init);
+        // 🔥 FIX 5: Idempotent & Safe Startup
+        // Wait for DOM
+        document.addEventListener('DOMContentLoaded', () => {
+             // Wait for Firebase
+             if (window.FIREBASE_READY) {
+                 startApp();
+             } else {
+                 window.addEventListener('firebase-ready', startApp);
+             }
+        });
+
     </script>
 </body>
 </html>
