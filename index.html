@@ -72,10 +72,10 @@
           }
       }
 
+      // ✅ FIX: DO NOT SIGNAL READY IF AUTH FAILS
       signInAnonymously(auth).catch((error) => {
-          console.warn("Auth Error:", error);
-          // Proceed anyway for public read mode
-          signalReady();
+          console.error("Auth failed – app cannot start", error);
+          // DO NOT signal ready
       });
 
       onAuthStateChanged(auth, (user) => {
@@ -86,7 +86,8 @@
     </script>
 
     <script>
-        // Global Error Handler
+        // Global Error Handler (Commented out for debugging per instructions)
+        /*
         window.onerror = function(msg, url, lineNo, columnNo, error) {
             if (msg.includes("ResizeObserver")) return;
             const appEl = document.getElementById('app');
@@ -101,6 +102,7 @@
             }
             return false;
         };
+        */
 
         tailwind.config = {
             theme: {
