@@ -27,12 +27,9 @@
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
       // --- ENVIRONMENT SETUP ---
+      // Uses the environment's config if available, otherwise falls back to a placeholder for export safety.
       const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", authDomain: "demo" };
-      
-      // LOGIC: Use the secure ID in Canvas, but fallback to 'jodo-prod-v2' on GitHub so your paths are stable.
-      const envAppId = typeof __app_id !== 'undefined' ? __app_id : null;
-      const staticAppId = "jodo-prod-v2"; // Your Real Project ID
-      const appId = envAppId || staticAppId;
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
       // 1. INITIALIZE FIREBASE
       const app = initializeApp(firebaseConfig);
@@ -139,15 +136,14 @@
 
     <script type="module">
         /*
-         * JODO APP ARCHITECTURE v5.2
+         * JODO APP ARCHITECTURE v5.1
          */
 
         // ==========================================
         // 1. CONSTANTS
         // ==========================================
         const CONSTANTS = {
-            // ✅ HARDCODED GITHUB URL FOR PRODUCTION
-            PUBLIC_SHARE_URL: "https://satyanarayanagaraga.github.io/jodo-mvp/",
+            PUBLIC_SHARE_URL: window.location.href.split('?')[0],
             MIN_GROUP_SIZE: 2,
             GROUP_MAX_KG: 20,
             GROUPS_STORAGE_KEY: 'jodo_groups_joined_v1',
@@ -355,27 +351,18 @@
 
             async fetchInviteGroup(gid) {
                 try {
-                    console.log("🔍 Fetching Invite for:", gid);
-                    const ref = Services.Data.getGroupRef(gid);
-                    const snap = await window.fs.getDoc(ref);
-                    
+                    const snap = await window.fs.getDoc(Services.Data.getGroupRef(gid));
                     if (snap.exists()) {
-                        console.log("✅ Group Found:", snap.data());
                         Store.update('invitingGroup', snap.data());
                         // Add to cache so it renders immediately
                         const newGroups = { ...Store.state.groups, [gid]: snap.data() };
                         Store.update('groups', newGroups);
                         Services.Data.listenToGroup(gid);
                     } else {
-                        console.warn("❌ Group not found at path:", ref.path);
-                        UI.toast("Group link is invalid or expired", "alert-circle");
+                        UI.toast("Group not found", "alert-circle");
                         this.navigateToHome();
                     }
-                } catch(e) { 
-                    console.error("🔥 Fetch Error:", e); 
-                    UI.toast("Connection error", "wifi-off");
-                    this.navigateToHome(); 
-                }
+                } catch(e) { console.error(e); this.navigateToHome(); }
             },
 
             updateCart(productId, delta) {
@@ -661,15 +648,7 @@
                 const productsHtml = CONSTANTS.PRODUCTS.map(p => {
                     const qty = cart[p.id] || 0;
                     // Always show best price for attraction
-                    const bestPrice = p.tiers[p.tiers.length-1].price;
-                    
-                    let displayLabel = `Best Price / ${p.unit}`;
-                    let displayValue = bestPrice;
-                    
-                    if (qty > 0) {
-                        displayLabel = "Item Total";
-                        displayValue = Math.round(qty * bestPrice);
-                    }
+                    const displayPrice = p.tiers[p.tiers.length-1].price;
                     
                     return `
                     <div class="bg-white p-4 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 flex gap-4 ${isClosed ? 'opacity-70' : ''}">
@@ -677,7 +656,7 @@
                         <div class="flex-1 flex flex-col justify-between py-1">
                                 <div><h3 class="font-bold text-lg text-gray-900 leading-tight">${p.name}</h3><p class="text-sm text-gray-500">${p.nameTe}</p></div>
                                 <div class="mt-2 flex items-center justify-between">
-                                <div class="bg-green-50 rounded-lg px-2 py-1 border border-green-100 flex flex-col"><span class="text-[10px] font-bold text-green-700 uppercase">${displayLabel}</span><span class="text-lg font-bold text-green-700">₹${displayValue}</span></div>
+                                <div class="bg-green-50 rounded-lg px-2 py-1 border border-green-100 flex flex-col"><span class="text-[10px] font-bold text-green-700 uppercase">Best Price</span><span class="text-lg font-bold text-green-700">₹${displayPrice}</span></div>
                                 ${qty === 0 ? `<button onclick="window.JodoApp.Actions.updateCart('${p.id}', ${p.step})" class="bg-white border border-gray-300 text-gray-700 font-bold px-4 py-2 rounded-xl text-sm shadow-sm active:bg-gray-50">Add</button>` : `<div class="flex items-center bg-gray-900 rounded-xl px-1 py-1"><button onclick="window.JodoApp.Actions.updateCart('${p.id}', -${p.step})" class="w-8 h-8 text-white"><i data-lucide="minus" size="14"></i></button><div class="w-12 text-center text-sm font-bold text-white">${Services.Pricing.formatQty(qty)}</div><button onclick="window.JodoApp.Actions.updateCart('${p.id}', ${p.step})" class="w-8 h-8 text-white"><i data-lucide="plus" size="14"></i></button></div>`}
                                 </div>
                         </div>
@@ -717,26 +696,22 @@
                         const p = CONSTANTS.PRODUCTS.find(x => x.id === pid); 
                         if(!p || qty <= 0) return null;
                         const price = Services.Pricing.getPrice(p, g.memberCount); // Dynamic!
-                        const itemCost = qty * price;
-                        totalVal += itemCost;
-                        // Added item price display
-                        return `<div class="flex justify-between w-full max-w-[200px]"><span class="mr-2">${Services.Pricing.formatQty(qty)} ${p.name}</span> <span class="text-gray-400 font-medium">₹${Math.round(itemCost)}</span></div>`;
+                        totalVal += qty * price;
+                        return `${Services.Pricing.formatQty(qty)} ${p.name}`;
                     }).filter(Boolean);
                     
-                    // Added Edit Interaction for "Me"
                     return `
-                    <div ${isMe ? `onclick="window.JodoApp.UI.openCheckoutModal('${g.id}')"` : ''} class="bg-white border ${isMe ? 'border-green-600 border-2 cursor-pointer relative shadow-sm' : 'border-gray-100'} p-3 rounded-xl flex justify-between items-start transition-all active:scale-[0.98]">
-                        ${isMe ? '<div class="absolute top-0 right-0 bg-green-600 text-white text-[9px] px-2 py-0.5 rounded-bl-lg font-bold uppercase tracking-wider">Tap to Edit</div>' : ''}
-                        <div class="flex-1">
-                            <div class="text-sm font-bold text-gray-800 flex items-center gap-1 mb-1">${isMe ? 'You' : m.name} ${m.isLeader ? '👑' : ''}</div>
-                            <div class="text-xs text-gray-500 flex flex-col gap-0.5">${parts.length > 0 ? parts.join("") : "Joined"}</div>
-                        </div>
-                        <div class="font-bold text-sm mt-1 pl-2">₹${Math.round(totalVal)}</div>
+                    <div class="bg-white border ${isMe ? 'border-green-200' : 'border-gray-100'} p-3 rounded-xl flex justify-between items-center">
+                        <div><div class="text-sm font-bold text-gray-800">${isMe ? 'You' : m.name} ${m.isLeader ? '👑' : ''}</div><div class="text-xs text-gray-500">${parts.length > 0 ? parts.join(", ") : "Joined"}</div></div>
+                        <div class="font-bold text-sm">₹${Math.round(totalVal)}</div>
                     </div>`;
                 }).join('');
 
                 container.innerHTML = `
-                <div class="fade-in bg-white min-h-screen pb-40 font-sans pt-safe">
+                <div class="fade-in bg-white min-h-screen pb-40 font-sans">
+                    <div class="glass-header h-[60px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white border-b border-gray-100">
+                        <div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="window.JodoApp.Actions.navigateToHome()"><i data-lucide="arrow-left" size="24" class="text-gray-700"></i><span class="font-bold">Back</span></div>
+                    </div>
                     <div class="p-4">
                         <div class="w-full h-40 rounded-2xl bg-gray-100 overflow-hidden mb-4 border border-gray-200 relative"><img src="https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/40 flex items-center justify-center"><h1 class="text-3xl font-black text-white">Group Order</h1></div></div>
                         <div class="text-center mb-2"><span class="text-sm font-medium text-gray-500">Host: <span class="font-bold text-gray-900">${g.ownerName}</span></span></div>
@@ -893,9 +868,7 @@
                     actionBtn.innerHTML = '<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>';
 
                     const success = await Actions.submitOrder(name, phone, joinGroupId);
-                    if (success) {
-                        this.closeModal();
-                    } else {
+                    if (!success) {
                         actionBtn.disabled = false;
                         actionBtn.innerHTML = `<span>${btnText}</span>`;
                     }
