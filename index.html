@@ -152,7 +152,7 @@
             MIN_GROUP_SIZE: 2,
             GROUP_MAX_KG: 20,
             GROUPS_STORAGE_KEY: 'jodo_groups_joined_v1',
-            CUTOFF_HOUR: 21, // 9 PM
+            CUTOFF_HOUR: 23, // 11 PM
             PRODUCTS: [
                 { 
                     id: 'tomato', name: 'Fresh Tomatoes', nameTe: 'టమాటాలు', unit: '1kg', baseWeight: 1, step: 0.25, weightUnit: 'kg', 
@@ -255,8 +255,10 @@
 
             Time: {
                 getCutoffTimestamp() {
+                    // Set cutoff to end of today (23:59:59)
+                    // This applies to BOTH creators and joiners
                     const now = new Date();
-                    now.setHours(CONSTANTS.CUTOFF_HOUR, 0, 0, 0); 
+                    now.setHours(23, 59, 59, 999); 
                     return now.getTime();
                 },
                 isPastCutoff() {
@@ -345,10 +347,16 @@
                 Store.state.user.joinedGroupIds.forEach(id => Services.Data.listenToGroup(id));
 
                 if (gid) {
-                    // FIX 2: FORCE HOME VIEW ON INVITE
-                    Store.update('view', 'home');
-                    Store.update('pendingJoinId', gid);
-                    this.fetchInviteGroup(gid);
+                    // NEW: Check if already joined/created
+                    if (Store.state.user.joinedGroupIds.includes(gid)) {
+                        // Redirect directly to group status
+                        this.navigateToGroup(gid);
+                    } else {
+                        // Not joined yet -> Show Invite UI (locks creation)
+                        Store.update('view', 'home');
+                        Store.update('pendingJoinId', gid);
+                        this.fetchInviteGroup(gid);
+                    }
                 } else {
                     Store.update('view', 'home');
                 }
@@ -476,16 +484,19 @@
 
                         // --- QUANTITY CHANGE ---
                         let oldQty = 0;
+                        let joinedAt = window.fs.serverTimestamp();
                         if (memberSnap.exists()) {
                             const oldData = memberSnap.data();
                             oldQty = Object.values(oldData.cart || {}).reduce((a,b)=>a+b, 0);
+                            // Preserve original joinedAt timestamp
+                            if (oldData.joinedAt) joinedAt = oldData.joinedAt;
                         }
                         const qtyChange = currentCartQty - oldQty;
 
                         // capacity check (still valid)
                         const maxKg = gData.maxKg || CONSTANTS.GROUP_MAX_KG;
                         if (qtyChange > 0 && (newPending + newUsed + qtyChange) > maxKg) {
-                            throw `Sold Out! Only ${Math.max(0, maxKg - (newPending + newUsed))}kg left.`;
+                            throw `Sold Out! Only ${Math.max(0, maxKg - (newPending + newUsed)).toFixed(1)}kg left.`;
                         }
 
                         // apply qty
@@ -513,7 +524,7 @@
                             name, 
                             phone, 
                             cart, 
-                            joinedAt: window.fs.serverTimestamp(), 
+                            joinedAt: joinedAt, 
                             isLeader: (!joinGroupId && isNewMember) || (gData.ownerPhone === phone) 
                         });
                     });
@@ -662,8 +673,19 @@
                 // Products HTML
                 const productsHtml = CONSTANTS.PRODUCTS.map(p => {
                     const qty = cart[p.id] || 0;
-                    // Always show best price for attraction
-                    const displayPrice = p.tiers[p.tiers.length-1].price;
+                    
+                    // Pricing Logic Update
+                    const bestPricePerKg = p.tiers[p.tiers.length-1].price; // Assumes config prices are per Kg
+                    const pricePer250g = Math.round(bestPricePerKg / 4);
+                    
+                    let displayLabel = "Best Price / 250g";
+                    let displayValue = `₹${pricePer250g}`;
+                    
+                    // If user adds items, show the total cost for that line item
+                    if (qty > 0) {
+                        displayLabel = "Item Total";
+                        displayValue = `₹${Math.round(qty * bestPricePerKg)}`;
+                    }
                     
                     return `
                     <div class="bg-white p-4 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 flex gap-4 ${isClosed ? 'opacity-70' : ''}">
@@ -671,7 +693,7 @@
                         <div class="flex-1 flex flex-col justify-between py-1">
                                 <div><h3 class="font-bold text-lg text-gray-900 leading-tight">${p.name}</h3><p class="text-sm text-gray-500">${p.nameTe}</p></div>
                                 <div class="mt-2 flex items-center justify-between">
-                                <div class="bg-green-50 rounded-lg px-2 py-1 border border-green-100 flex flex-col"><span class="text-[10px] font-bold text-green-700 uppercase">Best Price</span><span class="text-lg font-bold text-green-700">₹${displayPrice}</span></div>
+                                <div class="bg-green-50 rounded-lg px-2 py-1 border border-green-100 flex flex-col min-w-[90px]"><span class="text-[10px] font-bold text-green-700 uppercase">${displayLabel}</span><span class="text-lg font-bold text-green-700">${displayValue}</span></div>
                                 ${qty === 0 ? `<button onclick="window.JodoApp.Actions.updateCart('${p.id}', ${p.step})" class="bg-white border border-gray-300 text-gray-700 font-bold px-4 py-2 rounded-xl text-sm shadow-sm active:bg-gray-50">Add</button>` : `<div class="flex items-center bg-gray-900 rounded-xl px-1 py-1"><button onclick="window.JodoApp.Actions.updateCart('${p.id}', -${p.step})" class="w-8 h-8 text-white"><i data-lucide="minus" size="14"></i></button><div class="w-12 text-center text-sm font-bold text-white">${Services.Pricing.formatQty(qty)}</div><button onclick="window.JodoApp.Actions.updateCart('${p.id}', ${p.step})" class="w-8 h-8 text-white"><i data-lucide="plus" size="14"></i></button></div>`}
                                 </div>
                         </div>
@@ -703,11 +725,7 @@
                 const isUnlocked = !!g.unlockedAt;
                 const myPhone = Store.state.user.phone;
                 const hasJoined = myPhone && memberList.some(m => m.phone === myPhone);
-                
-                // Calculate current pricing based on member count
-                // If unlocked, use max pricing tier. If not, calculate current tier?
-                // Actually, logic says: Locked = Tier 0, Unlocked = Tier 1 (Best).
-                // But let's use the dynamic function.
+                const isClosed = Services.Time.isPastCutoff();
                 
                 const memberHtml = memberList.map(m => {
                     const isMe = myPhone === m.phone;
@@ -715,18 +733,35 @@
                     const parts = Object.entries(m.cart || {}).map(([pid, qty]) => {
                         const p = CONSTANTS.PRODUCTS.find(x => x.id === pid); 
                         if(!p || qty <= 0) return null;
-                        // Use pricing service
                         const price = Services.Pricing.getPrice(p, g.memberCount); // Dynamic!
                         totalVal += qty * price;
                         return `${Services.Pricing.formatQty(qty)} ${p.name}`;
                     }).filter(Boolean);
                     
+                    const editLink = (isMe && !isClosed) ? `<span onclick="window.JodoApp.UI.openCheckoutModal('${g.id}')" class="text-blue-600 underline ml-2 cursor-pointer text-xs">Edit</span>` : '';
+
                     return `
                     <div class="bg-white border ${isMe ? 'border-green-200' : 'border-gray-100'} p-3 rounded-xl flex justify-between items-center">
-                        <div><div class="text-sm font-bold text-gray-800">${isMe ? 'You' : m.name} ${m.isLeader ? '👑' : ''}</div><div class="text-xs text-gray-500">${parts.length > 0 ? parts.join(", ") : "Joined"}</div></div>
+                        <div>
+                            <div class="text-sm font-bold text-gray-800">
+                                ${isMe ? 'You' : m.name} ${m.isLeader ? '👑' : ''}
+                                ${editLink}
+                            </div>
+                            <div class="text-xs text-gray-500">${parts.length > 0 ? parts.join(", ") : "Joined"}</div>
+                        </div>
                         <div class="font-bold text-sm">₹${Math.round(totalVal)}</div>
                     </div>`;
                 }).join('');
+
+                const footerHtml = hasJoined 
+                    ? (isClosed 
+                        ? `<button onclick="window.JodoApp.UI.shareGroup('${g.id}', ${isUnlocked})" class="w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold gap-2"><i data-lucide="share-2" size="20"></i> Share Result</button>`
+                        : `<div class="flex gap-3 w-full">
+                                <button onclick="window.JodoApp.UI.openCheckoutModal('${g.id}')" class="w-[56px] bg-gray-50 border border-gray-200 text-gray-700 h-[56px] flex items-center justify-center rounded-xl font-bold shadow-sm active:bg-gray-100"><i data-lucide="edit-3" size="20"></i></button>
+                                <button onclick="window.JodoApp.UI.shareGroup('${g.id}', ${isUnlocked})" class="flex-1 bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold gap-2"><i data-lucide="share-2" size="20"></i> Share Deal</button>
+                           </div>`
+                    )
+                    : `<button onclick="window.JodoApp.UI.openCheckoutModal('${g.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold">Join Group</button>`;
 
                 container.innerHTML = `
                 <div class="fade-in bg-white min-h-screen pb-40 font-sans">
@@ -743,7 +778,7 @@
                         </div>
                     </div>
                     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe z-50 shadow-lg">
-                        ${hasJoined ? `<button onclick="window.JodoApp.UI.shareGroup('${g.id}', ${isUnlocked})" class="w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold gap-2"><i data-lucide="share-2" size="20"></i> Share Deal</button>` : `<button onclick="window.JodoApp.UI.openCheckoutModal('${g.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold">Join Group</button>`}
+                        ${footerHtml}
                     </div>
                 </div>`;
                 
@@ -893,6 +928,8 @@
                     if (!success) {
                         actionBtn.disabled = false;
                         actionBtn.innerHTML = `<span>${btnText}</span>`;
+                    } else {
+                        this.closeModal();
                     }
                 };
             },
