@@ -8,15 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     
-    <!-- ✅ FIREBASE INITIALIZATION (USING ENVIRONMENT DEFAULTS) -->
+    <!-- ✅ FIREBASE INITIALIZATION (SAFE FOR GITHUB PAGES) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-      import { 
-        getAuth, 
-        signInWithCustomToken, 
-        signInAnonymously, 
-        onAuthStateChanged 
-      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
       import {
         getFirestore,
         doc,
@@ -32,31 +27,27 @@
         where
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-      // ✅ FIX: Use dynamic environment config to avoid "Invalid API Key" errors
-      const firebaseConfig = JSON.parse(__firebase_config);
+      // 1. HARDCODED CONFIG (Required for GitHub Pages)
+      const firebaseConfig = {
+        apiKey: "AIzaSyAHsRiYhNea5tFpKVSU7YA9nsR6qINtQdA",
+        authDomain: "jodo-prod-v2.firebaseapp.com",
+        projectId: "jodo-prod-v2",
+        storageBucket: "jodo-prod-v2.firebasestorage.app",
+        messagingSenderId: "577075664016",
+        appId: "1:577075664016:web:dcf613e7650217cc94b415"
+      };
+
+      // 2. INITIALIZE
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-      // 🔥 MANDATORY AUTH WORKFLOW
-      const initAuth = async () => {
-        try {
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-        } catch (err) {
-          console.error("Firebase Auth Failed:", err);
-        }
-      };
-
-      // 🔥 Expose globally
+      // 3. EXPOSE GLOBALS (Safe assignment)
       window.db = db;
       window.auth = auth;
-      window.appId = appId; 
+      window.appId = "jodo-prod-v2"; // Hardcoded Project ID for pathing
       
+      // EXPOSE FUNCTIONS ON WINDOW.FS FOR USAGE IN APP LOGIC
       window.fs = {
         doc,
         setDoc,
@@ -71,26 +62,36 @@
         where
       };
       
-      console.log("🚀 JODO v3.11 - JOIN ≠ ORDER DECOUPLING APPLIED");
-      
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          window.FIREBASE_READY = true;
-          window.dispatchEvent(new Event("firebase-ready"));
-        }
+      console.log("🚀 JODO v4.1 - Race Condition Fix Applied");
+
+      // 4. AUTHENTICATE & SIGNAL READY
+      function signalReady() {
+          if (!window.FIREBASE_READY) {
+              window.FIREBASE_READY = true;
+              window.dispatchEvent(new Event("firebase-ready"));
+          }
+      }
+
+      signInAnonymously(auth).catch((error) => {
+          console.warn("Auth Error:", error);
+          // Proceed anyway for public read mode
+          signalReady();
       });
 
-      initAuth();
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          signalReady();
+        }
+      });
     </script>
 
     <script>
         // Global Error Handler
         window.onerror = function(msg, url, lineNo, columnNo, error) {
-            const app = document.getElementById('app');
             if (msg.includes("ResizeObserver")) return;
-            
-            if (app) {
-                app.innerHTML = `
+            const appEl = document.getElementById('app');
+            if (appEl) {
+                appEl.innerHTML = `
                     <div style="padding: 20px; color: #DC2626; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; justify-content: center; text-align: center;">
                         <h2 style="font-weight: bold; font-size: 1.25rem;">Connection Error</h2>
                         <p style="margin-top: 10px; background: #fee2e2; padding: 10px; border-radius: 8px; font-family: monospace; text-align: left;">${msg}</p>
@@ -105,18 +106,7 @@
             theme: {
                 extend: {
                     colors: {
-                        jodo: {
-                            base: '#FFFFFF',
-                            textPrimary: '#111827',
-                            textSecondary: '#4B5563',
-                            ctaPrimary: '#15803D',
-                            ctaSuccess: '#15803D',      
-                            bonus: '#F3F4F6',             
-                            bonusText: '#374151',         
-                            urgency: '#4B5563',           
-                            border: '#E5E7EB',            
-                            error: '#DC2626',             
-                        }
+                        jodo: { ctaPrimary: '#15803D' }
                     },
                     fontFamily: {
                         sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
@@ -145,7 +135,6 @@
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .price-anchor { color: #15803D; font-weight: 700; letter-spacing: -0.01em; }
         
         .spinner-fallback {
             width: 32px;
@@ -174,16 +163,16 @@
     <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none pt-safe text-center w-max max-w-[90%]"></div>
 
     <script type="module">
-        const { db, fs, auth } = window;
-        const { doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, collection, runTransaction, serverTimestamp, query, where } = fs;
+        // ==========================================
+        // APP LOGIC (RACE CONDITION FIX APPLIED)
+        // ==========================================
 
-        // ==========================================
-        // APP LOGIC
-        // ==========================================
+        // ✅ 1. DEFINE NULL GLOBALS FIRST (NO DESTRUCTURING)
+        let db = null;
+        let fs = null;
 
         var JODO_INITIALIZED = false;
         var renderScheduled = false;
-        var COMPANY_PHONE = "918500742671"; 
         
         var BASE_URL;
         try {
@@ -200,7 +189,6 @@
         var PUBLIC_SHARE_URL = "https://satyanarayanagaraga.github.io/jodo-mvp/";
         var MIN_GROUP_SIZE = 2; 
         var GROUP_MAX_KG = 20; 
-
         var PRODUCT_LIMITS = { tomato: 10, onion: 10, chilli: 2 };
 
         var PRODUCTS = [
@@ -211,6 +199,7 @@
 
         var GROUPS_KEY = 'jodo_groups_joined_v1';
         
+        // --- HELPER FUNCTIONS ---
         function formatQty(qty) {
             return qty < 1 ? (qty * 1000).toFixed(0) + 'g' : qty + 'kg';
         }
@@ -260,6 +249,7 @@
             return 0;
         }
 
+        // --- STATE & GLOBAL VARS ---
         var state = { 
             view: 'home', 
             mode: 'HOME', 
@@ -278,6 +268,7 @@
         var IS_JOIN_LINK = false;
         var JOIN_SESSION_PHONE = null;
 
+        // --- STORAGE & UTILS ---
         function loadData() {
             try {
                 state.user.name = localStorage.getItem('jodo_user_name') || '';
@@ -535,30 +526,30 @@
                 actionBtn.innerHTML = `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>`;
                 saveUser(name, phone);
                 
-                const finalGroupId = joinGroupId || doc(collection(db, 'artifacts', window.appId, 'public', 'data', "groups")).id;
+                // ✅ SAFE: use local fs which is guaranteed by startApp/firebase-ready
+                const groupsCol = fs.collection(db, 'artifacts', window.appId, 'public', 'data', "groups");
+                const finalGroupId = joinGroupId || fs.doc(groupsCol).id;
                 
                 try {
                     if (!joinGroupId) {
-                        const groupData = { id: finalGroupId, ownerName: name, ownerPhone: phone, expiresAt: getTodayCutoffTimestamp(), createdAt: serverTimestamp(), type: 'multi', maxKg: GROUP_MAX_KG, pendingKg: 0, usedKg: 0, memberCount: 0, unlockedAt: null };
-                        await setDoc(doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId), groupData);
+                        const groupData = { id: finalGroupId, ownerName: name, ownerPhone: phone, expiresAt: getTodayCutoffTimestamp(), createdAt: fs.serverTimestamp(), type: 'multi', maxKg: GROUP_MAX_KG, pendingKg: 0, usedKg: 0, memberCount: 0, unlockedAt: null };
+                        await fs.setDoc(fs.doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId), groupData);
                     }
 
                     let didUnlock = false;
-                    await runTransaction(db, async (transaction) => {
-                        const groupRef = doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId);
+                    await fs.runTransaction(db, async (transaction) => {
+                        const groupRef = fs.doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId);
                         const groupSnap = await transaction.get(groupRef);
                         if (!groupSnap.exists()) throw "GROUP_NOT_FOUND";
                         
                         const gData = groupSnap.data();
-                        const memberRef = doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", phone);
+                        const memberRef = fs.doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", phone);
                         const memberSnap = await transaction.get(memberRef); 
 
-                        // 🔧 PATCH 1: Allow join without cart
                         const isNewMember = !memberSnap.exists();
                         const currentCartQty = Object.values(cartPayload).reduce((a,b) => a+b, 0);
                         const isJoinOnly = isNewMember && currentCartQty === 0;
 
-                        // 🔧 PATCH 2: Increment memberCount on join, but guard logic
                         let newMemberCount = gData.memberCount || 0;
                         if (isNewMember) {
                             newMemberCount += 1;
@@ -568,7 +559,6 @@
                         let newUsed = gData.usedKg || 0;
                         let newUnlockedAt = gData.unlockedAt;
 
-                        // Guard ALL inventory/order logic
                         if (!isJoinOnly) {
                             let oldQty = 0;
                             if (memberSnap.exists()) {
@@ -578,7 +568,6 @@
                             const qtyChange = currentCartQty - oldQty;
                             const maxKg = gData.maxKg || GROUP_MAX_KG; 
                             
-                            // Enforce capacity only for adding items
                             if (qtyChange > 0 && (newPending + newUsed + qtyChange) > maxKg) {
                                 throw `Sold Out! Only ${Math.max(0, maxKg - (newPending + newUsed))}kg left.`;
                             }
@@ -589,17 +578,14 @@
                                 newPending += qtyChange;
                             }
 
-                            // 🔧 PATCH 2: Only trigger unlock if a cart exists or members reached goal
                             if (!newUnlockedAt && newMemberCount >= MIN_GROUP_SIZE && currentCartQty > 0) {
                                 didUnlock = true;
-                                newUnlockedAt = serverTimestamp();
-                                // 🔧 PATCH 3: We still move pending to used ONLY when unlocking is finally triggered by an order
+                                newUnlockedAt = fs.serverTimestamp();
                                 newUsed += newPending;
                                 newPending = 0;
                             }
                         }
 
-                        // Write changes back to Firestore
                         transaction.update(groupRef, { 
                             pendingKg: Math.round(newPending*100)/100, 
                             usedKg: Math.round(newUsed*100)/100, 
@@ -613,7 +599,7 @@
                             name, 
                             phone, 
                             cart: cartPayload, 
-                            joinedAt: serverTimestamp(), 
+                            joinedAt: fs.serverTimestamp(), 
                             isLeader: (!joinGroupId && isNewMember) || (gData.ownerPhone === phone) 
                         });
                     });
@@ -754,11 +740,14 @@
             requestAnimationFrame(() => { render(); renderScheduled = false; });
         }
 
+        // --- FIRESTORE LISTENERS (SAFE) ---
         function listenToGroupForHome(gid) {
-            if (!db) return;
-            const unsubG = onSnapshot(doc(db, 'artifacts', window.appId, 'public', 'data', "groups", gid), d => { if (d.exists()) { state.groups[gid] = d.data(); safeRender(); } }, e => console.error(e));
+            if (!db) return; // ✅ Guard against missing db
+            
+            // ✅ Use fs.functionName(db, ...)
+            const unsubG = fs.onSnapshot(fs.doc(db, 'artifacts', window.appId, 'public', 'data', "groups", gid), d => { if (d.exists()) { state.groups[gid] = d.data(); safeRender(); } }, e => console.error(e));
             state.homeListeners.push(unsubG);
-            const unsubM = onSnapshot(collection(db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"), snap => {
+            const unsubM = fs.onSnapshot(fs.collection(db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"), snap => {
                 const m = []; snap.forEach(d => m.push({ ...d.data(), id: d.id })); 
                 m.sort((a,b) => getMillis(a.joinedAt) - getMillis(b.joinedAt)); state.members[gid] = m; safeRender();
             }, e => console.error(e));
@@ -776,10 +765,11 @@
             state.currentGroupId = gid; state.view = 'group'; 
             if (state.unsubGroup) state.unsubGroup(); if (state.unsubMembers) state.unsubMembers();
             safeRender(); 
-            state.unsubGroup = onSnapshot(doc(db, 'artifacts', window.appId, 'public', 'data', "groups", gid), d => {
+            // ✅ Use fs.functionName(db, ...)
+            state.unsubGroup = fs.onSnapshot(fs.doc(db, 'artifacts', window.appId, 'public', 'data', "groups", gid), d => {
                 if (d.exists()) { state.groups[gid] = d.data(); safeRender(); } else window.goHome();
             }, e => console.error(e));
-            state.unsubMembers = onSnapshot(collection(db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"), s => {
+            state.unsubMembers = fs.onSnapshot(fs.collection(db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"), s => {
                 const members = []; s.forEach(d => members.push({ ...d.data(), id: d.id }));
                 members.sort((a,b) => getMillis(a.joinedAt) - getMillis(b.joinedAt)); state.members[gid] = members; safeRender();
             }, e => console.error(e));
@@ -792,26 +782,52 @@
             state.view = 'home'; state.currentGroupId = null; safeRender(); 
         };
 
-        function startApp() {
+        // ✅ 2. ASYNC STARTAPP WITH GUARDS
+        async function startApp() {
             if (JODO_INITIALIZED) return; 
+            
+            // ✅ 3. GATE: IF FIREBASE NOT READY, RETURN (Should not happen if called correctly)
+            if (!fs || !db) {
+                console.warn("startApp called before Firebase");
+                return;
+            }
+
             JODO_INITIALIZED = true;
             const params = new URLSearchParams(window.location.search);
             const gid = params.get('group');
-            if (gid) { IS_JOIN_LINK = true; state.view = 'home'; state.pendingJoinId = gid; } else { loadData(); state.view = 'home'; }
-            
-            (async () => {
-                if (IS_JOIN_LINK && state.pendingJoinId) {
-                    try {
-                        const snap = await getDoc(doc(db, 'artifacts', window.appId, 'public', 'data', "groups", state.pendingJoinId));
-                        if (snap.exists()) {
-                            state.invitingGroup = snap.data();
-                            state.groups[state.pendingJoinId] = snap.data();
-                            listenToGroupForHome(state.pendingJoinId);
-                        } else window.goHome();
-                    } catch (e) { window.goHome(); }
+
+            // ✅ 4. JOIN LINK LOGIC MOVED INSIDE FIREBASE-READY BLOCK
+            if (gid) {
+                IS_JOIN_LINK = true;
+                state.view = 'home';
+                state.pendingJoinId = gid;
+                state.mode = 'JOIN'; // Set mode to show loading
+
+                try {
+                    // ✅ SAFE: fs is guaranteed defined here
+                    const snap = await fs.getDoc(
+                        fs.doc(db, "artifacts", window.appId, "public", "data", "groups", gid)
+                    );
+                    if (snap.exists()) {
+                        state.invitingGroup = snap.data();
+                        state.groups[gid] = snap.data();
+                        // Pre-load logic if needed
+                    } else {
+                        // Invalid group ID
+                        window.goHome();
+                    }
+                } catch (e) {
+                    console.error("Join link fetch failed", e);
+                    window.goHome();
                 }
-                loadData(); initHomeListeners(); safeRender();
-            })();
+            } else {
+                loadData();
+                state.view = 'home';
+            }
+
+            loadData();
+            initHomeListeners();
+            safeRender();
 
             window.addEventListener('popstate', () => {
                 const p = new URLSearchParams(location.search); const g = p.get('group');
@@ -819,10 +835,18 @@
             });
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
-             if (window.FIREBASE_READY) startApp();
-             else window.addEventListener('firebase-ready', startApp);
-        });
+        // ✅ 5. BOOTSTRAP: LISTEN FOR FIREBASE-READY
+        function onFirebaseReady() {
+            db = window.db;
+            fs = window.fs;
+            startApp();
+        }
+
+        if (window.FIREBASE_READY) {
+            onFirebaseReady();
+        } else {
+            document.addEventListener('firebase-ready', onFirebaseReady);
+        }
     </script>
 </body>
 </html>
