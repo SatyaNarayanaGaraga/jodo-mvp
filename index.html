@@ -87,9 +87,9 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
+        // Expose db for convenience if needed, but we will use 'db' directly in module scope
         window.db = db;
-        // Expose query/where/collection for robust lookups
-        window.fs = { doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot, collection, runTransaction, serverTimestamp, query, where };
+        // window.fs = { ... }  <-- DELETED: Removed as per instruction to fix white screen crash
         window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
         // 🔒 GLOBAL READY FLAG
@@ -112,9 +112,11 @@
             }
         };
         initAuth();
-    </script>
-    
-    <script>
+
+        // ==========================================
+        // APP LOGIC MERGED INTO MODULE SCOPE
+        // ==========================================
+
         // 🔒 BOOTSTRAP GUARD (Must be first)
         var JODO_INITIALIZED = false;
         var renderScheduled = false;
@@ -225,6 +227,7 @@
             JOIN_SESSION_PHONE = phone;
         }
 
+        // Exposed to Window
         window.logout = function() {
             localStorage.removeItem('jodo_user_name');
             localStorage.removeItem('jodo_user_phone');
@@ -281,6 +284,7 @@
             if(window.lucide) window.lucide.createIcons(); 
         }
 
+        // Exposed to Window
         window.closeModal = () => {
             const overlay = document.getElementById('modal-overlay');
             const content = document.getElementById('modal-content');
@@ -314,6 +318,7 @@
             });
         }
 
+        // Exposed to Window
         window.openSupportOptions = function() {
             window.open("https://wa.me/" + COMPANY_PHONE, "_blank");
         };
@@ -326,6 +331,7 @@
             return `https://wa.me/?text=${encodeURIComponent(inviteMsg)}`;
         }
         
+        // Exposed to Window
         window.shareGroup = function(groupId, isUnlocked) {
             const currentUrl = `${BASE_URL}?group=${groupId}`;
             const text = isUnlocked 
@@ -337,6 +343,7 @@
         };
 
         // --- CART ACTIONS ---
+        // Exposed to Window
         window.updateCart = function(productId, delta) {
             if (isPastCutoff()) {
                 toast("Orders closed for today", "clock");
@@ -363,6 +370,7 @@
             safeRender();
         };
 
+        // Exposed to Window
         window.openJoinFlow = function(gid) {
             if (IS_JOIN_LINK) {
                 state.user.name = '';
@@ -382,6 +390,7 @@
         };
 
         // 🔥 CHECKOUT MODAL
+        // Exposed to Window
         window.openCheckoutModal = function(joinGroupId = null) {
             if (isPastCutoff()) {
                 toast("Orders closed.", "clock");
@@ -509,6 +518,7 @@
             showModalNode(node);
 
             // Re-render logic for inside modal (Update specific IDs)
+            // Exposed to Window
             window.renderCheckoutTotal = () => {
                 let totalJodo = 0;
                 let totalMarket = 0;
@@ -579,7 +589,8 @@
                 actionBtn.innerHTML = `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>`;
                 
                 saveUser(name, phone);
-                const finalGroupId = joinGroupId || window.fs.doc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups")).id;
+                // FIX: Use `doc` and `collection` directly
+                const finalGroupId = joinGroupId || doc(collection(db, 'artifacts', window.appId, 'public', 'data', "groups")).id;
                 
                 try {
                     // Create group doc if needed
@@ -594,12 +605,15 @@
                             totalQty: 0, 
                             unlockedAt: null
                         };
-                         await window.fs.setDoc(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId), groupData);
+                         // FIX: Use `setDoc` and `doc` directly
+                         await setDoc(doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId), groupData);
                     }
 
                     let didUnlock = false;
-                    await window.fs.runTransaction(window.db, async (transaction) => {
-                        const groupRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId);
+                    // FIX: Use `runTransaction` directly
+                    await runTransaction(db, async (transaction) => {
+                        // FIX: Use `doc` directly
+                        const groupRef = doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId);
                         const groupSnap = await transaction.get(groupRef);
                         if (!groupSnap.exists()) throw "GROUP_NOT_FOUND";
                         
@@ -613,13 +627,15 @@
                         let memberId = existingMember ? existingMember.id : crypto.randomUUID();
                         
                         if (isEditing && oldPhone !== phone && oldMember) {
-                            const oldMemberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", oldMember.id);
+                            // FIX: Use `doc` directly
+                            const oldMemberRef = doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", oldMember.id);
                             transaction.delete(oldMemberRef);
                         }
 
                         const cartQty = Object.values(state.cart).reduce((a,b) => a+b, 0);
 
-                        const memberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", memberId);
+                        // FIX: Use `doc` directly
+                        const memberRef = doc(db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", memberId);
                         
                         let currentTotal = gData.totalQty || 0;
                         let currentCount = gData.memberCount || 0;
@@ -647,7 +663,8 @@
                         // Unlock condition: memberCount >= MIN_GROUP_SIZE
                         if (currentCount >= MIN_GROUP_SIZE && !gData.unlockedAt) {
                             didUnlock = true;
-                            updates.unlockedAt = window.fs.serverTimestamp();
+                            // FIX: Use `serverTimestamp` directly
+                            updates.unlockedAt = serverTimestamp();
                         }
 
                         transaction.set(memberRef, {
@@ -690,6 +707,7 @@
             };
         };
 
+        // Exposed to Window
         window.editOrder = function(gid) {
             const members = state.members[gid] || [];
             const me = members.find(m => m.phone === JOIN_SESSION_PHONE);
@@ -700,6 +718,7 @@
             }
         };
 
+        // Exposed to Window
         window.openEditMemberModal = function() {
             toast("Order is final. No edits allowed.", "lock");
             return;
@@ -1088,16 +1107,18 @@
         }
 
         function listenToGroupForHome(gid) {
-            if (!window.fs || !window.db) return;
+            if (!db) return;
             
-            const unsubG = window.fs.onSnapshot(
-                window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid),
+            // FIX: Use `doc` and `onSnapshot` directly
+            const unsubG = onSnapshot(
+                doc(db, 'artifacts', window.appId, 'public', 'data', "groups", gid),
                 (doc) => { if (doc.exists()) { state.groups[gid] = doc.data(); safeRender(); } }
             );
             state.homeListeners.push(unsubG);
 
-            const unsubM = window.fs.onSnapshot(
-                window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"),
+            // FIX: Use `collection` and `onSnapshot` directly
+            const unsubM = onSnapshot(
+                collection(db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"),
                 (snap) => {
                     const m = []; 
                     snap.forEach(d => m.push({ ...d.data(), id: d.id })); 
@@ -1118,6 +1139,7 @@
             });
         }
 
+        // Exposed to Window
         window.openGroup = function(gid) { 
             if (!gid || typeof gid !== 'string') {
                 toast('Invalid group link', 'alert-circle');
@@ -1137,9 +1159,10 @@
             if (state.unsubMembers) { state.unsubMembers(); state.unsubMembers = null; }
             safeRender(); 
 
-            if (window.fs && window.db) {
-                state.unsubGroup = window.fs.onSnapshot(
-                    window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid),
+            if (db) {
+                // FIX: Use `doc` and `onSnapshot` directly
+                state.unsubGroup = onSnapshot(
+                    doc(db, 'artifacts', window.appId, 'public', 'data', "groups", gid),
                     (doc) => {
                         if (doc.exists()) {
                             state.groups[gid] = doc.data();
@@ -1152,8 +1175,9 @@
                     (error) => { console.error("Group Listen Error:", error); }
                 );
 
-                state.unsubMembers = window.fs.onSnapshot(
-                    window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"),
+                // FIX: Use `collection` and `onSnapshot` directly
+                state.unsubMembers = onSnapshot(
+                    collection(db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"),
                     (snapshot) => {
                         const members = [];
                         snapshot.forEach((doc) => {
@@ -1169,6 +1193,7 @@
             }
         };
 
+        // Exposed to Window
         window.goHome = function() { 
             if (state.timerInterval) clearInterval(state.timerInterval);
             if (cutoffTimerInterval) { clearInterval(cutoffTimerInterval); cutoffTimerInterval = null; }
@@ -1211,8 +1236,9 @@
             const startApp = async () => {
                 if (IS_JOIN_LINK && state.pendingJoinId) {
                     try {
-                        const docRef = window.fs.doc(
-                            window.db, 
+                        // FIX: Use `doc` and `getDoc` directly
+                        const docRef = doc(
+                            db, 
                             'artifacts', 
                             window.appId, 
                             'public', 
@@ -1220,7 +1246,7 @@
                             "groups", 
                             state.pendingJoinId
                         );
-                        const snap = await window.fs.getDoc(docRef);
+                        const snap = await getDoc(docRef);
                         
                         if (snap.exists()) {
                             const g = snap.data();
