@@ -8,10 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     
-    <!-- ✅ FIREBASE INITIALIZATION (SAFE FOR GITHUB PAGES) -->
+    <!-- ✅ FIREBASE INITIALIZATION -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-      import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
       import {
         getFirestore,
         doc,
@@ -24,10 +24,11 @@
         runTransaction,
         serverTimestamp,
         query,
-        where
+        where,
+        increment,
+        Timestamp
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-      // 1. HARDCODED CONFIG (Required for GitHub Pages)
       const firebaseConfig = {
         apiKey: "AIzaSyAHsRiYhNea5tFpKVSU7YA9nsR6qINtQdA",
         authDomain: "jodo-prod-v2.firebaseapp.com",
@@ -37,83 +38,52 @@
         appId: "1:577075664016:web:dcf613e7650217cc94b415"
       };
 
-      // 2. INITIALIZE
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
 
-      // 3. EXPOSE GLOBALS (Safe assignment)
       window.db = db;
       window.auth = auth;
-      window.appId = "jodo-prod-v2"; // Hardcoded Project ID for pathing
+      window.appId = typeof __app_id !== 'undefined' ? __app_id : "jodo-prod-v2"; 
       
-      // Namespace for Firestore functions to avoid top-level destructuring
       window.fs = {
         doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot,
-        collection, runTransaction, serverTimestamp, query, where
+        collection, runTransaction, serverTimestamp, query, where, increment, Timestamp
       };
       
-      console.log("🚀 JODO v5.4 - Instant Bootstrap + Auth Safety");
+      console.log("🚀 JODO v11.0 - DYNAMIC PRICE LADDERS");
 
-      // 4. AUTHENTICATE (Background Process)
-      // We do not block UI rendering on this. The SDK queues requests.
-      signInAnonymously(auth).catch((error) => {
-          console.warn("Auth Error (Public Mode):", error);
-      });
+      const initAuth = async () => {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            try { await signInWithCustomToken(auth, __initial_auth_token); } 
+            catch (e) { console.warn("Auth failed", e); await signInAnonymously(auth); }
+        } else { await signInAnonymously(auth); }
+      };
+      initAuth().catch(console.error);
     </script>
 
     <script>
-        // --- GLOBAL ERROR HANDLER ---
         window.onerror = function(msg, url, lineNo, columnNo, error) {
             if (msg.includes("ResizeObserver")) return;
             const appEl = document.getElementById('app');
             if (appEl) {
-                appEl.innerHTML = `
-                    <div style="padding: 20px; color: #DC2626; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; justify-content: center; text-align: center;">
-                        <h2 style="font-weight: bold; font-size: 1.25rem;">Connection Error</h2>
-                        <p style="margin-top: 10px; background: #fee2e2; padding: 10px; border-radius: 8px; font-family: monospace; text-align: left;">${msg}</p>
-                        <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #333; color: #fff; border-radius: 8px; border: none;">Retry</button>
-                    </div>
-                `;
+                appEl.innerHTML = `<div style="padding:20px;color:#DC2626;text-align:center;"><h2 style="font-weight:bold;">Error</h2><p>${msg}</p><button onclick="window.location.reload()" style="margin-top:20px;padding:10px 20px;background:#333;color:#fff;">Retry</button></div>`;
             }
             return false;
         };
-
-        // --- TAILWIND CONFIG ---
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { jodo: { ctaPrimary: '#15803D' } },
-                    fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'] },
-                    animation: {
-                        'fade-in-up': 'fadeInUp 0.5s ease-out',
-                        'slide-up': 'slideUp 0.3s ease-out forwards',
-                        'pop': 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                    },
-                    keyframes: {
-                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-                        slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-                        popIn: { '0%': { opacity: '0', transform: 'scale(0.9)' }, '100%': { opacity: '1', transform: 'scale(1)' } }
-                    }
-                }
-            }
-        }
+        tailwind.config = { theme: { extend: { colors: { jodo: { ctaPrimary: '#15803D', danger: '#DC2626' }, gray: { 50:'#F9FAFB', 100:'#F3F4F6', 200:'#E5E7EB', 500:'#6B7280', 600:'#4B5563', 800:'#1F2937', 900:'#111827' } }, fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'] }, animation: { 'fade-in-up': 'fadeInUp 0.5s ease-out', 'slide-up': 'slideUp 0.3s ease-out forwards', 'pop': 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }, keyframes: { fadeInUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }, slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }, popIn: { '0%': { opacity: '0', transform: 'scale(0.9)' }, '100%': { opacity: '1', transform: 'scale(1)' } } } } } }
     </script>
     
     <style>
-        body { background: #FFFFFF; color: #111827; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; }
+        body { background: #F3F4F6; color: #111827; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; }
         #app { width: 100%; max-width: 448px; background: #FFFFFF; min-height: 100dvh; position: relative; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
         .btn-press { transition: opacity 0.1s; cursor: pointer; user-select: none; }
         .btn-press:active:not(:disabled) { opacity: 0.8; }
-        .card-modern { background: #FFFFFF; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #E5E7EB; }
         .glass-header { background: rgba(255, 255, 255, 0.98); border-bottom: 1px solid #E5E7EB; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        .spinner-fallback {
-            width: 32px; height: 32px; border: 3px solid #E5E7EB; border-top: 3px solid #15803D; border-radius: 50%; animation: spin 1s linear infinite;
-        }
+        .spinner-fallback { width: 32px; height: 32px; border: 3px solid #E5E7EB; border-top: 3px solid #15803D; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -122,7 +92,7 @@
     <div id="app">
         <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; color: #333;">
             <div class="spinner-fallback"></div>
-            <div style="margin-top: 16px; font-family: sans-serif; font-size: 14px; font-weight: 600;">Connecting to JODO...</div>
+            <div style="margin-top: 16px; font-family: sans-serif; font-size: 14px; font-weight: 600;">JODO v11.0</div>
         </div>
     </div>
 
@@ -135,82 +105,66 @@
     <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl hidden z-[90] flex items-center gap-2 pointer-events-none pt-safe text-center w-max max-w-[90%]"></div>
 
     <script type="module">
-        /*
-         * JODO APP ARCHITECTURE v5.0
-         * 1. CONSTANTS - Config & Static Data
-         * 2. STORE - Centralized State Management
-         * 3. SERVICES - Firebase & Logic Abstraction
-         * 4. ACTIONS - Business Logic
-         * 5. UI - Rendering Logic
-         */
-
         // ==========================================
         // 1. CONSTANTS
         // ==========================================
         const CONSTANTS = {
             PUBLIC_SHARE_URL: "https://satyanarayanagaraga.github.io/jodo-mvp/",
-            MIN_GROUP_SIZE: 2,
-            GROUP_MAX_KG: 20,
+            MIN_GROUP_SIZE: 3, 
+            GROUP_MAX_KG: 1000, 
             GROUPS_STORAGE_KEY: 'jodo_groups_joined_v1',
-            CUTOFF_HOUR: 23, // 11 PM
+            CUTOFF_HOUR: 23, 
             PRODUCTS: [
-                { 
-                    id: 'tomato', name: 'Fresh Tomatoes', nameTe: 'టమాటాలు', unit: '1kg', baseWeight: 1, step: 0.25, weightUnit: 'kg', 
-                    icon: 'circle-dot', imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80',
-                    tiers: [ { minMembers: 1, price: 40 }, { minMembers: 2, price: 20 } ]
-                },
-                { 
-                    id: 'onion', name: 'Red Onions', nameTe: 'ఉల్లిపాయలు', unit: '1kg', baseWeight: 1, step: 0.25, weightUnit: 'kg', 
-                    icon: 'layers', imageSrc: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=800&q=80',
-                    tiers: [ { minMembers: 1, price: 60 }, { minMembers: 2, price: 35 } ]
-                },
-                { 
-                    id: 'chilli', name: 'Green Chillies', nameTe: 'పచ్చి మిరపకాయలు', unit: '250g', baseWeight: 0.25, step: 0.25, weightUnit: 'g', 
-                    icon: 'zap', imageSrc: 'https://images.unsplash.com/photo-1577218349272-37eb645284eb?auto=format&fit=crop&w=800&q=80',
-                    tiers: [ { minMembers: 1, price: 80 }, { minMembers: 2, price: 50 } ]
-                }
+                { id: 'tomato', name: 'Fresh Tomatoes', nameTe: 'టమాటాలు', unit: '1kg', step: 0.25, imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80' },
+                { id: 'onion', name: 'Red Onions', nameTe: 'ఉల్లిపాయలు', unit: '1kg', step: 0.25, imageSrc: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=800&q=80' },
+                { id: 'chilli', name: 'Green Chillies', nameTe: 'పచ్చి మిరపకాయలు', unit: '250g', step: 0.25, imageSrc: 'https://images.unsplash.com/photo-1577218349272-37eb645284eb?auto=format&fit=crop&w=800&q=80' }
             ],
-            PRODUCT_LIMITS: { tomato: 10, onion: 10, chilli: 2 }
+            PRODUCT_LIMITS: { tomato: 10, onion: 10, chilli: 2 },
+            PRICE_LADDERS: {
+                tomato: [
+                    { min: 1, price: 42 },   // solo
+                    { min: 2, price: 38 },
+                    { min: 4, price: 34 },
+                    { min: 7, price: 30 }    // best
+                ],
+                onion: [
+                    { min: 1, price: 36 },
+                    { min: 3, price: 32 },
+                    { min: 6, price: 28 }
+                ],
+                chilli: [
+                    { min: 1, price: 80 },   
+                    { min: 3, price: 70 },
+                    { min: 6, price: 60 }
+                ]
+            }
         };
 
         // ==========================================
-        // 2. STORE (Central State)
+        // 2. STORE
         // ==========================================
         const Store = {
             state: {
                 view: 'home',
-                mode: 'HOME',
                 currentGroupId: null,
-                groups: {},       // Cache for group data
-                members: {},      // Cache for member lists
+                groups: {},
+                members: {},
                 user: { name: '', phone: '', joinedGroupIds: [] },
-                cart: {},         // Local cart state
+                cart: {},
                 invitingGroup: null,
                 pendingJoinId: null,
                 isAppInitialized: false
             },
-            
-            // Centralized state updater to prevent direct mutations
             update(key, value) {
                 this.state[key] = value;
-                if(key === 'view' || key === 'groups' || key === 'members' || key === 'cart') {
-                    UI.scheduleRender();
-                }
+                if(key === 'view' || key === 'groups' || key === 'members' || key === 'cart') UI.scheduleRender();
             },
-
-            // Specific updater for deeply nested user data
             updateUser(field, value) {
                 this.state.user[field] = value;
-                if (field === 'joinedGroupIds') {
-                    localStorage.setItem(CONSTANTS.GROUPS_STORAGE_KEY, JSON.stringify(value));
-                } else if (field === 'name') {
-                    localStorage.setItem('jodo_user_name', value);
-                } else if (field === 'phone') {
-                    localStorage.setItem('jodo_user_phone', value);
-                }
+                if (field === 'joinedGroupIds') localStorage.setItem(CONSTANTS.GROUPS_STORAGE_KEY, JSON.stringify(value));
+                else if (field === 'name') localStorage.setItem('jodo_user_name', value);
+                else if (field === 'phone') localStorage.setItem('jodo_user_phone', value);
             },
-
-            // Load initial data from LocalStorage
             loadFromStorage() {
                 try {
                     this.state.user.name = localStorage.getItem('jodo_user_name') || '';
@@ -222,47 +176,30 @@
         };
 
         // ==========================================
-        // 3. SERVICES (Business Logic & Firebase)
+        // 3. UTILITIES
         // ==========================================
-        const Services = {
-            // Subscription Manager to prevent listener leaks
-            Subscriptions: {
-                active: {}, // Stores unsubscribe functions
-                
-                add(key, unsubscribeFn) {
-                    // If a listener exists for this key, don't overwrite it, 
-                    // or unsubscribe first if we are replacing it.
-                    if (this.active[key]) {
-                        // For this app, we usually want to keep home listeners active.
-                        // But if we explicitly want to replace, we call remove first.
-                        return;
-                    }
-                    this.active[key] = unsubscribeFn;
-                },
-
-                remove(key) {
-                    if (this.active[key]) {
-                        this.active[key]();
-                        delete this.active[key];
-                    }
-                },
-
-                clearAll() {
-                    Object.keys(this.active).forEach(k => this.active[k]());
-                    this.active = {};
-                }
-            },
-
+        const Utils = {
             Time: {
                 getCutoffTimestamp() {
-                    // Set cutoff to end of today (23:59:59)
-                    // This applies to BOTH creators and joiners
                     const now = new Date();
-                    now.setHours(23, 59, 59, 999); 
-                    return now.getTime();
+                    const utcNow = now.getTime();
+                    const istOffset = 5.5 * 60 * 60 * 1000;
+                    const istTime = new Date(utcNow + istOffset);
+                    istTime.setUTCHours(CONSTANTS.CUTOFF_HOUR, 59, 59, 999);
+                    return istTime.getTime() - istOffset;
                 },
-                isPastCutoff() {
-                    return Date.now() > this.getCutoffTimestamp();
+                isPastCutoff() { return Date.now() > this.getCutoffTimestamp(); },
+                isTimestampPast(firestoreTimestamp) {
+                    if (!firestoreTimestamp) return false;
+                    return Date.now() > firestoreTimestamp.toMillis();
+                },
+                calculateInitialCutoff() {
+                    const now = new Date();
+                    const utcNow = now.getTime();
+                    const istOffset = 5.5 * 60 * 60 * 1000;
+                    const istTime = new Date(utcNow + istOffset);
+                    istTime.setUTCHours(CONSTANTS.CUTOFF_HOUR, 59, 59, 999);
+                    return window.fs.Timestamp.fromMillis(istTime.getTime() - istOffset);
                 },
                 getMillis(ts) {
                     if (!ts) return 0;
@@ -271,97 +208,174 @@
                     return 0;
                 }
             },
-
             Pricing: {
-                // Determine price based on member count tiers
-                getPrice(product, memberCount = 1) {
-                    // Find the highest tier met by memberCount
-                    // Tiers are sorted by minMembers usually, but let's be safe
-                    const validTiers = product.tiers.filter(t => memberCount >= t.minMembers);
-                    if (validTiers.length === 0) return product.tiers[0].price;
-                    // Sort descending by minMembers to get best price
-                    validTiers.sort((a,b) => b.minMembers - a.minMembers);
-                    return validTiers[0].price;
-                },
-                
-                formatQty(qty) {
-                    return qty < 1 ? (qty * 1000).toFixed(0) + 'g' : qty + 'kg';
-                }
-            },
-
-            Data: {
-                // Strict path construction to adhere to environment rules
-                getGroupRef(gid) {
-                    return window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid);
-                },
-                getMembersCol(gid) {
-                    return window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members");
-                },
-                
-                listenToGroup(gid, isHomeContext = false) {
-                    const keyG = `group_${gid}`;
-                    const keyM = `members_${gid}`;
-
-                    // If viewing group details, we might want to refresh listeners or keep them separate?
-                    // For MVP, sharing listeners is fine if keys are unique.
-                    
-                    if (!Services.Subscriptions.active[keyG]) {
-                        const unsubG = window.fs.onSnapshot(this.getGroupRef(gid), (snap) => {
-                            if (snap.exists()) {
-                                const newGroups = { ...Store.state.groups, [gid]: snap.data() };
-                                Store.update('groups', newGroups);
-                            }
-                        }, err => console.error("Group listen error", err));
-                        Services.Subscriptions.add(keyG, unsubG);
+                formatQty(qty) { return qty < 1 ? (qty * 1000).toFixed(0) + 'g' : qty + 'kg'; },
+                getGroupPrice(productId, memberCount) {
+                    const ladder = CONSTANTS.PRICE_LADDERS[productId];
+                    if (!ladder) return null;
+                    let applicable = ladder[0];
+                    for (const tier of ladder) {
+                        if (memberCount >= tier.min) applicable = tier;
                     }
-
-                    if (!Services.Subscriptions.active[keyM]) {
-                        const unsubM = window.fs.onSnapshot(this.getMembersCol(gid), (snap) => {
-                            const mList = [];
-                            snap.forEach(d => mList.push({ ...d.data(), id: d.id }));
-                            mList.sort((a,b) => Services.Time.getMillis(a.joinedAt) - Services.Time.getMillis(b.joinedAt));
-                            const newMembers = { ...Store.state.members, [gid]: mList };
-                            Store.update('members', newMembers);
-                        }, err => console.error("Member listen error", err));
-                        Services.Subscriptions.add(keyM, unsubM);
-                    }
+                    return applicable.price;
+                },
+                getNextTier(productId, memberCount) {
+                    const ladder = CONSTANTS.PRICE_LADDERS[productId];
+                    if (!ladder) return null;
+                    return ladder.find(t => t.min > memberCount) || null;
                 }
             }
         };
 
         // ==========================================
-        // 4. ACTIONS (State Mutators)
+        // 4. SERVER (SIMULATED CLOUD FUNCTIONS)
         // ==========================================
+        const BackendSimulation = {
+            async call(functionName, data) {
+                console.log(`[BACKEND] Invoked: ${functionName}`, data);
+                await new Promise(r => setTimeout(r, 600));
+                
+                const context = {
+                    auth: window.auth.currentUser ? { uid: window.auth.currentUser.uid } : null
+                };
+
+                try {
+                    if (functionName === 'joinGroup') return await this.joinGroup(data, context);
+                    throw new Error("Unknown function");
+                } catch (e) {
+                    console.error(`[BACKEND] Error:`, e);
+                    throw e; 
+                }
+            },
+
+            async joinGroup({ name, phone, cart, joinGroupId, isManual, location }, context) {
+                if (!context.auth && !isManual) throw new Error("Unauthenticated");
+                if (!name || !phone) throw new Error("Invalid input");
+                if (isManual && !joinGroupId) throw new Error("Manual entry needs group ID");
+
+                const groupId = joinGroupId || window.fs.doc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups")).id;
+                const groupRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", groupId);
+                
+                await window.fs.runTransaction(window.db, async (transaction) => {
+                    const groupSnap = await transaction.get(groupRef);
+                    let gData;
+
+                    if (!groupSnap.exists()) {
+                        if (joinGroupId) throw "Group not found";
+                        const cutoffTime = Utils.Time.calculateInitialCutoff();
+                        gData = { 
+                            id: groupId, ownerName: name, ownerPhone: phone, 
+                            ownerId: context.auth.uid, 
+                            expiresAt: cutoffTime, 
+                            createdAt: window.fs.serverTimestamp(), 
+                            type: 'multi', maxKg: CONSTANTS.GROUP_MAX_KG, 
+                            memberCount: 0, status: 'FORMING' 
+                        };
+                        transaction.set(groupRef, gData);
+                    } else {
+                        gData = groupSnap.data();
+                    }
+
+                    if (isManual) {
+                        if (gData.ownerId && gData.ownerId !== context.auth.uid) {
+                            // Security check placeholder
+                        }
+                    }
+
+                    if (Utils.Time.isTimestampPast(gData.expiresAt)) throw "Event has ended. Orders closed.";
+                    if (gData.status === 'CANCELLED') throw "Group is closed.";
+
+                    const memberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", groupId, "members", phone);
+                    const memberSnap = await transaction.get(memberRef);
+                    const memberData = memberSnap.exists() ? memberSnap.data() : {};
+                    
+                    const isNewMember = !memberSnap.exists();
+                    const wasCounted = !!memberData.hasJoined;
+                    const willBeCounted = !isManual;
+
+                    let newMemberCount = gData.memberCount || 0;
+                    if (!wasCounted && willBeCounted) newMemberCount += 1;
+
+                    transaction.update(groupRef, { memberCount: newMemberCount });
+                    transaction.set(memberRef, { 
+                        memberId: phone, name, phone, cart, 
+                        joinedAt: memberSnap.exists() ? memberData.joinedAt : window.fs.serverTimestamp(), 
+                        location: location, isManualEntry: isManual, hasJoined: willBeCounted,
+                        isLeader: (!joinGroupId && isNewMember) || (gData.ownerPhone === phone) 
+                    });
+                });
+
+                this.triggerBackgroundTasks(groupId);
+                return { success: true, groupId };
+            },
+
+            async triggerBackgroundTasks(gid) {
+                try {
+                    const groupRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid);
+                    const snap = await window.fs.getDoc(groupRef);
+                    if (!snap.exists()) return;
+                    
+                    const g = snap.data();
+                    if (g.status === 'FORMING' && g.memberCount >= CONSTANTS.MIN_GROUP_SIZE) {
+                        if (!Utils.Time.isTimestampPast(g.expiresAt)) {
+                            setTimeout(async () => {
+                                await window.fs.updateDoc(groupRef, { status: 'VALID' });
+                            }, 500); 
+                        }
+                    }
+                } catch(e) { console.warn("Background Trigger Error", e); }
+            }
+        };
+
+        // ==========================================
+        // 5. CLIENT SERVICES
+        // ==========================================
+        const Services = {
+            Data: {
+                getGroupRef(gid) { return window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid); },
+                getMembersCol(gid) { return window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"); },
+                listenToGroup(gid) {
+                    window.fs.onSnapshot(this.getGroupRef(gid), (snap) => {
+                        if (snap.exists()) Store.update('groups', { ...Store.state.groups, [gid]: snap.data() });
+                    });
+                    window.fs.onSnapshot(this.getMembersCol(gid), (snap) => {
+                        const mList = [];
+                        snap.forEach(d => mList.push({ ...d.data(), id: d.id }));
+                        mList.sort((a,b) => Utils.Time.getMillis(a.joinedAt) - Utils.Time.getMillis(b.joinedAt));
+                        Store.update('members', { ...Store.state.members, [gid]: mList });
+                    });
+                }
+            },
+            Status: {
+                getGroupStatus(group) {
+                    if (!group) return 'UNKNOWN';
+                    if (group.status === 'CANCELLED') return 'CANCELLED'; 
+                    if (group.status === 'VALID') return 'VALID'; 
+                    if (Utils.Time.isTimestampPast(group.expiresAt) && group.memberCount < CONSTANTS.MIN_GROUP_SIZE) return 'CANCELLED';
+                    return 'FORMING';
+                }
+            }
+        };
+
         const Actions = {
             initApp() {
                 if (Store.state.isAppInitialized) return;
                 Store.update('isAppInitialized', true);
-                
                 Store.loadFromStorage();
                 
-                // Route handling
                 const params = new URLSearchParams(window.location.search);
                 const gid = params.get('group');
-                
-                // Initialize listeners for known groups
                 Store.state.user.joinedGroupIds.forEach(id => Services.Data.listenToGroup(id));
 
                 if (gid) {
-                    // NEW: Check if already joined/created
-                    if (Store.state.user.joinedGroupIds.includes(gid)) {
-                        // Redirect directly to group status
-                        this.navigateToGroup(gid);
-                    } else {
-                        // Not joined yet -> Show Invite UI (locks creation)
+                    if (Store.state.user.joinedGroupIds.includes(gid)) this.navigateToGroup(gid);
+                    else {
                         Store.update('view', 'home');
                         Store.update('pendingJoinId', gid);
                         this.fetchInviteGroup(gid);
                     }
-                } else {
-                    Store.update('view', 'home');
-                }
+                } else Store.update('view', 'home');
 
-                // History listener
                 window.addEventListener('popstate', () => {
                     const p = new URLSearchParams(location.search);
                     const g = p.get('group');
@@ -374,9 +388,7 @@
                     const snap = await window.fs.getDoc(Services.Data.getGroupRef(gid));
                     if (snap.exists()) {
                         Store.update('invitingGroup', snap.data());
-                        // Add to cache so it renders immediately
-                        const newGroups = { ...Store.state.groups, [gid]: snap.data() };
-                        Store.update('groups', newGroups);
+                        Store.update('groups', { ...Store.state.groups, [gid]: snap.data() });
                         Services.Data.listenToGroup(gid);
                     } else {
                         UI.toast("Group not found", "alert-circle");
@@ -386,20 +398,13 @@
             },
 
             updateCart(productId, delta) {
-                if (Services.Time.isPastCutoff()) { UI.toast("Orders closed for today", "clock"); return; }
-                
+                if (Utils.Time.isPastCutoff()) { UI.toast("Event ended.", "clock"); return; }
                 const currentQty = Store.state.cart[productId] || 0;
-                let newQty = currentQty + delta;
-                newQty = Math.round(newQty * 100) / 100;
+                let newQty = Math.round((currentQty + delta) * 100) / 100;
                 if (newQty < 0) newQty = 0;
-                
-                const limit = CONSTANTS.PRODUCT_LIMITS[productId] || 99;
-                if (newQty > limit) { UI.toast(`Limit ${limit}kg`, "alert-circle"); return; }
-
+                if (newQty > (CONSTANTS.PRODUCT_LIMITS[productId] || 99)) { UI.toast(`Limit reached`, "alert-circle"); return; }
                 const newCart = { ...Store.state.cart };
-                if (newQty === 0) delete newCart[productId];
-                else newCart[productId] = newQty;
-
+                if (newQty === 0) delete newCart[productId]; else newCart[productId] = newQty;
                 Store.update('cart', newCart);
                 UI.triggerVibration();
             },
@@ -420,307 +425,85 @@
             },
 
             async submitOrder(name, phone, joinGroupId, isManual = false, location = null) {
-                const user = Store.state.user;
-                if (!name || !/^[6-9]\d{9}$/.test(phone)) {
-                    UI.toast('Enter valid name & mobile', 'alert-circle');
-                    return false;
-                }
-
-                // 🔥 SAFETY: AUTH GUARD
-                if (!window.auth.currentUser) {
-                    UI.toast("Connecting to network... please retry.", "wifi");
-                    return false;
-                }
-
-                // Only update local user identity if NOT a manual entry for someone else
+                if (!name || !/^[6-9]\d{9}$/.test(phone)) { UI.toast('Enter valid details', 'alert-circle'); return false; }
+                
                 if (!isManual) {
                     Store.updateUser('name', name);
                     Store.updateUser('phone', phone);
                 }
                 
                 const cart = { ...Store.state.cart };
-                // Ensure strict path compliance
-                const groupsCol = window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups");
-                const finalGroupId = joinGroupId || window.fs.doc(groupsCol).id;
 
                 try {
-                    // Create group doc if new
-                    if (!joinGroupId) {
-                        const groupData = { 
-                            id: finalGroupId, 
-                            ownerName: name, 
-                            ownerPhone: phone, 
-                            expiresAt: Services.Time.getCutoffTimestamp(), 
-                            createdAt: window.fs.serverTimestamp(), 
-                            type: 'multi', 
-                            maxKg: CONSTANTS.GROUP_MAX_KG, 
-                            pendingKg: 0, 
-                            usedKg: 0, 
-                            memberCount: 0, 
-                            unlockedAt: null 
-                        };
-                        await window.fs.setDoc(Services.Data.getGroupRef(finalGroupId), groupData);
-                    }
-
-                    let didUnlock = false;
-                    
-                    await window.fs.runTransaction(window.db, async (transaction) => {
-                        const groupRef = Services.Data.getGroupRef(finalGroupId);
-                        const groupSnap = await transaction.get(groupRef);
-                        if (!groupSnap.exists()) throw "GROUP_NOT_FOUND";
-                        
-                        const gData = groupSnap.data();
-                        const memberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", finalGroupId, "members", phone);
-                        const memberSnap = await transaction.get(memberRef);
-
-                        const isNewMember = !memberSnap.exists();
-                        const currentCartQty = Object.values(cart).reduce((a,b) => a+b, 0);
-                        
-                        // --- MEMBER COUNT ---
-                        let newMemberCount = gData.memberCount || 0;
-                        if (isNewMember) newMemberCount += 1;
-
-                        // --- INVENTORY ---
-                        let newPending = gData.pendingKg || 0;
-                        let newUsed = gData.usedKg || 0;
-                        let newUnlockedAt = gData.unlockedAt;
-
-                        // --- QUANTITY CHANGE ---
-                        let oldQty = 0;
-                        let joinedAt = window.fs.serverTimestamp();
-                        if (memberSnap.exists()) {
-                            const oldData = memberSnap.data();
-                            oldQty = Object.values(oldData.cart || {}).reduce((a,b)=>a+b, 0);
-                            // Preserve original joinedAt timestamp
-                            if (oldData.joinedAt) joinedAt = oldData.joinedAt;
-                        }
-                        const qtyChange = currentCartQty - oldQty;
-
-                        // capacity check (still valid)
-                        const maxKg = gData.maxKg || CONSTANTS.GROUP_MAX_KG;
-                        if (qtyChange > 0 && (newPending + newUsed + qtyChange) > maxKg) {
-                            throw `Sold Out! Only ${Math.max(0, maxKg - (newPending + newUsed)).toFixed(1)}kg left.`;
-                        }
-
-                        // apply qty
-                        if (newUnlockedAt) newUsed += qtyChange;
-                        else newPending += qtyChange;
-
-                        // 🔓 UNLOCK = MEMBER COUNT ONLY
-                        if (!newUnlockedAt && newMemberCount >= CONSTANTS.MIN_GROUP_SIZE) {
-                            didUnlock = true;
-                            newUnlockedAt = window.fs.serverTimestamp();
-                            newUsed += newPending;
-                            newPending = 0;
-                        }
-
-                        transaction.update(groupRef, { 
-                            pendingKg: parseFloat(newPending.toFixed(2)), 
-                            usedKg: parseFloat(newUsed.toFixed(2)), 
-                            memberCount: newMemberCount, 
-                            totalQty: parseFloat((newPending + newUsed).toFixed(2)), 
-                            unlockedAt: newUnlockedAt 
-                        });
-
-                        transaction.set(memberRef, { 
-                            memberId: phone, 
-                            name, 
-                            phone, 
-                            cart, 
-                            joinedAt: joinedAt, 
-                            location: location, // Save GPS coordinates if available
-                            isManualEntry: isManual, // Flag for analytics/display
-                            isLeader: (!joinGroupId && isNewMember) || (gData.ownerPhone === phone) 
-                        });
+                    const result = await BackendSimulation.call('joinGroup', {
+                        name, phone, cart, joinGroupId, isManual, location
                     });
 
-                    // Success handling
-                    if (joinGroupId && !isManual) {
-                        Store.update('pendingJoinId', null);
-                        Store.update('invitingGroup', null);
-                        // FIX 1: REMOVE navigateToHome() TO PREVENT RACE CONDITION
-                    }
-                    
-                    // Add to local list only if it's the user joining themselves
+                    const finalGroupId = result.groupId;
+                    if (joinGroupId && !isManual) { Store.update('pendingJoinId', null); Store.update('invitingGroup', null); }
                     if (!isManual) {
                         const joined = [...Store.state.user.joinedGroupIds];
                         if(!joined.includes(finalGroupId)) {
                             joined.push(finalGroupId);
                             Store.updateUser('joinedGroupIds', joined);
                         }
-                        // Navigate
                         Actions.navigateToGroup(finalGroupId);
-                    } else {
-                        UI.toast("Order added successfully!", "user-plus");
-                    }
+                    } else { UI.toast("Manual order added", "user-plus"); }
                     
-                    // Clear cart
                     Store.update('cart', {});
-                    
-                    // User feedback
-                    if (didUnlock) UI.toast("Deal Unlocked! 🎉", "check-circle");
-                    else if (!isManual) UI.toast("Joined successfully!", "check-circle");
-
+                    if (!isManual) UI.toast("Joined!", "users");
                     return true;
 
-                } catch (e) {
-                    console.error("Order Error", e);
-                    UI.toast(typeof e === 'string' ? e : "Transaction failed", "alert-triangle");
-                    return false;
+                } catch (e) { 
+                    const errMsg = typeof e === 'object' ? (e.message || JSON.stringify(e)) : String(e);
+                    console.error("Order Error", errMsg);
+                    UI.toast(errMsg.includes('closed') ? "Group is closed." : "Request failed.", "alert-triangle"); 
+                    return false; 
                 }
             }
         };
 
         // ==========================================
-        // 5. UI (Rendering & Interactions)
+        // 6. UI RENDERER
         // ==========================================
         const UI = {
             renderScheduled: false,
-            
             scheduleRender() {
                 if (this.renderScheduled) return;
                 this.renderScheduled = true;
-                requestAnimationFrame(() => {
-                    this.render();
-                    this.renderScheduled = false;
-                });
+                requestAnimationFrame(() => { this.render(); this.renderScheduled = false; });
             },
-
             render() {
                 const app = document.getElementById('app');
                 if (!app) return;
-                
                 const { view } = Store.state;
                 if (view === 'home') this.renderHome(app);
                 else if (view === 'group') this.renderGroup(app);
-                
                 if (window.lucide) window.lucide.createIcons();
             },
-
-            // --- COMPONENTS ---
-
             renderHome(container) {
                 const { user, groups, invitingGroup, cart } = Store.state;
-                const isClosed = Services.Time.isPastCutoff();
-
-                // Sort groups by time
-                const activeGroups = user.joinedGroupIds
-                    .map(gid => groups[gid])
-                    .filter(Boolean)
-                    .sort((a,b) => Services.Time.getMillis(b.createdAt) - Services.Time.getMillis(a.createdAt));
-
-                // Cart summary
-                let cartCount = 0; let cartTotal = 0;
-                Object.keys(cart).forEach(pid => {
-                    const qty = cart[pid]; 
-                    if (qty > 0) { 
-                        cartCount++; 
-                        // Base price for cart preview
-                        cartTotal += qty * CONSTANTS.PRODUCTS.find(p => p.id === pid).tiers[1].price; 
-                    }
-                });
-
-                // Header HTML
-                let headerHtml = `
-                    <div class="glass-header sticky top-0 z-40 px-4 pt-safe pb-3 flex justify-between items-end min-h-[88px]">
-                        <div class="flex flex-col justify-end pb-0.5 w-full">
-                            <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1">JODO</h1>
-                            <span class="text-[10px] text-gray-500 font-bold tracking-wide">Group orders for Duvva</span>
-                            <div id="home-timer" class="text-[10px] font-bold text-red-600 mt-1">Loading…</div>
-                        </div>
-                    </div>
-                `;
-                
-                // Invite HTML
-                let inviteHtml = '';
-                if (invitingGroup) {
-                     headerHtml = `
-                        <div class="glass-header sticky top-0 z-40 px-4 pt-safe pb-3 flex justify-between items-end min-h-[88px]">
-                            <div class="flex flex-col justify-end pb-0.5 w-full">
-                                <h1 class="font-black text-2xl tracking-tight text-jodo-ctaPrimary leading-none mb-1">JODO x ${invitingGroup.ownerName}</h1>
-                                <span class="text-[10px] text-green-700 font-bold tracking-wide bg-green-50 px-2 py-0.5 rounded-full w-fit">Special Invitation</span>
-                            </div>
-                        </div>`;
-
-                     inviteHtml = `
-                        <div class="px-4 mb-6 mt-4 animate-pop">
-                            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 shadow-sm">
-                                <div class="flex items-start gap-4">
-                                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-sm shrink-0"><i data-lucide="users" size="24"></i></div>
-                                    <div class="flex-1">
-                                        <h3 class="font-bold text-lg text-gray-900 leading-tight mb-2">Accept Invite</h3>
-                                        <p class="text-xs text-gray-600 mb-3">Join this group to unlock wholesale prices.</p>
-                                        <button onclick="window.JodoApp.UI.openCheckoutModal('${Store.state.pendingJoinId}')" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2">Join Group</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
+                if (Utils.Time.isPastCutoff()) {
+                    container.innerHTML = `<div class="h-screen flex flex-col items-center justify-center bg-gray-50 px-6 text-center"><h1 class="text-3xl font-black text-gray-900 mb-2">Event Ended</h1><p class="text-gray-500">Come back on Wednesday.</p></div>`; return;
                 }
+                const activeGroups = user.joinedGroupIds.map(gid => groups[gid]).filter(Boolean);
+                let groupsHtml = activeGroups.map(g => {
+                    const status = Services.Status.getGroupStatus(g);
+                    const color = status === 'VALID' ? 'green' : (status === 'CANCELLED' ? 'red' : 'gray');
+                    return `<div onclick="window.JodoApp.Actions.navigateToGroup('${g.id}')" class="shrink-0 w-[80%] bg-white rounded-xl border border-gray-200 shadow-sm p-4 btn-press relative overflow-hidden flex items-center gap-3"><div class="w-10 h-10 bg-${color}-100 rounded-full flex items-center justify-center text-${color}-700"><i data-lucide="${status === 'VALID' ? 'check' : 'users'}" size="20"></i></div><div><div class="font-bold text-gray-900">Your Group</div><div class="text-[10px] font-bold px-2 py-0.5 rounded border border-${color}-200 bg-${color}-50 text-${color}-700 inline-block mt-1">${status === 'VALID' ? 'Confirmed' : 'Forming'}</div></div></div>`;
+                }).join('');
+                if (activeGroups.length) groupsHtml = `<div class="mt-6 mb-4"><div class="px-4 flex gap-3 overflow-x-auto no-scrollbar">${groupsHtml}</div></div>`;
 
-                // Active Groups HTML
-                let groupsHtml = '';
-                if (activeGroups.length > 0) {
-                    groupsHtml = `
-                        <div class="mt-6 mb-4">
-                            <div class="px-4 flex gap-3 overflow-x-auto no-scrollbar">
-                                ${activeGroups.map(g => `
-                                    <div onclick="window.JodoApp.Actions.navigateToGroup('${g.id}')" class="shrink-0 w-[80%] card-modern p-4 btn-press">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-700"><i data-lucide="shopping-bag" size="20"></i></div>
-                                            <div>
-                                                <div class="font-bold text-gray-900">Your Group</div>
-                                                <div class="text-[10px] font-bold px-2 py-0.5 rounded border inline-block mt-1">${g.unlockedAt ? 'Unlocked' : `${g.memberCount}/${CONSTANTS.MIN_GROUP_SIZE} joined`}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>`;
-                }
-
-                // Products HTML
                 const productsHtml = CONSTANTS.PRODUCTS.map(p => {
                     const qty = cart[p.id] || 0;
-                    
-                    // Pricing Logic Update
-                    const bestPricePerKg = p.tiers[p.tiers.length-1].price; // Assumes config prices are per Kg
-                    const pricePer250g = Math.round(bestPricePerKg / 4);
-                    
-                    let displayLabel = "Best Price / 250g";
-                    let displayValue = `₹${pricePer250g}`;
-                    
-                    // If user adds items, show the total cost for that line item
-                    if (qty > 0) {
-                        displayLabel = "Item Total";
-                        displayValue = `₹${Math.round(qty * bestPricePerKg)}`;
-                    }
-                    
-                    return `
-                    <div class="bg-white p-4 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 flex gap-4 ${isClosed ? 'opacity-70' : ''}">
-                        <div class="w-20 h-20 bg-gray-50 rounded-xl shrink-0 overflow-hidden border border-gray-100"><img src="${p.imageSrc}" class="w-full h-full object-cover"></div>
-                        <div class="flex-1 flex flex-col justify-between py-1">
-                                <div><h3 class="font-bold text-lg text-gray-900 leading-tight">${p.name}</h3><p class="text-sm text-gray-500">${p.nameTe}</p></div>
-                                <div class="mt-2 flex items-center justify-between">
-                                <div class="bg-green-50 rounded-lg px-2 py-1 border border-green-100 flex flex-col min-w-[90px]"><span class="text-[10px] font-bold text-green-700 uppercase">${displayLabel}</span><span class="text-lg font-bold text-green-700">${displayValue}</span></div>
-                                ${qty === 0 ? `<button onclick="window.JodoApp.Actions.updateCart('${p.id}', ${p.step})" class="bg-white border border-gray-300 text-gray-700 font-bold px-4 py-2 rounded-xl text-sm shadow-sm active:bg-gray-50">Add</button>` : `<div class="flex items-center bg-gray-900 rounded-xl px-1 py-1"><button onclick="window.JodoApp.Actions.updateCart('${p.id}', -${p.step})" class="w-8 h-8 text-white"><i data-lucide="minus" size="14"></i></button><div class="w-12 text-center text-sm font-bold text-white">${Services.Pricing.formatQty(qty)}</div><button onclick="window.JodoApp.Actions.updateCart('${p.id}', ${p.step})" class="w-8 h-8 text-white"><i data-lucide="plus" size="14"></i></button></div>`}
-                                </div>
-                        </div>
-                    </div>`;
+                    const soloPrice = CONSTANTS.PRICE_LADDERS[p.id] ? CONSTANTS.PRICE_LADDERS[p.id][0].price : 0;
+                    return `<div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 mb-3 mx-4"><div class="w-20 h-20 bg-gray-50 rounded-xl shrink-0 overflow-hidden"><img src="${p.imageSrc}" class="w-full h-full object-cover"></div><div class="flex-1 flex flex-col justify-between py-1"><div><h3 class="font-bold text-lg">${p.name}</h3><p class="text-sm text-gray-500">${p.nameTe}</p></div><div class="mt-2 flex items-center justify-between"><span class="text-sm font-black text-gray-800">₹${soloPrice}</span>${qty===0 ? `<button onclick="window.JodoApp.Actions.updateCart('${p.id}',${p.step})" class="bg-white border border-gray-300 font-bold px-4 py-2 rounded-xl text-sm">Add</button>` : `<div class="flex items-center bg-gray-900 rounded-xl px-1 py-1"><button onclick="window.JodoApp.Actions.updateCart('${p.id}',-${p.step})" class="w-8 h-8 text-white">-</button><div class="w-12 text-center text-sm font-bold text-white">${Utils.Pricing.formatQty(qty)}</div><button onclick="window.JodoApp.Actions.updateCart('${p.id}',${p.step})" class="w-8 h-8 text-white">+</button></div>`}</div></div></div>`;
                 }).join('');
 
-                container.innerHTML = `
-                    <div class="pb-32 fade-in bg-white min-h-screen">
-                        ${headerHtml}
-                        ${inviteHtml}
-                        ${groupsHtml}
-                        <div class="px-4 space-y-3 mt-6">
-                            ${productsHtml}
-                        </div>
-                        ${cartCount > 0 ? `<div class="fixed bottom-4 left-4 right-4 z-50 animate-slide-up"><button onclick="window.JodoApp.UI.openCheckoutModal(${Store.state.pendingJoinId ? `'${Store.state.pendingJoinId}'` : 'null'})" class="w-full bg-jodo-ctaPrimary text-white h-[60px] rounded-xl font-bold text-lg shadow-xl flex items-center justify-between px-6 btn-press ring-2 ring-white/50"><div><span class="text-xs font-medium opacity-90">${cartCount} Items</span><br><span class="text-lg leading-none">~₹${Math.round(cartTotal)}</span></div><div class="flex items-center gap-2">Checkout <i data-lucide="arrow-right" size="20"></i></div></button></div>` : ''}
-                    </div>
-                `;
+                let inviteHtml = invitingGroup ? `<div class="px-4 mb-6 mt-4"><div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5"><h3 class="font-bold text-lg">Accept Invite</h3><button onclick="window.JodoApp.UI.openCheckoutModal('${Store.state.pendingJoinId}')" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl mt-3">Join Group</button></div></div>` : '';
+                let cartCount = 0; Object.values(cart).forEach(v => { if(v>0) cartCount++ });
 
-                this.initTilt();
+                container.innerHTML = `<div class="pb-32 fade-in bg-white min-h-screen"><div class="glass-header sticky top-0 z-40 px-4 pt-safe pb-3"><h1 class="font-black text-2xl text-jodo-ctaPrimary">JODO</h1><div id="home-timer" class="text-xs font-black text-red-600">Loading...</div></div>${inviteHtml}${groupsHtml}<div class="mt-6">${productsHtml}</div>${cartCount>0?`<div class="fixed bottom-4 left-4 right-4 z-50"><button onclick="window.JodoApp.UI.openCheckoutModal(${Store.state.pendingJoinId?`'${Store.state.pendingJoinId}'`:'null'})" class="w-full bg-jodo-ctaPrimary text-white h-[60px] rounded-xl font-bold text-lg shadow-xl flex justify-between px-6 items-center"><span>${cartCount} Items</span><span>Checkout -></span></button></div>`:''}</div>`;
                 this.startTimer(document.getElementById('home-timer'));
             },
 
@@ -728,365 +511,212 @@
                 const { currentGroupId, groups, members } = Store.state;
                 const g = groups[currentGroupId];
                 if (!g) return;
-                
                 const memberList = members[currentGroupId] || [];
-                const isUnlocked = !!g.unlockedAt;
-                const myPhone = Store.state.user.phone;
-                const hasJoined = myPhone && memberList.some(m => m.phone === myPhone);
-                const isClosed = Services.Time.isPastCutoff();
-                
-                const memberHtml = memberList.map(m => {
-                    const isMe = myPhone === m.phone;
-                    let totalVal = 0;
-                    const parts = Object.entries(m.cart || {}).map(([pid, qty]) => {
-                        const p = CONSTANTS.PRODUCTS.find(x => x.id === pid); 
-                        if(!p || qty <= 0) return null;
-                        const price = Services.Pricing.getPrice(p, g.memberCount); // Dynamic!
-                        totalVal += qty * price;
-                        return `${Services.Pricing.formatQty(qty)} ${p.name}`;
-                    }).filter(Boolean);
-                    
-                    const editLink = (isMe && !isClosed) ? `<span onclick="window.JodoApp.UI.openCheckoutModal('${g.id}')" class="text-blue-600 underline ml-2 cursor-pointer text-xs">Edit</span>` : '';
+                const status = Services.Status.getGroupStatus(g);
+                const remaining = Math.max(0, CONSTANTS.MIN_GROUP_SIZE - g.memberCount);
+                const hasJoined = Store.state.user.phone && memberList.some(m => m.phone === Store.state.user.phone);
 
-                    return `
-                    <div class="bg-white border ${isMe ? 'border-green-200' : 'border-gray-100'} p-3 rounded-xl flex justify-between items-center">
-                        <div>
-                            <div class="text-sm font-bold text-gray-800">
-                                ${isMe ? 'You' : m.name} ${m.isLeader ? '👑' : ''}
-                                ${editLink}
-                            </div>
-                            <div class="text-xs text-gray-500">${parts.length > 0 ? parts.join(", ") : "Joined"}</div>
-                        </div>
-                        <div class="font-bold text-sm">₹${Math.round(totalVal)}</div>
-                    </div>`;
+                if (status === 'CANCELLED') {
+                    container.innerHTML = `<div class="min-h-screen bg-white flex flex-col p-6 items-center text-center pt-20"><h1 class="text-2xl font-black text-gray-900 mb-2">Order Cancelled</h1><p class="text-gray-600 mb-8">We did not reach 3 orders.</p><button onclick="window.JodoApp.Actions.navigateToHome()" class="text-gray-500 font-bold underline">Go Home</button></div>`;
+                    return;
+                }
+
+                const headerHTML = (status === 'VALID') 
+                    ? `<div class="bg-blue-600 text-white text-center py-3 px-4 font-bold text-sm tracking-wide leading-tight">✅ Order locked.<br><span class="opacity-80 text-xs font-normal">Final price = lowest tier reached before cutoff.</span></div>`
+                    : `<div class="bg-red-600 text-white text-center py-3 px-4 font-black text-sm tracking-wide leading-tight">🚨 This group is incomplete.<br>${remaining} more people needed or your order will cancel.</div>`;
+
+                const ladderHtml = CONSTANTS.PRODUCTS.map(p => {
+                    const price = Utils.Pricing.getGroupPrice(p.id, g.memberCount);
+                    const next = Utils.Pricing.getNextTier(p.id, g.memberCount);
+                    return `<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-3"><div class="flex justify-between items-center"><div class="font-bold text-gray-900">${p.name}</div><div class="text-lg font-black text-green-700">₹${price}</div></div>${next ? `<div class="text-xs text-gray-600 mt-1">${next.min - g.memberCount} more people → ₹${next.price}</div>` : `<div class="text-xs text-green-700 mt-1 font-bold">Lowest price achieved 🎉</div>`}</div>`;
                 }).join('');
 
-                const footerHtml = hasJoined 
-                    ? (isClosed 
-                        ? `<button onclick="window.JodoApp.UI.shareGroup('${g.id}', ${isUnlocked})" class="w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold gap-2"><i data-lucide="share-2" size="20"></i> Share Result</button>`
-                        : `<div class="flex gap-3 w-full">
-                                <button onclick="window.JodoApp.UI.openCheckoutModal('${g.id}')" class="w-[56px] bg-gray-50 border border-gray-200 text-gray-700 h-[56px] flex items-center justify-center rounded-xl font-bold shadow-sm active:bg-gray-100"><i data-lucide="edit-3" size="20"></i></button>
-                                <button onclick="window.JodoApp.UI.shareGroup('${g.id}', ${isUnlocked})" class="flex-1 bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-bold gap-2"><i data-lucide="share-2" size="20"></i> Share Deal</button>
-                           </div>`
-                    )
-                    : `<button onclick="window.JodoApp.UI.openCheckoutModal('${g.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold">Join Group</button>`;
+                const membersHTML = memberList.map(m => {
+                    const isMe = Store.state.user.phone === m.phone;
+                    const parts = Object.entries(m.cart || {}).map(([pid, qty]) => { const p = CONSTANTS.PRODUCTS.find(x => x.id === pid); return p ? `${Utils.Pricing.formatQty(qty)} ${p.name}` : null; }).filter(Boolean);
+                    const subText = status === 'VALID' ? `<div class="text-[10px] text-blue-700 font-bold mt-0.5">Order Placed • Waiting for Price</div>` : `<div class="text-[10px] text-gray-500 font-medium mt-0.5">Waiting for confirmation...</div>`;
+                    return `<div class="bg-white border ${isMe ? 'border-green-300 ring-1 ring-green-100' : 'border-gray-100'} p-3 rounded-xl flex justify-between items-center"><div><div class="text-xs font-bold text-gray-900">${isMe ? 'You' : m.name} ${m.isLeader ? '👑' : ''} ${isMe ? `<span onclick="window.JodoApp.UI.openCheckoutModal('${g.id}')" class="text-blue-600 underline ml-2 cursor-pointer text-xs">Edit</span>` : ''}</div><div class="text-[11px] text-gray-500 mt-0.5">${parts.join(", ")}</div>${subText}</div><div class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded font-bold">PENDING</div></div>`;
+                }).join('') + Array.from({ length: Math.max(0, CONSTANTS.MIN_GROUP_SIZE - memberList.length) }).map(() => `<div class="border border-dashed border-red-300 bg-red-50/40 p-3 rounded-xl text-center text-xs font-bold text-red-600 flex items-center justify-center min-h-[50px]">Empty slot – invite someone</div>`).join('');
+
+                const footerHTML = hasJoined 
+                    ? (status === 'VALID' ? `<div class="flex flex-col gap-2 w-full"><button onclick="window.JodoApp.UI.shareGroup('${g.id}', true)" class="w-full bg-blue-600 text-white h-[56px] flex items-center justify-center rounded-xl font-black text-sm tracking-wide gap-2 shadow-lg">SHARE GROUP LINK</button></div>` : `<div class="flex flex-col w-full"><button onclick="window.JodoApp.UI.shareGroup('${g.id}', false)" class="w-full bg-jodo-ctaPrimary text-white h-[56px] flex items-center justify-center rounded-xl font-black text-sm tracking-wide gap-2 shadow-lg">INVITE ${remaining} PEOPLE · ORDER NOT CONFIRMED</button></div>`)
+                    : `<button onclick="window.JodoApp.UI.openCheckoutModal('${g.id}')" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-black text-sm tracking-wide shadow-lg">JOIN GROUP</button>`;
 
                 container.innerHTML = `
                 <div class="fade-in bg-white min-h-screen pb-40 font-sans">
-                    <div class="glass-header h-[60px] sticky top-0 z-50 px-4 flex justify-between items-center bg-white border-b border-gray-100">
-                        <div class="flex items-center gap-3 cursor-pointer pt-safe" onclick="window.JodoApp.Actions.navigateToHome()"><i data-lucide="arrow-left" size="24" class="text-gray-700"></i><span class="font-bold">Back</span></div>
+                    <div class="glass-header h-[60px] sticky top-0 z-[1000] px-4 flex justify-between items-center bg-white border-b border-gray-100">
+                        <button onclick="window.JodoApp.Actions.navigateToHome()" class="flex items-center gap-2 px-2 py-1 rounded-lg active:bg-gray-100 text-gray-600"><i data-lucide="arrow-left" size="24"></i></button>
+                        <button onclick="window.JodoApp.UI.openCheckoutModal('${g.id}', true)" class="bg-gray-50 border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 active:bg-gray-100"><i data-lucide="user-plus" size="14"></i> Add Manual</button>
                     </div>
+                    ${headerHTML}
                     <div class="p-4">
-                        <div class="w-full h-40 rounded-2xl bg-gray-100 overflow-hidden mb-4 border border-gray-200 relative"><img src="https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/40 flex items-center justify-center"><h1 class="text-3xl font-black text-white">Group Order</h1></div></div>
-                        <div class="text-center mb-2"><span class="text-sm font-medium text-gray-500">Host: <span class="font-bold text-gray-900">${g.ownerName}</span></span></div>
-                        <div id="cutoff-timer" class="text-xs font-bold text-red-600 text-center mb-6">Loading…</div>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-end mb-4">
-                                <h3 class="text-xs font-bold text-gray-400 uppercase">People Joined</h3>
-                                <div class="flex items-center gap-2">
-                                    <button onclick="window.JodoApp.UI.openCheckoutModal('${g.id}', true)" class="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 active:bg-gray-200"><i data-lucide="user-plus" size="12"></i> Add Manual</button>
-                                    ${!isUnlocked ? `<span class="text-xs font-bold text-orange-800 bg-orange-100 px-2 py-0.5 rounded animate-pulse">Need ${Math.max(0, CONSTANTS.MIN_GROUP_SIZE - g.memberCount)} more</span>` : '<span class="text-xs font-bold text-green-800 bg-green-100 px-2 py-0.5 rounded">Unlocked!</span>'}
-                                </div>
-                            </div>
-                            ${memberHtml}
-                        </div>
+                        <div class="text-center mb-6 mt-4 px-2"><h1 class="text-xl font-black text-gray-900">${g.ownerName}'s Group</h1><div id="cutoff-timer" class="text-sm font-black text-red-600 mt-2">⏳ ...</div></div>
+                        ${ladderHtml}
+                        <div class="space-y-2 mt-6"><div class="flex justify-between items-end mb-1 px-1"><h3 class="text-[11px] font-bold text-gray-400 uppercase">Members</h3><div class="text-xs font-bold text-gray-800">${g.memberCount} Joined</div></div>${membersHTML}</div>
                     </div>
-                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe z-50 shadow-lg">
-                        ${footerHtml}
-                    </div>
+                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-safe z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">${footerHTML}</div>
                 </div>`;
-                
-                this.startTimer(document.getElementById('cutoff-timer'));
+                this.startTimer(document.getElementById('cutoff-timer'), g.expiresAt);
             },
 
             openCheckoutModal(joinGroupId = null, isManual = false) {
-                const isClosed = Services.Time.isPastCutoff();
-                if (isClosed) { this.toast("Orders closed.", "clock"); return; }
-
+                // if (Utils.Time.isPastCutoff()) { this.toast("Event Ended", "x"); return; } // Removed to let server handle it
                 const { user, members, cart } = Store.state;
-                // Determine logic for pre-fill
-                let activeCart = isManual ? {} : { ...cart }; // Manual mode starts with empty cart
-                let isEditing = false;
+                let activeCart = isManual ? {} : { ...cart }; 
                 let capturedLocation = null;
 
-                // If joining/editing normally
                 if (joinGroupId && !isManual) {
-                     const mList = members[joinGroupId] || [];
-                     const me = mList.find(m => m.phone === user.phone);
-                     if (me) {
-                         activeCart = { ...(me.cart || {}) };
-                         isEditing = true;
-                         Store.update('cart', activeCart);
-                     } else {
-                         if (Object.keys(Store.state.cart).length === 0) {
-                             this.toast("Please select items before joining", "shopping-bag");
-                             return;
-                         }
-                     }
-                } else if (!isManual && Object.keys(cart).length === 0) {
-                     // Normal mode requires items
-                     this.toast("Please select items first", "shopping-bag");
-                     return;
-                } else if (isManual) {
-                    // Reset cart for manual mode
-                    Store.update('cart', {});
-                }
+                     const me = (members[joinGroupId] || []).find(m => m.phone === user.phone);
+                     if (me) { activeCart = { ...(me.cart || {}) }; Store.update('cart', activeCart); }
+                     else if (Object.keys(Store.state.cart).length === 0) { this.toast("Select items first", "shopping-bag"); return; }
+                } else if (!isManual && Object.keys(cart).length === 0) { this.toast("Select items first", "shopping-bag"); return; }
+                else if (isManual) { Store.update('cart', {}); }
 
-                const btnText = isManual ? "Add Order" : (isEditing ? "Update Order" : (joinGroupId ? "Join Group" : "Start saving today"));
-                const modalTitle = isManual ? "Add Manual Order" : "Smart Choice";
-                
-                // RENDER MODAL CONTENT
-                const modalHtml = `
-                <div class="flex flex-col h-[90vh] bg-white relative rounded-t-[1.5rem] overflow-hidden font-sans">
+                const modalHtml = `<div class="flex flex-col h-[90vh] bg-white relative rounded-t-[1.5rem] overflow-hidden font-sans">
                     <div class="bg-white px-5 py-4 flex items-center justify-between border-b border-gray-100 shrink-0 z-20">
-                        <div class="flex items-center gap-2 text-green-700">
-                            <i data-lucide="${isManual ? 'user-plus' : 'sparkles'}" size="20"></i>
-                            <h3 class="font-black text-xl tracking-tight">${modalTitle}</h3>
-                        </div>
-                        <button id="close-modal" class="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"><i data-lucide="x" size="20"></i></button>
+                        <div class="flex items-center gap-2 text-gray-800"><h3 class="font-black text-xl tracking-tight">${isManual ? 'Manual Entry' : 'Confirm Order'}</h3></div>
+                        <button id="close-modal" class="p-2 bg-gray-50 rounded-full text-gray-500"><i data-lucide="x" size="20"></i></button>
                     </div>
                     <div class="p-5 overflow-y-auto flex-1 relative bg-gray-50/30">
-                        ${!isManual ? `<div class="bg-white border border-green-200 rounded-xl p-6 mb-6 shadow-sm text-center relative" id="savings-banner">
-                            <div class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Savings</div>
-                            <div class="text-6xl font-black text-green-600 tracking-tighter mb-3 leading-none" id="summary-savings">...</div>
-                            <div class="bg-gray-50 rounded-lg py-2 px-3 border border-gray-100 inline-block mt-2">
-                                <div class="text-xs text-gray-500 font-medium">Estimated savings vs market price</div>
-                            </div>
-                        </div>` : ''}
                         <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
-                            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Select Items</div>
+                            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Order</div>
                             <div id="modal-items-container"></div>
-                            <div class="flex justify-between items-center pt-3 mt-2 border-t border-gray-100">
-                                <span class="font-bold text-gray-900">Total To Pay</span>
-                                <span class="font-black text-xl text-gray-900" id="checkout-total">...</span>
-                            </div>
                         </div>
                         <div class="space-y-4 mb-4">
-                            <div class="relative"><div class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400"><i data-lucide="user" size="18"></i></div><input id="inp-name" value="${isManual ? '' : user.name}" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600" placeholder="Name"></div>
-                            <div class="relative"><div class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400"><i data-lucide="phone" size="18"></i></div><input id="inp-phone" value="${isManual ? '' : user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3 pl-12 pr-4 rounded-lg outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600" placeholder="Mobile Number"></div>
-                            <button id="btn-location" class="w-full bg-blue-50 text-blue-600 border border-blue-100 py-3 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors">
-                                <i data-lucide="map-pin" size="18"></i> <span>Share Location</span>
+                            <input id="inp-name" value="${isManual?'':user.name}" class="w-full bg-white border border-gray-300 py-3 px-4 rounded-lg outline-none font-medium text-gray-900" placeholder="Name">
+                            <input id="inp-phone" value="${isManual?'':user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3 px-4 rounded-lg outline-none font-medium text-gray-900" placeholder="Mobile Number">
+                            <button id="btn-location" class="w-full bg-blue-50 text-blue-600 border border-blue-100 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm animate-pulse">
+                                <i data-lucide="map-pin" size="16"></i> <span>Add Delivery Location (Required)</span>
                             </button>
                         </div>
                     </div>
                     <div class="bg-white border-t border-gray-100 p-4 shrink-0 pb-safe z-20">
-                        <div class="text-center text-[11px] text-gray-500 font-medium mb-2">Pay on delivery • Cash or UPI</div>
-                        <button id="action-btn" class="w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-bold text-lg shadow-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-all btn-press">
-                            <span>${btnText}</span>
+                        <button id="action-btn" disabled class="w-full bg-gray-300 text-gray-500 h-[56px] rounded-xl font-black text-lg shadow-none flex items-center justify-center gap-2 transition-all btn-press cursor-not-allowed">
+                            <span>${isManual ? "Add Manual Order" : "Place Order"}</span>
                         </button>
                     </div>
                 </div>`;
 
                 const node = this.createNode(modalHtml);
                 this.showModal(node);
-
-                // GPS Logic
+                
                 const locBtn = node.querySelector('#btn-location');
+                const actionBtn = node.querySelector('#action-btn');
+
                 locBtn.onclick = () => {
-                    if (!navigator.geolocation) {
-                        this.toast("Geolocation not supported", "alert-circle");
-                        return;
-                    }
-                    locBtn.innerHTML = '<div class="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div> Getting location...';
+                    if (!navigator.geolocation) { this.toast("No GPS", "alert-circle"); return; }
+                    
+                    locBtn.innerHTML = 'Searching for best signal...';
+                    locBtn.className = "w-full bg-blue-50 text-blue-600 border border-blue-100 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm";
+                    locBtn.classList.remove('animate-pulse');
+                    
                     navigator.geolocation.getCurrentPosition(
                         (pos) => {
-                            capturedLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                            locBtn.className = "w-full bg-green-50 text-green-700 border border-green-200 py-3 rounded-lg font-bold flex items-center justify-center gap-2";
-                            locBtn.innerHTML = '<i data-lucide="check" size="18"></i> Location Saved';
-                            if(window.lucide) window.lucide.createIcons();
-                        },
-                        (err) => {
+                            const acc = pos.coords.accuracy;
+                            if (acc > 30) {
+                                capturedLocation = null;
+                                locBtn.innerHTML = `❌ Weak Signal (${Math.round(acc)}m). Move outside & retry.`;
+                                locBtn.className = "w-full bg-red-50 text-red-600 border border-red-100 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm";
+                                this.toast(`GPS Accuracy: ${Math.round(acc)}m. Needs <30m.`, "alert-triangle");
+                                
+                                // Disable button if GPS is weak
+                                actionBtn.disabled = true;
+                                actionBtn.className = "w-full bg-gray-300 text-gray-500 h-[56px] rounded-xl font-black text-lg shadow-none flex items-center justify-center gap-2 transition-all btn-press cursor-not-allowed";
+                            } else {
+                                capturedLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: acc };
+                                locBtn.innerHTML = `✅ Delivery Location Set (${Math.round(acc)}m accuracy)`;
+                                locBtn.className = "w-full bg-green-50 text-green-600 border border-green-100 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm";
+                                
+                                // ✅ ENABLE BUTTON
+                                actionBtn.disabled = false;
+                                actionBtn.className = "w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-black text-lg shadow-lg flex items-center justify-center gap-2 active:scale-[0.99] transition-all btn-press";
+                            }
+                        }, 
+                        (err) => { 
                             console.error(err);
-                            locBtn.innerHTML = '<i data-lucide="map-pin" size="18"></i> Share Location (Retry)';
-                            this.toast("Location access denied", "alert-triangle");
-                        }
+                            locBtn.innerHTML = '<span>Retry Location</span>';
+                            this.toast("GPS signal failed. Move outside.", "map-pin-off"); 
+                        },
+                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                     );
                 };
 
-                // Re-render function for modal
                 const updateModalUI = () => {
                     const currentCart = Store.state.cart;
-                    let totalJodo = 0; let totalMarket = 0;
-                    
                     const itemsHtml = CONSTANTS.PRODUCTS.map(p => {
                         const qty = currentCart[p.id] || 0;
-                        const marketPrice = p.tiers[0].price; // Tier 0 is market
-                        const jodoPrice = p.tiers[p.tiers.length-1].price; // Best price
-                        
-                        if (qty > 0) { 
-                            totalJodo += Math.round(qty * jodoPrice); 
-                            totalMarket += Math.round(qty * marketPrice); 
-                        }
-                        const isSelected = qty > 0;
-
-                        return `
-                        <div class="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 bg-gray-50 rounded-lg overflow-hidden border border-gray-200 shrink-0 relative transition-all ${isSelected ? '' : 'opacity-60 grayscale'}">
-                                    <img src="${p.imageSrc}" class="w-full h-full object-cover">
-                                </div>
-                                <div class="flex flex-col">
-                                    <div class="font-bold text-gray-800 text-sm">${p.name}</div>
-                                    <div class="text-xs text-gray-500 font-medium">
-                                        ${isSelected ? `<span class="text-green-700 font-bold">₹${Math.round(qty*jodoPrice)}</span> <span class="line-through text-gray-300 text-[10px]">₹${Math.round(qty*marketPrice)}</span>` : `Rate: ₹${jodoPrice}/kg`}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
-                                <button class="btn-minus w-8 h-8 flex items-center justify-center bg-white rounded-md text-gray-600" data-id="${p.id}" data-delta="-${p.step}"><i data-lucide="minus" size="14"></i></button>
-                                <span class="w-10 text-center text-sm font-bold text-gray-800 tabular-nums">${qty > 0 ? Services.Pricing.formatQty(qty) : '0'}</span>
-                                <button class="btn-plus w-8 h-8 flex items-center justify-center bg-jodo-ctaPrimary text-white rounded-md shadow-sm" data-id="${p.id}" data-delta="${p.step}"><i data-lucide="plus" size="14"></i></button>
-                            </div>
-                        </div>`;
+                        return `<div class="flex items-center justify-between py-3 border-b border-gray-50 last:border-0"><div class="flex items-center gap-3"><div class="w-12 h-12 bg-gray-50 rounded-lg overflow-hidden border border-gray-200 shrink-0"><img src="${p.imageSrc}" class="w-full h-full object-cover"></div><div class="flex flex-col"><div class="font-bold text-gray-800 text-sm">${p.name}</div></div></div><div class="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-1 shadow-sm"><button class="btn-minus w-8 h-8 flex items-center justify-center bg-white text-gray-600" data-id="${p.id}" data-delta="-${p.step}"><i data-lucide="minus" size="14"></i></button><span class="w-10 text-center text-sm font-bold text-gray-800 tabular-nums">${qty > 0 ? Utils.Pricing.formatQty(qty) : '0'}</span><button class="btn-plus w-8 h-8 flex items-center justify-center bg-jodo-ctaPrimary text-white rounded-md shadow-sm" data-id="${p.id}" data-delta="${p.step}"><i data-lucide="plus" size="14"></i></button></div></div>`;
                     }).join('');
-
                     node.querySelector('#modal-items-container').innerHTML = itemsHtml;
-                    if(node.querySelector('#summary-savings')) node.querySelector('#summary-savings').innerText = `₹${Math.round(totalMarket - totalJodo)}`;
-                    node.querySelector('#checkout-total').innerText = `₹${Math.round(totalJodo)}`;
-                    
                     if(window.lucide) window.lucide.createIcons();
-
-                    // Re-attach listeners inside modal
-                    node.querySelectorAll('.btn-minus, .btn-plus').forEach(btn => {
-                        btn.onclick = () => {
-                            Actions.updateCart(btn.dataset.id, parseFloat(btn.dataset.delta));
-                            updateModalUI();
-                        }
-                    });
+                    node.querySelectorAll('.btn-minus, .btn-plus').forEach(btn => { btn.onclick = () => { Actions.updateCart(btn.dataset.id, parseFloat(btn.dataset.delta)); updateModalUI(); } });
                 };
-
                 updateModalUI();
 
-                // Bind Main Actions
                 node.querySelector('#close-modal').onclick = this.closeModal;
-                const actionBtn = node.querySelector('#action-btn');
                 
                 actionBtn.onclick = async () => {
                     const name = node.querySelector('#inp-name').value.trim();
                     const phone = node.querySelector('#inp-phone').value.trim();
-                    
                     if(actionBtn.disabled) return;
-                    
-                    // Simple validation for cart empty check in manual mode
-                    if (isManual && Object.keys(Store.state.cart).length === 0) {
-                        this.toast("Please select items", "shopping-bag");
+                    if (!name || !/^[6-9]\d{9}$/.test(phone)) { this.toast("Enter valid name & mobile", "alert-circle"); return; }
+                    if (isManual && Object.keys(Store.state.cart).length === 0) { this.toast("Empty Cart", "shopping-bag"); return; }
+                    if (!capturedLocation) {
+                        this.toast("Delivery location required.", "map-pin");
                         return;
                     }
-
-                    actionBtn.disabled = true;
-                    actionBtn.innerHTML = '<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>';
-
+                    actionBtn.disabled = true; actionBtn.innerHTML = 'Processing...';
                     const success = await Actions.submitOrder(name, phone, joinGroupId, isManual, capturedLocation);
-                    if (!success) {
-                        actionBtn.disabled = false;
-                        actionBtn.innerHTML = `<span>${btnText}</span>`;
-                    } else {
-                        this.closeModal();
-                    }
+                    if (!success) { 
+                        actionBtn.disabled = false; 
+                        actionBtn.innerHTML = `<span>Try Again</span>`; 
+                        // Re-enable style if failed but location is still valid
+                        if(capturedLocation) {
+                             actionBtn.className = "w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-black text-lg shadow-lg flex items-center justify-center gap-2 active:scale-[0.99] transition-all btn-press";
+                        }
+                    } else { this.closeModal(); }
                 };
             },
 
-            // --- UTILITIES ---
-
             toast(msg, icon) {
                 const t = document.getElementById('toast');
-                t.innerHTML = `<i data-lucide="${icon}" size="16" class="${icon === 'share-2' ? 'text-white' : 'text-green-400'}"></i> ${msg}`;
+                t.innerHTML = `<i data-lucide="${icon}" size="16" class="text-white"></i> ${msg}`;
                 t.classList.remove('hidden');
                 if(window.lucide) window.lucide.createIcons();
                 setTimeout(() => t.classList.add('hidden'), 4000);
             },
 
-            shareGroup(groupId, isUnlocked) {
+            shareGroup(groupId, isValid) {
                 const currentUrl = `${CONSTANTS.PUBLIC_SHARE_URL}?group=${groupId}`;
-                const text = isUnlocked 
-                    ? `ఈరోజు గ్రూప్ డీల్ అన్‌లాక్ అయ్యింది ✅\n\nమా గ్రూప్‌లో అందరూ తక్కువ ధరకే కొంటున్నారు\nఇప్పుడే జాయిన్ అయితే నీకూ అదే రేట్`
-                    : `ఈరోజు ఆర్డర్ మొదలైంది\n\nఇది ఆగిపోతే అందరం షాపు ధరకే కొనాలి\nనేనే మొదలుపెట్టాను, నువ్వే చివరివాడు`;
+                const text = isValid ? `✅ Group Order Placed. Join to increase volume and lower final price:` : `🚨 My vegetable order will be CANCELLED tonight if ${CONSTANTS.MIN_GROUP_SIZE} people don't join. Help me confirm this group:`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text + "\n\n👉 " + currentUrl)}`, '_blank');
             },
 
-            createNode(html) {
-                const t = document.createElement('template');
-                t.innerHTML = html.trim();
-                return t.content.firstElementChild;
-            },
-
-            showModal(node) {
-                const overlay = document.getElementById('modal-overlay');
-                const content = document.getElementById('modal-content');
-                content.innerHTML = '';
-                content.appendChild(node);
-                overlay.classList.remove('hidden');
-                setTimeout(() => {
-                    overlay.classList.remove('opacity-0');
-                    content.classList.remove('translate-y-full');
-                }, 10);
-            },
-
-            closeModal() {
-                const overlay = document.getElementById('modal-overlay');
-                const content = document.getElementById('modal-content');
-                content.classList.add('translate-y-full');
-                overlay.classList.add('opacity-0');
-                setTimeout(() => {
-                    overlay.classList.add('hidden');
-                    content.innerHTML = '';
-                }, 300);
-            },
-
-            triggerVibration() {
-                if (navigator.vibrate) navigator.vibrate(10);
-            },
-
-            initTilt() {
-                if (window.matchMedia("(pointer: coarse)").matches) return;
-                document.querySelectorAll('.tilt-card').forEach(card => {
-                    card.addEventListener('mousemove', (e) => {
-                        const rect = card.getBoundingClientRect();
-                        const x = e.clientX - rect.left - rect.width/2;
-                        const y = e.clientY - rect.top - rect.height/2;
-                        card.style.transform = `perspective(1000px) rotateX(${y * -0.05}deg) rotateY(${x * 0.05}deg) scale3d(1.01, 1.01, 1.01)`;
-                    });
-                    card.addEventListener('mouseleave', () => {
-                        card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-                    });
-                });
-            },
+            createNode(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; },
+            showModal(node) { const o = document.getElementById('modal-overlay'), c = document.getElementById('modal-content'); c.innerHTML=''; c.appendChild(node); o.classList.remove('hidden'); setTimeout(()=> { o.classList.remove('opacity-0'); c.classList.remove('translate-y-full'); }, 10); },
+            closeModal() { const o = document.getElementById('modal-overlay'), c = document.getElementById('modal-content'); c.classList.add('translate-y-full'); o.classList.add('opacity-0'); setTimeout(()=> { o.classList.add('hidden'); c.innerHTML=''; }, 300); },
+            triggerVibration() { if (navigator.vibrate) navigator.vibrate(10); },
+            initTilt() {},
             
             _timerInterval: null,
             startTimer(el) {
                 if (!el) return;
                 if (this._timerInterval) clearInterval(this._timerInterval);
                 const tick = () => {
-                    const rem = Services.Time.getCutoffTimestamp() - Date.now();
-                    el.textContent = rem > 0 ? `⏰ ${Services.Time.isPastCutoff() ? "Closed" : Services.Pricing.formatQty(rem/3600000).replace('kg','h') + " left"}` : "⛔ Today's orders closed"; // Hacky format, better to just use helper
-                    
-                    if (rem > 0) {
-                        const h = Math.floor(rem/3600000);
-                        const m = Math.floor((rem%3600000)/60000);
-                        el.textContent = `⏰ ${h}h ${m}m left`;
-                    }
+                    const rem = Utils.Time.getCutoffTimestamp() - Date.now();
+                    if (rem <= 0) { el.textContent = "ENDED"; return; }
+                    const h = Math.floor(rem/3600000);
+                    const m = Math.floor((rem%3600000)/60000);
+                    el.textContent = `⏳ ${h}h ${m}m left before cancellation`;
                 };
                 tick();
                 this._timerInterval = setInterval(tick, 1000);
             }
         };
 
-        // ==========================================
-        // EXPOSE & BOOTSTRAP
-        // ==========================================
-        
-        // Expose to window for HTML event attributes (onclick="...")
         window.JodoApp = { Actions, UI };
-
-        // Start
-        function bootstrap() {
-             Actions.initApp();
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-             bootstrap();
-        });
-
+        function bootstrap() { Actions.initApp(); }
+        document.addEventListener('DOMContentLoaded', () => { bootstrap(); });
     </script>
 </body>
 </html>
