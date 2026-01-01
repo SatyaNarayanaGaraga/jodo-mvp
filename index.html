@@ -51,7 +51,7 @@
         collection, runTransaction, serverTimestamp, query, where, increment, Timestamp
       };
       
-      console.log("🚀 JODO v11.0 - DYNAMIC PRICE LADDERS");
+      console.log("🚀 JODO v11.1 - GPS HARDENING");
 
       const initAuth = async () => {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -92,7 +92,7 @@
     <div id="app">
         <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; color: #333;">
             <div class="spinner-fallback"></div>
-            <div style="margin-top: 16px; font-family: sans-serif; font-size: 14px; font-weight: 600;">JODO v11.0</div>
+            <div style="margin-top: 16px; font-family: sans-serif; font-size: 14px; font-weight: 600;">JODO v11.1</div>
         </div>
     </div>
 
@@ -586,7 +586,7 @@
                             <input id="inp-name" value="${isManual?'':user.name}" class="w-full bg-white border border-gray-300 py-3 px-4 rounded-lg outline-none font-medium text-gray-900" placeholder="Name">
                             <input id="inp-phone" value="${isManual?'':user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3 px-4 rounded-lg outline-none font-medium text-gray-900" placeholder="Mobile Number">
                             <button id="btn-location" class="w-full bg-blue-50 text-blue-600 border border-blue-100 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm animate-pulse">
-                                <i data-lucide="map-pin" size="16"></i> <span>Add Delivery Location (Required)</span>
+                                <i data-lucide="map-pin" size="16"></i> <span>Confirm delivery location (used only for routing)</span>
                             </button>
                         </div>
                     </div>
@@ -604,41 +604,99 @@
                 const actionBtn = node.querySelector('#action-btn');
 
                 locBtn.onclick = () => {
-                    if (!navigator.geolocation) { this.toast("No GPS", "alert-circle"); return; }
+                    if (!navigator.geolocation) { this.toast("GPS not supported", "alert-circle"); return; }
                     
-                    locBtn.innerHTML = 'Searching for best signal...';
+                    // Prevent multiple clicks
+                    if (locBtn.dataset.scanning === "true") return;
+                    locBtn.dataset.scanning = "true";
+                    
+                    locBtn.innerHTML = '<span class="animate-pulse">Searching for better GPS signal...</span>';
                     locBtn.className = "w-full bg-blue-50 text-blue-600 border border-blue-100 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm";
-                    locBtn.classList.remove('animate-pulse');
+                    locBtn.classList.remove('animate-pulse'); // remove initial pulse class if present
                     
-                    navigator.geolocation.getCurrentPosition(
+                    let bestFix = null;
+                    const startTime = Date.now();
+                    
+                    const finish = (finalPos) => {
+                        if (watchId) navigator.geolocation.clearWatch(watchId);
+                        locBtn.dataset.scanning = "false";
+                        
+                        if (!finalPos) {
+                             locBtn.innerHTML = '⚠️ GPS Failed. Retry.';
+                             this.toast("GPS failed. Move outside.", "map-pin-off");
+                             return;
+                        }
+
+                        const acc = finalPos.coords.accuracy;
+                        
+                        // Thresholds
+                        // > 120m -> Reject
+                        if (acc > 120) {
+                            capturedLocation = null;
+                            locBtn.innerHTML = `❌ Signal Weak (${Math.round(acc)}m). Move outside & retry.`;
+                            locBtn.className = "w-full bg-red-50 text-red-600 border border-red-100 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm";
+                            this.toast(`Accuracy ${Math.round(acc)}m too low. Needs <120m.`, "alert-triangle");
+                            actionBtn.disabled = true;
+                            actionBtn.className = "w-full bg-gray-300 text-gray-500 h-[56px] rounded-xl font-black text-lg shadow-none flex items-center justify-center gap-2 transition-all btn-press cursor-not-allowed";
+                            return;
+                        }
+
+                        // Accept
+                        capturedLocation = { 
+                            lat: finalPos.coords.latitude, 
+                            lng: finalPos.coords.longitude, 
+                            accuracy: acc,
+                            capturedAt: Date.now(),
+                            device: navigator.userAgent,
+                            isSuspicious: (Date.now() - startTime) < 2000 && acc < 20
+                        };
+
+                        let msg = `✅ GPS Locked: ${Math.round(acc)}m`;
+                        let style = "bg-green-50 text-green-600 border-green-100";
+
+                        if (acc > 60) {
+                             msg = `⚠️ GPS Accuracy: ${Math.round(acc)}m (Weak)`;
+                             style = "bg-orange-50 text-orange-600 border-orange-100";
+                        } else if (acc <= 25) {
+                             msg = `✅ GPS Locked: ${Math.round(acc)}m (Excellent)`;
+                        }
+
+                        locBtn.innerHTML = msg;
+                        locBtn.className = `w-full ${style} border py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm`;
+                        
+                        actionBtn.disabled = false;
+                        actionBtn.className = "w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-black text-lg shadow-lg flex items-center justify-center gap-2 active:scale-[0.99] transition-all btn-press";
+                    };
+
+                    const watchId = navigator.geolocation.watchPosition(
                         (pos) => {
                             const acc = pos.coords.accuracy;
-                            if (acc > 30) {
-                                capturedLocation = null;
-                                locBtn.innerHTML = `❌ Weak Signal (${Math.round(acc)}m). Move outside & retry.`;
-                                locBtn.className = "w-full bg-red-50 text-red-600 border border-red-100 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm";
-                                this.toast(`GPS Accuracy: ${Math.round(acc)}m. Needs <30m.`, "alert-triangle");
-                                
-                                // Disable button if GPS is weak
-                                actionBtn.disabled = true;
-                                actionBtn.className = "w-full bg-gray-300 text-gray-500 h-[56px] rounded-xl font-black text-lg shadow-none flex items-center justify-center gap-2 transition-all btn-press cursor-not-allowed";
-                            } else {
-                                capturedLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: acc };
-                                locBtn.innerHTML = `✅ Delivery Location Set (${Math.round(acc)}m accuracy)`;
-                                locBtn.className = "w-full bg-green-50 text-green-600 border border-green-100 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm";
-                                
-                                // ✅ ENABLE BUTTON
-                                actionBtn.disabled = false;
-                                actionBtn.className = "w-full bg-jodo-ctaPrimary text-white h-[56px] rounded-xl font-black text-lg shadow-lg flex items-center justify-center gap-2 active:scale-[0.99] transition-all btn-press";
+                            
+                            if (!bestFix || acc < bestFix.coords.accuracy) {
+                                bestFix = pos;
+                            }
+                            
+                            // Visual feedback during scan
+                            locBtn.innerHTML = `<span class="animate-pulse">Searching for better GPS signal... (${Math.round(bestFix.coords.accuracy)}m)</span>`;
+
+                            // Convergence criteria: <= 40m is good enough to stop early
+                            if (bestFix.coords.accuracy <= 40) {
+                                finish(bestFix);
                             }
                         }, 
                         (err) => { 
                             console.error(err);
-                            locBtn.innerHTML = '<span>Retry Location</span>';
-                            this.toast("GPS signal failed. Move outside.", "map-pin-off"); 
+                            // Don't finish immediately, might recover or timeout will handle it
                         },
-                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
                     );
+
+                    // 15s timeout to stop scanning
+                    setTimeout(() => {
+                        if (locBtn.dataset.scanning === "true") {
+                            finish(bestFix);
+                        }
+                    }, 15000);
                 };
 
                 const updateModalUI = () => {
