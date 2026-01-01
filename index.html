@@ -282,7 +282,9 @@
                     
                     const isNewMember = !memberSnap.exists();
                     const wasCounted = !!memberData.hasJoined;
-                    const willBeCounted = !isManual;
+                    
+                    // ✅ FIX: Manual entries MUST count as real participants for the group to succeed.
+                    const willBeCounted = true; 
 
                     let newMemberCount = gData.memberCount || 0;
                     if (!wasCounted && willBeCounted) newMemberCount += 1;
