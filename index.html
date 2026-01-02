@@ -120,9 +120,9 @@
             PRODUCT_LIMITS: { tomato: 10 },
             PRICE_LADDERS: {
                 tomato: [
-                    { min: 1, price: 42 },   // solo
-                    { min: 2, price: 38 },
-                    { min: 3, price: 34 }    // 3 People is ENOUGH for best price
+                    { min: 1, price: 60 },   // SOLO - Shop equivalent (High friction)
+                    { min: 2, price: 48 },   // Huge drop - motivating
+                    { min: 3, price: 40 }    // GROUP UNLOCKED - Best Price (Share goal)
                 ]
             }
         };
@@ -134,10 +134,10 @@
             state: {
                 view: null, 
                 currentGroupId: null,
-                isInviteOnly: false, // 🔒 ADDED HARD FLAG
+                isInviteOnly: false, // 🔒 HARD FLAG
                 groups: {},
                 members: {},
-                user: { name: '', phone: '', joinedGroupIds: [] },
+                user: { name: '', phone: '', address: { flat: '', street: '' }, joinedGroupIds: [] }, // ✅ Added address
                 cart: {},
                 invitingGroup: null,
                 pendingJoinId: null,
@@ -152,11 +152,17 @@
                 if (field === 'joinedGroupIds') localStorage.setItem(CONSTANTS.GROUPS_STORAGE_KEY, JSON.stringify(value));
                 else if (field === 'name') localStorage.setItem('jodo_user_name', value);
                 else if (field === 'phone') localStorage.setItem('jodo_user_phone', value);
+                else if (field === 'address') localStorage.setItem('jodo_user_address', JSON.stringify(value)); // ✅ Save address
             },
             loadFromStorage() {
                 try {
                     this.state.user.name = localStorage.getItem('jodo_user_name') || '';
                     this.state.user.phone = localStorage.getItem('jodo_user_phone') || '';
+                    
+                    // ✅ Load address
+                    const savedAddr = localStorage.getItem('jodo_user_address');
+                    this.state.user.address = savedAddr ? JSON.parse(savedAddr) : { flat: '', street: '' };
+
                     const savedGroups = localStorage.getItem(CONSTANTS.GROUPS_STORAGE_KEY);
                     this.state.user.joinedGroupIds = savedGroups ? JSON.parse(savedGroups) : [];
                 } catch(e) { console.error("Storage Error", e); }
@@ -237,10 +243,28 @@
                 }
             },
 
-            async joinGroup({ name, phone, cart, joinGroupId, isManual }, context) {
+            async joinGroup({ name, phone, address, cart, joinGroupId, isManual }, context) { // ✅ Added address
                 if (!context.auth && !isManual) throw new Error("Unauthenticated");
                 if (!name || !phone) throw new Error("Invalid input");
                 if (isManual && !joinGroupId) throw new Error("Manual entry needs group ID");
+
+                // ✅ FIX: Prevent multiple active groups for same owner
+                if (!joinGroupId) { // Creating a new group
+                    const q = window.fs.query(
+                        window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups"),
+                        window.fs.where('ownerPhone', '==', phone)
+                    );
+                    const snap = await window.fs.getDocs(q);
+                    let hasActive = false;
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        const isExpired = Utils.Time.isTimestampPast(d.expiresAt);
+                        if ((d.status === 'FORMING' || d.status === 'VALID') && !isExpired) {
+                            hasActive = true;
+                        }
+                    });
+                    if (hasActive) throw "You already have an active group. Finish it first.";
+                }
 
                 const groupId = joinGroupId || window.fs.doc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups")).id;
                 const groupRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", groupId);
@@ -298,7 +322,7 @@
                     }
 
                     transaction.set(memberRef, { 
-                        memberId: phone, name, phone, cart, 
+                        memberId: phone, name, phone, address, cart, // ✅ Save address
                         joinedAt: memberSnap.exists() ? memberData.joinedAt : window.fs.serverTimestamp(), 
                         location: null, 
                         isManualEntry: isManual, hasJoined: willBeCounted,
@@ -428,19 +452,21 @@
                 Store.update('invitingGroup', null);
             },
 
-            async submitOrder(name, phone, joinGroupId, isManual = false, location = null) {
+            async submitOrder(name, phone, address, joinGroupId, isManual = false) { // ✅ Added address arg
                 if (!name || !/^[6-9]\d{9}$/.test(phone)) { UI.toast('Enter valid details', 'alert-circle'); return false; }
-                
+                if (!address || !address.flat || !address.street) { UI.toast('Enter address details', 'map-pin'); return false; } // ✅ Restored validation
+
                 if (!isManual) {
                     Store.updateUser('name', name);
                     Store.updateUser('phone', phone);
+                    if (address) Store.updateUser('address', address); // Only store if provided
                 }
                 
                 const cart = { ...Store.state.cart };
 
                 try {
                     const result = await BackendSimulation.call('joinGroup', {
-                        name, phone, cart, joinGroupId, isManual, location: null
+                        name, phone, address, cart, joinGroupId, isManual // ✅ Pass address
                     });
 
                     const finalGroupId = result.groupId;
@@ -498,6 +524,25 @@
                 }
 
                 const activeGroups = user.joinedGroupIds.map(gid => groups[gid]).filter(Boolean);
+                
+                // ✅ FIX: Check if user has ANY active group to disable creation
+                const hasActiveGroup = activeGroups.some(g => {
+                    const s = Services.Status.getGroupStatus(g);
+                    return s === 'FORMING' || s === 'VALID';
+                });
+
+                let startAction = "window.JodoApp.UI.openCheckoutModal(null)";
+                let startClasses = "bg-gradient-to-br from-jodo-ctaPrimary to-green-600 rounded-2xl p-6 mb-4 shadow-lg text-white btn-press";
+                let startTitle = "Start New Group";
+                let startDesc = "Be the first, invite others.";
+
+                if (hasActiveGroup) {
+                    startAction = "window.JodoApp.UI.toast('You already have an active group', 'alert-circle')";
+                    startClasses = "bg-gray-100 border border-gray-200 rounded-2xl p-6 mb-4 text-gray-400 cursor-not-allowed";
+                    startTitle = "Active Group in Progress";
+                    startDesc = "Finish your current group to start a new one.";
+                }
+
                 let activeGroupsHtml = '';
                 if (activeGroups.length > 0) {
                     activeGroupsHtml = activeGroups.map(g => {
@@ -530,12 +575,12 @@
                     </div>
                     <div class="px-4 mt-6">
                         <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Actions</h2>
-                        <div onclick="window.JodoApp.UI.openCheckoutModal(null)" class="bg-gradient-to-br from-jodo-ctaPrimary to-green-600 rounded-2xl p-6 mb-4 shadow-lg text-white btn-press">
+                        <div onclick="${startAction}" class="${startClasses}">
                             <div class="flex items-center gap-4 mb-3">
-                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center"><i data-lucide="plus" size="24" class="text-white"></i></div>
-                                <div><div class="font-black text-xl">Start New Group</div><div class="text-green-100 text-sm">Be the first, invite others.</div></div>
+                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center"><i data-lucide="${hasActiveGroup ? 'lock' : 'plus'}" size="24" class="${hasActiveGroup ? 'text-gray-400' : 'text-white'}"></i></div>
+                                <div><div class="font-black text-xl ${hasActiveGroup ? 'text-gray-500' : ''}">${startTitle}</div><div class="${hasActiveGroup ? 'text-gray-400' : 'text-green-100'} text-sm">${startDesc}</div></div>
                             </div>
-                            <div class="mt-4 bg-white/10 rounded-xl p-3 text-xs font-medium text-green-50">Create a group → Select items → Invite neighbors to unlock wholesale prices.</div>
+                            ${!hasActiveGroup ? '<div class="mt-4 bg-white/10 rounded-xl p-3 text-xs font-medium text-green-50">Create a group → Select items → Invite neighbors to unlock wholesale prices.</div>' : ''}
                         </div>
                     </div>
                     <div class="px-4 mt-2">
@@ -778,14 +823,22 @@
 
                 const { user, members, cart } = Store.state;
                 let activeCart = isManual ? {} : { ...cart }; 
+                
+                // ✅ Prepare Address Pre-fill
+                let activeAddress = isManual ? { flat: '', street: '' } : { ...user.address };
+
                 let isEditing = false;
                 if (joinGroupId && !isManual) {
                       const me = (members[joinGroupId] || []).find(m => m.phone === user.phone);
-                      if (me) { activeCart = { ...(me.cart || {}) }; Store.update('cart', activeCart); isEditing = true; }
+                      if (me) { 
+                          activeCart = { ...(me.cart || {}) }; 
+                          Store.update('cart', activeCart); 
+                          if (me.address) activeAddress = { ...me.address }; // ✅ Load existing address
+                          isEditing = true; 
+                      }
                 }
                 
                 // ✅ FIX 3: TITLE LOGIC
-                // Shows "Join Group" instead of "Final Step" or "Start New Group"
                 const title = isManual
                   ? 'Manual Entry'
                   : isEditing
@@ -805,10 +858,29 @@
                             <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Order</div>
                             <div id="modal-items-container"></div>
                         </div>
-                        <div class="space-y-4 mb-4">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Your Details</label>
-                            <input id="inp-name" value="${isManual?'':user.name}" class="w-full bg-white border border-gray-300 py-3 px-4 rounded-lg outline-none font-medium text-gray-900" placeholder="Your Name">
-                            <input id="inp-phone" value="${isManual?'':user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3 px-4 rounded-lg outline-none font-medium text-gray-900" placeholder="Mobile Number">
+                        <div class="space-y-4 mb-8">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Your Details</label>
+                                <input id="inp-name" value="${isManual?'':user.name}" class="w-full bg-white border border-gray-300 py-3 px-4 rounded-lg outline-none font-medium text-gray-900 mb-2" placeholder="Your Name">
+                                <input id="inp-phone" value="${isManual?'':user.phone}" type="tel" class="w-full bg-white border border-gray-300 py-3 px-4 rounded-lg outline-none font-medium text-gray-900" placeholder="Mobile Number">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Delivery Location</label>
+                                
+                                <div id="address-preview" class="hidden mb-3 p-3 bg-green-50 border border-green-100 rounded-lg flex items-start gap-2">
+                                    <i data-lucide="map-pin" size="16" class="text-green-600 mt-0.5 shrink-0"></i>
+                                    <div>
+                                        <div class="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-0.5">DETECTED LOCATION</div>
+                                        <div id="addr-text" class="text-xs text-green-900 font-medium leading-relaxed"></div>
+                                    </div>
+                                </div>
+
+                                <button id="btn-locate" class="w-full py-3 bg-blue-50 text-blue-700 font-bold text-sm rounded-xl border border-blue-100 flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                                    <i data-lucide="crosshair" size="16"></i> 
+                                    <span>One-Click Auto Address</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="bg-white border-t border-gray-100 p-4 shrink-0 pb-safe z-20">
@@ -820,7 +892,31 @@
                 
                 const nameInp = node.querySelector('#inp-name');
                 const phoneInp = node.querySelector('#inp-phone');
+                // Removed manual inputs
                 const actionBtn = node.querySelector('#action-btn');
+                const locateBtn = node.querySelector('#btn-locate'); 
+                const addrPreview = node.querySelector('#address-preview');
+                const addrText = node.querySelector('#addr-text');
+
+                // Internal state for address since inputs are gone
+                let detectedAddress = { ...activeAddress };
+
+                const renderAddress = () => {
+                    if (detectedAddress.street) {
+                        addrPreview.classList.remove('hidden');
+                        addrText.textContent = `${detectedAddress.flat ? detectedAddress.flat + ', ' : ''}${detectedAddress.street}`;
+                        locateBtn.innerHTML = `<i data-lucide="refresh-cw" size="14"></i><span>Update Location</span>`;
+                        locateBtn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-100');
+                        locateBtn.classList.add('bg-white', 'text-gray-500', 'border-gray-200', 'text-xs', 'py-2');
+                    } else {
+                        addrPreview.classList.add('hidden');
+                        locateBtn.innerHTML = `<i data-lucide="crosshair" size="16"></i><span>One-Click Auto Address</span>`;
+                        locateBtn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-100', 'text-sm', 'py-3');
+                        locateBtn.classList.remove('bg-white', 'text-gray-500', 'border-gray-200', 'text-xs', 'py-2');
+                    }
+                    if(window.lucide) window.lucide.createIcons();
+                };
+                renderAddress();
 
                 const updateModalUI = () => {
                     const currentCart = Store.state.cart;
@@ -837,7 +933,9 @@
                 const validate = () => {
                     const n = nameInp.value.trim();
                     const p = phoneInp.value.trim();
-                    const valid = n.length > 0 && /^[6-9]\d{9}$/.test(p);
+                    // Validate if address is detected
+                    const valid = n.length > 0 && /^[6-9]\d{9}$/.test(p) && detectedAddress.street && detectedAddress.street.length > 0;
+                    
                     actionBtn.disabled = !valid;
                     actionBtn.style.opacity = valid ? '1' : '0.5';
                     actionBtn.style.cursor = valid ? 'pointer' : 'not-allowed';
@@ -846,14 +944,78 @@
                 phoneInp.addEventListener('input', validate);
                 validate();
 
+                // ✅ LOCATION LOGIC
+                locateBtn.onclick = () => {
+                    if (!navigator.geolocation) {
+                        this.toast("Geolocation not supported", "alert-circle");
+                        return;
+                    }
+
+                    locateBtn.disabled = true;
+                    locateBtn.innerHTML = `<span class="animate-spin">⌛</span> Locating...`;
+
+                    navigator.geolocation.getCurrentPosition(async (pos) => {
+                        try {
+                            const { latitude, longitude } = pos.coords;
+                            locateBtn.innerHTML = `Fetching address...`;
+                            
+                            // Use OpenStreetMap Nominatim (Free, no key required for client-side)
+                            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                            const data = await response.json();
+                            
+                            if (data && data.address) {
+                                const addr = data.address;
+                                const parts = [
+                                    addr.road,
+                                    addr.suburb,
+                                    addr.neighbourhood,
+                                    addr.residential,
+                                    addr.city_district,
+                                    addr.city
+                                ].filter(Boolean);
+                                
+                                const uniqueParts = [...new Set(parts)];
+                                const streetVal = uniqueParts.join(', ');
+                                const houseVal = addr.house_number || '';
+
+                                // Update internal state
+                                detectedAddress = { flat: houseVal, street: streetVal };
+                                renderAddress();
+                                validate(); 
+                                
+                                this.toast("Address detected!", "check");
+                                this.triggerVibration();
+                            } else {
+                                this.toast("Address not found", "help-circle");
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            this.toast("Could not fetch address", "alert-triangle");
+                            renderAddress(); // Reset button state
+                        } finally {
+                            locateBtn.disabled = false;
+                        }
+                    }, (err) => {
+                        console.error(err);
+                        this.toast("Location permission denied", "lock");
+                        locateBtn.disabled = false;
+                        renderAddress(); // Reset button state
+                    }, { enableHighAccuracy: true, timeout: 10000 });
+                };
+
                 node.querySelector('#close-modal').onclick = this.closeModal;
                 actionBtn.onclick = async () => {
                     if(actionBtn.disabled) return;
                     if (Object.keys(Store.state.cart).length === 0) { this.toast("Select at least one item", "shopping-bag"); return; }
+                    
                     const name = nameInp.value.trim();
                     const phone = phoneInp.value.trim();
+                    // Use detectedAddress variable
+                    
                     actionBtn.disabled = true; actionBtn.innerHTML = 'Joining...';
-                    const success = await Actions.submitOrder(name, phone, joinGroupId, isManual, null);
+                    
+                    const success = await Actions.submitOrder(name, phone, detectedAddress, joinGroupId, isManual);
+                    
                     if (!success) { actionBtn.disabled = false; actionBtn.innerHTML = `<span>Try Again</span>`; } else { this.closeModal(); }
                 };
             },
