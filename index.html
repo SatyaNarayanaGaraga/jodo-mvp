@@ -121,7 +121,7 @@
             GROUPS_STORAGE_KEY: 'jodo_groups_joined_v12',
             CUTOFF_HOUR: 23, 
             PRODUCTS: [
-                { id: 'tomato', name: 'Fresh Tomatoes', nameTe: 'టమాటాలు', unit: '1kg', step: 0.25, imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80' }
+                { id: 'tomato', name: 'Fresh Tomatoes', nameTe: 'టమాటాలు', unit: '1kg', step: 0.5, imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80' }
             ],
             PRODUCT_LIMITS: { tomato: 10 },
             PRICE_LADDERS: {
@@ -907,7 +907,11 @@
                 const addrText = node.querySelector('#addr-text');
 
                 // Internal state for address since inputs are gone
-                let detectedAddress = { ...activeAddress };
+                // ✅ FIX: Ensure properties exist even if user.address was empty
+                let detectedAddress = { 
+                    flat: activeAddress.flat || '', 
+                    street: activeAddress.street || '' 
+                };
 
                 const renderAddress = () => {
                     if (detectedAddress.street) {
@@ -941,16 +945,31 @@
                 const validate = () => {
                     const n = nameInp.value.trim();
                     const p = phoneInp.value.trim();
-                    // Validate if address is detected
-                    const valid = n.length > 0 && /^[6-9]\d{9}$/.test(p) && detectedAddress.street && detectedAddress.street.length > 0;
+                    
+                    const isNameValid = n.length > 0;
+                    const isPhoneValid = /^\d{10}$/.test(p); // ✅ Relaxed regex: Any 10 digits
+                    const hasAddress = detectedAddress.street && detectedAddress.street.length > 0;
+
+                    const valid = isNameValid && isPhoneValid && hasAddress;
                     
                     actionBtn.disabled = !valid;
                     actionBtn.style.opacity = valid ? '1' : '0.5';
                     actionBtn.style.cursor = valid ? 'pointer' : 'not-allowed';
+
+                    // ✅ BUTTON FEEDBACK: Tell user EXACTLY what is missing
+                    if (!valid) {
+                        const btnText = node.querySelector('#action-btn span');
+                        if (!isNameValid) btnText.innerText = "Enter Name";
+                        else if (!isPhoneValid) btnText.innerText = "Enter 10-digit Phone";
+                        else if (!hasAddress) btnText.innerText = "Detect Location";
+                    } else {
+                        const btnText = node.querySelector('#action-btn span');
+                        btnText.innerText = isManual ? "Add Manual Order" : "Confirm Joining";
+                    }
                 };
                 nameInp.addEventListener('input', validate);
                 phoneInp.addEventListener('input', validate);
-                validate();
+                validate(); // Initial check
 
                 // ✅ LOCATION LOGIC
                 locateBtn.onclick = () => {
@@ -985,9 +1004,9 @@
                                 const uniqueParts = [...new Set(parts)];
                                 let streetVal = uniqueParts.join(', ');
                                 
-                                // ✅ FALLBACK: If API returns empty street parts but has a display name, use that
-                                if (!streetVal && data.display_name) {
-                                    streetVal = data.display_name.split(',').slice(0,2).join(',');
+                                // ✅ FALLBACK: If specific parts are empty, use full display name to GUARANTEE address
+                                if (!streetVal) {
+                                    streetVal = data.display_name || "Unknown Location";
                                 }
 
                                 const houseVal = addr.house_number || '';
@@ -1005,15 +1024,17 @@
                         } catch (e) {
                             console.error(e);
                             this.toast("Could not fetch address", "alert-triangle");
-                            renderAddress(); // Reset button state
+                            // Don't clear address on error, just keep UI consistent
                         } finally {
                             locateBtn.disabled = false;
+                            // renderAddress() sets the button text back correctly
+                            if (!detectedAddress.street) renderAddress(); 
                         }
                     }, (err) => {
                         console.error(err);
                         this.toast("Location permission denied", "lock");
                         locateBtn.disabled = false;
-                        renderAddress(); // Reset button state
+                        renderAddress(); 
                     }, { enableHighAccuracy: true, timeout: 10000 });
                 };
 
