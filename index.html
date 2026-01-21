@@ -1,810 +1,1668 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLASHFLOW | CV Fruit Ninja Clone</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <title>⚠️ GROUP UNSAFE</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡️</text></svg>">
+    
+    <!-- ✅ 1. GLOBAL ERROR HANDLER FIRST -->
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            if (msg.includes("ResizeObserver")) return;
+            console.error("Global Error:", msg);
+            return false;
+        };
+    </script>
+
+    <!-- ✅ 2. TAILWIND & CONFIG -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // SAFEGUARD: Wait for Tailwind
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof tailwind !== 'undefined') {
+                tailwind.config = { 
+                    theme: { 
+                        extend: { 
+                            colors: { 
+                                jodo: { 
+                                    urgent: '#E02E24', // Pinduoduo Red
+                                    risk: '#FF5722',   // Risk Orange
+                                    bg: '#FFF5F5',     // Dirty White
+                                    text: '#1A1A1A'    // Hard Black
+                                } 
+                            }, 
+                            animation: { 
+                                'pulse-fast': 'pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                                'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                                'flash': 'flash 1.5s infinite'
+                            },
+                            keyframes: {
+                                shake: {
+                                    '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                                    '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                                    '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                                    '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                                },
+                                flash: {
+                                    '0%, 100%': { opacity: '1' },
+                                    '50%': { opacity: '0.5' }
+                                }
+                            },
+                            spacing: {
+                                'dense': '0.35rem'
+                            }
+                        } 
+                    } 
+                }
+            } else {
+                console.warn("Tailwind CSS not loaded - offline or blocked.");
+            }
+        });
+    </script>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    
+    <!-- ✅ 3. FIREBASE -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import {
+        getFirestore, doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot,
+        collection, runTransaction, serverTimestamp, query, where, increment, Timestamp
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAHsRiYhNea5tFpKVSU7YA9nsR6qINtQdA",
+        authDomain: "jodo-prod-v2.firebaseapp.com",
+        projectId: "jodo-prod-v2",
+        storageBucket: "jodo-prod-v2.firebasestorage.app",
+        messagingSenderId: "577075664016",
+        appId: "1:577075664016:web:dcf613e7650217cc94b415"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      window.db = db;
+      window.auth = auth;
+      window.appId = "jodo-prod-v2"; 
+      window.signInAnonymously = signInAnonymously; 
+      
+      window.fs = {
+        doc, setDoc, getDoc, getDocs, updateDoc, onSnapshot,
+        collection, runTransaction, serverTimestamp, query, where, increment, Timestamp
+      };
+      
+      // -----------------------------------------------------------
+      // 🔒 REQUIRED SERVER-SIDE SECURITY RULES (DEPLOY TO FIRESTORE)
+      // -----------------------------------------------------------
+      // match /artifacts/{appId}/public/data/groups/{groupId} {
+      //   allow write: if false; // Only allow writes via transactions/admin for status
+      //   allow update: if request.resource.data.verifiedAnchorKg == resource.data.verifiedAnchorKg 
+      //                 || request.auth.token.phone_number == resource.data.ownerPhone;
+      // }
+      // -----------------------------------------------------------
+      
+      console.log("🚀 JODO PANIC MACHINE v2.8 - PRODUCTION READY");
+
+      const initAuth = async () => {
+        try {
+            await signInAnonymously(auth);
+        } catch (e) {
+            console.error("Auth failed", e);
+        }
+      };
+      initAuth();
+    </script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-
-        body {
-            background-color: #050505;
-            color: white;
-            font-family: 'Orbitron', sans-serif;
-            overflow: hidden;
-            touch-action: none;
-            user-select: none;
-        }
-
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 2;
-        }
-
-        #video-feed {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 200px;
-            height: 150px;
-            transform: scaleX(-1); /* Mirror effect */
-            z-index: 1;
-            opacity: 0.3;
-            border-radius: 12px;
-            border: 2px solid #333;
-            object-fit: cover;
-        }
-
-        /* UI Overlay */
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .hud {
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
-        }
-
-        .score-box {
-            font-size: 2.5rem;
-            color: #0ff;
-        }
-
-        .lives-box {
-            font-size: 2.5rem;
-            color: #ff0055;
-            letter-spacing: 5px;
-        }
-
-        /* Combo Indicator */
-        #combo-display {
-            position: absolute;
-            top: 15%;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 4rem;
-            font-weight: 900;
-            color: #ffd700;
-            text-shadow: 0 0 20px #ff6600;
-            opacity: 0;
-            transition: opacity 0.1s, transform 0.1s;
-        }
-
-        .combo-active {
-            opacity: 1 !important;
-            transform: translateX(-50%) scale(1.2) !important;
-        }
-
-        /* Screens */
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-            pointer-events: auto;
-            backdrop-filter: blur(5px);
-            transition: opacity 0.3s;
-        }
-
-        .hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        h1 {
-            font-size: 4rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(90deg, #0ff, #f0f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-        }
-
-        p {
-            font-size: 1.2rem;
-            color: #aaa;
-            margin-bottom: 2rem;
-            max-width: 600px;
-            text-align: center;
-            line-height: 1.6;
-        }
-
-        .btn {
-            padding: 15px 40px;
-            font-size: 1.5rem;
-            font-family: 'Orbitron', sans-serif;
-            background: transparent;
-            color: #0ff;
-            border: 2px solid #0ff;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
-        }
-
-        .btn:hover {
-            background: #0ff;
-            color: #000;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
-        }
-
-        #loading-spinner {
-            border: 4px solid #333;
-            border-top: 4px solid #0ff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { background: #FFF5F5; color: #1A1A1A; -webkit-tap-highlight-color: transparent; min-height: 100dvh; display: flex; justify-content: center; margin: 0; overscroll-behavior-y: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        #app { width: 100%; max-width: 448px; background: #FFFFFF; min-height: 100dvh; position: relative; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        
+        /* 🔴 AGGRESSIVE BUTTONS */
+        .btn-press { transition: transform 0.05s; cursor: pointer; user-select: none; }
+        .btn-press:active:not(:disabled) { transform: scale(0.96); opacity: 0.9; }
+        
+        .glass-header { background: #FFF5F5; border-bottom: 2px solid #FFE4E6; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* 🔴 URGENCY ANIMATIONS */
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+        .animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        
+        .skeleton { background: #E5E7EB; background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%); border-radius: 4px; background-size: 200% 100%; animation: 1.5s shine linear infinite; }
+        @keyframes shine { to { background-position-x: -200%; } }
+        
+        .sticky-timer { background: #DC2626; color: white; text-align: center; font-weight: 900; padding: 4px; font-size: 14px; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 10px rgba(220, 38, 38, 0.3); }
     </style>
 </head>
-<body>
+<body class="antialiased">
 
-<div id="game-container">
-    <video id="video-feed" autoplay playsinline muted></video>
-    <canvas id="game-canvas"></canvas>
-
-    <!-- UI Overlay (HUD) -->
-    <div id="ui-layer">
-        <div class="hud">
-            <div class="score-box">SCORE: <span id="score-val">0</span></div>
-            <div id="combo-display">x0 COMBO</div>
-            <div class="lives-box" id="lives-val">❤❤❤</div>
+    <div id="app">
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #FFF5F5; color: #E02E24;">
+            <div class="animate-bounce text-6xl mb-4">⚠️</div>
+            <div class="font-black text-xl uppercase tracking-tighter">Connecting to War Room...</div>
         </div>
     </div>
 
-    <!-- Start Screen -->
-    <div id="start-screen" class="screen">
-        <h1>SLASHFLOW</h1>
-        <div id="loading-spinner"></div>
-        <p id="status-text">Initializing Vision Engine...</p>
-        <p style="font-size: 0.9rem; color: #666;">Requires Camera Access. Stand back ~1 meter.</p>
-        <button id="start-btn" class="btn hidden">INITIATE</button>
+    <!-- MODAL -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/90 hidden z-[60] flex items-end justify-center backdrop-blur-sm transition-opacity duration-200">
+        <div id="modal-content" class="bg-white w-full max-w-[448px] rounded-t-xl shadow-2xl transform transition-transform duration-200 translate-y-full max-h-[95dvh] flex flex-col overflow-hidden pb-safe"></div>
     </div>
 
-    <!-- Game Over Screen -->
-    <div id="game-over-screen" class="screen hidden">
-        <h1 style="color: #ff0055; background: none; -webkit-text-fill-color: #ff0055;">SYSTEM FAILURE</h1>
-        <p>FINAL SCORE: <span id="final-score" style="color: white; font-size: 2rem;">0</span></p>
-        <button id="restart-btn" class="btn">REBOOT SYSTEM</button>
+    <!-- TOAST (URGENT STYLE) -->
+    <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded shadow-2xl hidden z-[90] flex items-center gap-3 pointer-events-none pt-safe text-center w-[90%] font-black text-sm border-2 border-white/20 uppercase tracking-widest animate-shake"></div>
+
+    <!-- FAILURE OVERLAY (SCAR) -->
+    <div id="failure-overlay" class="fixed inset-0 bg-red-950 z-[100] hidden flex flex-col items-center justify-center text-white p-6 text-center">
+        <div class="text-6xl mb-4">❌</div>
+        <h1 class="text-3xl font-black uppercase tracking-tighter mb-2">Deal Failed</h1>
+        <p id="fail-msg" class="text-lg font-bold text-red-200 mb-6">Price jumped to ₹45/kg.</p>
+        <div class="bg-red-950/50 p-4 rounded-lg border border-red-800 mb-8 max-w-xs">
+            <div class="text-[10px] uppercase font-bold text-red-400 mb-1">Reason</div>
+            <div class="text-sm font-bold">This failed. You pay more next time.</div>
+        </div>
+        <div class="text-xs font-black uppercase tracking-widest text-red-400 mb-2">Redirecting...</div>
     </div>
-</div>
 
-<!-- Audio Logic -->
-<script>
-    // --- AUDIO SYSTEM (Synthesized) ---
-    const AudioSys = {
-        ctx: null,
-        init: () => {
-            window.AudioContext = window.AudioContext || window.webkitAudioContext;
-            AudioSys.ctx = new AudioContext();
-        },
-        playSlice: (velocity, combo) => {
-            if (!AudioSys.ctx) return;
-            const osc = AudioSys.ctx.createOscillator();
-            const gain = AudioSys.ctx.createGain();
+    <script type="module">
+        // ==========================================
+        // 1. CONSTANTS (SINGLE PATH WAR)
+        // ==========================================
+        const CONSTANTS = {
+            PUBLIC_SHARE_URL: "https://satyanarayanagaraga.github.io/jodo-mvp/",
+            ANCHOR_TARGET_KG: 15, 
+            CUTOFF_HOUR: 23, 
+            GROUPS_STORAGE_KEY: 'jodo_groups_joined_v16',
+            PICKUP_LIMIT: 20, // ✅ OPS: Hard Capacity Limit
+            CURRENT_VERSION: 'v17', // ✅ OPS: Migration Version
+
+            // 🔥 THE WAR PRODUCT
+            TODAYS_PRODUCT: { 
+                id: 'tomato', 
+                name: 'Hybrid Tomato', 
+                nameTe: 'టమాటాలు', 
+                unit: '1kg', 
+                step: 1, 
+                imageSrc: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=400&q=80',
+                price: { base: 45, target: 31 }
+            },
             
-            // Pitch scales with velocity AND combo
-            // Higher combo = sharper, more satisfying sound
-            const comboBoost = Math.min(500, combo * 50);
-            const pitch = Math.min(1200, 200 + (velocity * 15) + comboBoost);
-            
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(pitch, AudioSys.ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, AudioSys.ctx.currentTime + 0.15);
-            
-            gain.gain.setValueAtTime(0.1, AudioSys.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, AudioSys.ctx.currentTime + 0.15);
-            
-            osc.connect(gain);
-            gain.connect(AudioSys.ctx.destination);
-            osc.start();
-            osc.stop(AudioSys.ctx.currentTime + 0.15);
-        },
-        playBomb: () => {
-            if (!AudioSys.ctx) return;
-            const osc = AudioSys.ctx.createOscillator();
-            const gain = AudioSys.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(100, AudioSys.ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(10, AudioSys.ctx.currentTime + 0.5);
-            gain.gain.setValueAtTime(0.5, AudioSys.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, AudioSys.ctx.currentTime + 0.5);
-            osc.connect(gain);
-            gain.connect(AudioSys.ctx.destination);
-            osc.start();
-            osc.stop(AudioSys.ctx.currentTime + 0.5);
-        }
-    };
-</script>
+            // 🎁 THE HOSTAGE (Reward)
+            ADDON_PRODUCT: {
+                id: 'potato',
+                name: 'Potato',
+                nameTe: 'బంగాళాదుంప', 
+                unit: '1kg', 
+                step: 1, 
+                imageSrc: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTbVeSJqZNYgFfHKmnRYPuMh2PFAELsrPo6Xw&s',
+                price: { base: 40, target: 25 }
+            },
 
-<!-- Vision & Game Logic -->
-<script type="module">
-import { FilesetResolver, HandLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm/index.mjs";
-
-const canvas = document.getElementById('game-canvas');
-const ctx = canvas.getContext('2d');
-const video = document.getElementById('video-feed');
-const scoreEl = document.getElementById('score-val');
-const livesEl = document.getElementById('lives-val');
-const comboEl = document.getElementById('combo-display');
-const startScreen = document.getElementById('start-screen');
-const gameOverScreen = document.getElementById('game-over-screen');
-const statusText = document.getElementById('status-text');
-const loadingSpinner = document.getElementById('loading-spinner');
-const startBtn = document.getElementById('start-btn');
-const restartBtn = document.getElementById('restart-btn');
-const finalScoreEl = document.getElementById('final-score');
-
-let handLandmarker = undefined;
-let webcamRunning = false;
-let lastVideoTime = -1;
-let lastHandTime = 0; // For velocity normalization
-
-// Game State
-let gameState = 'MENU'; // MENU, PLAYING, GAMEOVER
-let score = 0;
-let lives = 3;
-let width, height;
-let time = 0;
-let difficultyMultiplier = 1;
-let hitStop = 0; // Freeze frame counter
-
-// Combo System
-let combo = 0;
-let comboTimer = 0;
-const COMBO_WINDOW = 80; // Frames before combo drops
-
-// Hand Tracking State
-let handPos = { x: 0, y: 0, active: false };
-let handHistory = []; // For trail
-let velocity = 0;
-const VELOCITY_THRESHOLD = 6; // Normalized velocity threshold
-const TRAIL_LENGTH = 10;
-
-// Entities
-let fruits = [];
-let particles = [];
-let floaters = []; // Combo text
-
-// --- VISION SETUP ---
-
-async function createHandLandmarker() {
-    const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-    );
-    handLandmarker = await HandLandmarker.createFromOptions(vision, {
-        baseOptions: {
-            modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
-            delegate: "GPU"
-        },
-        runningMode: "VIDEO",
-        numHands: 1
-    });
-    statusText.innerText = "Vision System Online";
-    loadingSpinner.style.display = "none";
-    startBtn.classList.remove('hidden');
-}
-
-createHandLandmarker();
-
-// --- GAME OBJECTS ---
-
-const FRUIT_TYPES = {
-    WATERMELON: { color: '#ef5350', rind: '#2e7d32', radius: 40, points: 1, label: '🍉' },
-    BANANA:     { color: '#ffeb3b', rind: '#fbc02d', radius: 35, points: 1, label: '🍌' },
-    APPLE:      { color: '#ff1744', rind: '#b71c1c', radius: 30, points: 1, label: '🍎' },
-    ORANGE:     { color: '#ff9800', rind: '#e65100', radius: 32, points: 1, label: '🍊' },
-    BOMB:       { color: '#212121', rind: '#ff0000', radius: 45, points: 0, isBomb: true, label: '💣' },
-    ICE:        { color: '#00e5ff', rind: '#fff', radius: 30, points: 5, type: 'ice', label: '❄️' }
-};
-
-class Fruit {
-    constructor() {
-        this.reset();
-    }
-
-    reset() {
-        this.active = true;
-        this.sliced = false;
-        // Spawn closer to center
-        this.x = width * 0.2 + Math.random() * (width * 0.6); 
-        this.y = height + 50;
-        
-        // Physics
-        this.vx = (Math.random() - 0.5) * 8; 
-        this.vy = -(15 + Math.random() * 8 + (difficultyMultiplier * 2)); 
-        this.rotation = Math.random() * Math.PI * 2;
-        this.rotSpeed = (Math.random() - 0.5) * 0.2;
-        this.gravity = 0.4;
-
-        // Type selection
-        const rand = Math.random();
-        if (rand < 0.15) this.data = FRUIT_TYPES.BOMB;
-        else if (rand < 0.20) this.data = FRUIT_TYPES.ICE; 
-        else if (rand < 0.4) this.data = FRUIT_TYPES.BANANA;
-        else if (rand < 0.6) this.data = FRUIT_TYPES.APPLE;
-        else if (rand < 0.8) this.data = FRUIT_TYPES.ORANGE;
-        else this.data = FRUIT_TYPES.WATERMELON;
-
-        this.isPart = false;
-    }
-
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.vy += this.gravity;
-        this.rotation += this.rotSpeed;
-
-        if (this.y > height + 100 && !this.sliced) {
-            this.active = false;
-        }
-    }
-
-    draw(ctx) {
-        if (!this.active) return;
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
-
-        if (this.isPart) {
-            ctx.beginPath();
-            ctx.arc(0, 0, this.data.radius, Math.PI, 0); 
-            ctx.fillStyle = this.data.color;
-            ctx.fill();
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = this.data.rind;
-            ctx.stroke();
-        } else {
-            ctx.beginPath();
-            ctx.arc(0, 0, this.data.radius, 0, Math.PI * 2);
-            ctx.fillStyle = this.data.rind;
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(0, 0, this.data.radius - 4, 0, Math.PI * 2);
-            ctx.fillStyle = this.data.color;
-            ctx.fill();
-
-            ctx.font = `${this.data.radius}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'rgba(0,0,0,0.2)';
-            ctx.fillText(this.data.label, 0, 5);
-            
-            if (this.data.isBomb) {
-                ctx.beginPath();
-                ctx.moveTo(this.data.radius * 0.5, -this.data.radius * 0.5);
-                ctx.quadraticCurveTo(this.data.radius, -this.data.radius * 1.5, this.data.radius + 10, -this.data.radius);
-                ctx.strokeStyle = '#eca400';
-                ctx.lineWidth = 3;
-                ctx.stroke();
-                if (Math.random() > 0.5) {
-                    ctx.fillStyle = '#ffeb3b';
-                    ctx.fillRect(this.data.radius + 8, -this.data.radius - 2, 4, 4);
+            // 📍 OPS-DEFINED PICKUP POINTS (FIXED)
+            PREDEFINED_PICKUP_POINTS: {
+                "PP1": {
+                    id: "PP1",
+                    name: "Ramesh Kirana Store",
+                    landmark: "Near Hanuman Temple",
+                    pickupTime: "Tomorrow 7–9 AM"
+                },
+                "PP2": {
+                    id: "PP2",
+                    name: "Sita Medical Shop",
+                    landmark: "Opp Govt School",
+                    pickupTime: "Tomorrow 7–9 AM"
+                },
+                "PP3": {
+                    id: "PP3",
+                    name: "Community Hall",
+                    landmark: "Main Road Bus Stop",
+                    pickupTime: "Tomorrow 7–9 AM"
                 }
             }
-        }
-        ctx.restore();
-    }
-}
+        };
 
-class Particle {
-    constructor(x, y, color) {
-        this.x = x;
-        this.y = y;
-        this.color = color;
-        this.vx = (Math.random() - 0.5) * 15;
-        this.vy = (Math.random() - 0.5) * 15;
-        this.life = 1.0;
-        this.decay = 0.03 + Math.random() * 0.03;
-        this.size = Math.random() * 8 + 2;
-    }
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.life -= this.decay;
-        this.vy += 0.2;
-    }
-    draw(ctx) {
-        ctx.globalAlpha = this.life;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1.0;
-    }
-}
+        // ==========================================
+        // 2. STORE
+        // ==========================================
+        const Store = {
+            state: {
+                view: null, 
+                currentGroupId: null,
+                isInviteOnly: false,
+                groups: {},
+                members: {},
+                user: { name: '', phone: '', joinedGroupIds: [] }, 
+                cart: {},
+                isAppInitialized: false,
+                authReady: false,
+                isOffline: !navigator.onLine,
+                hasSharedGroups: {},
+                shareInProgress: null 
+            },
+            update(key, value) {
+                this.state[key] = value;
+                if(['view', 'groups', 'members', 'cart', 'isOffline', 'hasSharedGroups'].includes(key)) UI.scheduleRender();
+            },
+            updateUser(field, value) {
+                this.state.user[field] = value;
+                if (field === 'joinedGroupIds') localStorage.setItem(CONSTANTS.GROUPS_STORAGE_KEY, JSON.stringify(value));
+                else localStorage.setItem(`jodo_user_${field}`, value);
+            },
+            loadFromStorage() {
+                try {
+                    // ✅ OPS FIX 8: VERSION CHECK & MIGRATION
+                    const storedVersion = localStorage.getItem('jodo_version');
+                    if (storedVersion !== CONSTANTS.CURRENT_VERSION) {
+                        console.log("Migration: Clearing storage");
+                        localStorage.clear();
+                        localStorage.setItem('jodo_version', CONSTANTS.CURRENT_VERSION);
+                    }
 
-class Floater {
-    constructor(x, y, text, color) {
-        this.x = x;
-        this.y = y;
-        this.text = text;
-        this.color = color;
-        this.life = 1.0;
-        this.vy = -2;
-    }
-    update() {
-        this.y += this.vy;
-        this.life -= 0.02;
-    }
-    draw(ctx) {
-        ctx.globalAlpha = this.life;
-        ctx.font = "900 24px 'Orbitron'";
-        ctx.fillStyle = this.color;
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 3;
-        ctx.strokeText(this.text, this.x, this.y);
-        ctx.fillText(this.text, this.x, this.y);
-        ctx.globalAlpha = 1.0;
-    }
-}
-
-// --- GAME LOGIC ---
-
-function spawnFruit() {
-    const spawnRate = Math.min(0.03, 0.008 + score * 0.0003);
-    if (Math.random() < spawnRate) {
-        fruits.push(new Fruit());
-    }
-    if (score > 50 && Math.random() < 0.001) {
-        for(let i=0; i<3; i++) fruits.push(new Fruit());
-    }
-}
-
-function createExplosion(x, y, color) {
-    for (let i = 0; i < 15; i++) {
-        particles.push(new Particle(x, y, color));
-    }
-}
-
-function distToSegment(px, py, x1, y1, x2, y2) {
-    const l2 = (x2-x1)**2 + (y2-y1)**2;
-    if (l2 === 0) return Math.hypot(px-x1, py-y1);
-    let t = ((px-x1)*(x2-x1) + (py-y1)*(y2-y1)) / l2;
-    t = Math.max(0, Math.min(1, t));
-    const cx = x1 + t*(x2-x1);
-    const cy = y1 + t*(y2-y1);
-    return Math.hypot(px-cx, py-cy);
-}
-
-function handleSlice(fruit, index) {
-    if (fruit.sliced) return;
-    if (handHistory.length < 2) return;
-    
-    const p1 = handHistory[handHistory.length - 2];
-    const p2 = handHistory[handHistory.length - 1];
-    
-    const d = distToSegment(fruit.x, fruit.y, p1.x, p1.y, p2.x, p2.y);
-
-    if (d < fruit.data.radius + 10) { 
-        
-        // Bomb Check
-        if (fruit.data.isBomb) {
-            if (velocity > VELOCITY_THRESHOLD * 1.5) {
-                AudioSys.playBomb();
-                lives--;
-                combo = 0; // Reset combo on hit
-                updateHUD();
-                createExplosion(fruit.x, fruit.y, '#fff');
-                fruits.splice(index, 1);
-                
-                document.body.style.backgroundColor = '#330000';
-                setTimeout(() => document.body.style.backgroundColor = '#050505', 100);
-
-                if (lives <= 0) gameOver();
+                    this.state.user.name = localStorage.getItem('jodo_user_name') || '';
+                    this.state.user.phone = localStorage.getItem('jodo_user_phone') || '';
+                    const savedGroups = localStorage.getItem(CONSTANTS.GROUPS_STORAGE_KEY);
+                    this.state.user.joinedGroupIds = savedGroups ? JSON.parse(savedGroups) : [];
+                    const savedShares = localStorage.getItem('jodo_shared_groups');
+                    this.state.hasSharedGroups = savedShares ? JSON.parse(savedShares) : {};
+                } catch(e) { console.error("Storage Error", e); }
             }
-            return;
-        }
+        };
 
-        // --- SUCCESSFUL SLICE ---
-        hitStop = 4; 
-        
-        // Combo Logic
-        combo++;
-        comboTimer = COMBO_WINDOW;
-        
-        // Score Calculation (Base + Combo Bonus)
-        const bonus = combo > 1 ? combo : 0;
-        score += fruit.data.points + bonus;
+        // ==========================================
+        // 3. UTILITIES
+        // ==========================================
+        const Utils = {
+            Time: {
+                getCutoffTimestamp() {
+                    const now = new Date();
+                    const istOffset = 5.5 * 60 * 60 * 1000;
+                    const istTime = new Date(now.getTime() + istOffset);
+                    istTime.setUTCHours(CONSTANTS.CUTOFF_HOUR, 59, 59, 999);
+                    return istTime.getTime() - istOffset;
+                },
+                isTimestampPast(ts) {
+                    if (!ts) return false;
+                    const millis = ts.seconds ? ts.seconds * 1000 : (typeof ts === 'number' ? ts : 0);
+                    return Date.now() > millis;
+                },
+                calculateInitialCutoff() {
+                    return window.fs.Timestamp.fromMillis(this.getCutoffTimestamp());
+                }
+            },
+            Pricing: {
+                formatQty(qty, pid) {
+                    return qty + 'kg';
+                },
+                calculateOrderTotal(cart, useBasePrice = false) {
+                    let total = 0;
+                    const tp = CONSTANTS.TODAYS_PRODUCT;
+                    const ap = CONSTANTS.ADDON_PRODUCT;
+                    
+                    if (cart[tp.id]) total += cart[tp.id] * (useBasePrice ? tp.price.base : tp.price.target);
+                    if (cart[ap.id]) total += cart[ap.id] * (useBasePrice ? ap.price.base : ap.price.target);
+                    
+                    return Math.round(total);
+                }
+            }
+        };
 
-        AudioSys.playSlice(velocity, combo);
-        fruit.sliced = true;
-        updateHUD();
+        // ==========================================
+        // 4. BACKEND ACTIONS
+        // ==========================================
+        const Backend = {
+            async markShared(groupId, phone) {
+                const ref = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", groupId, "members", phone);
+                await window.fs.updateDoc(ref, { sharedOnce: true });
+            },
 
-        // Split
-        const p1Obj = new Fruit();
-        p1Obj.x = fruit.x; p1Obj.y = fruit.y;
-        p1Obj.vx = -5; p1Obj.vy = -5;
-        p1Obj.data = fruit.data;
-        p1Obj.isPart = true;
-        p1Obj.rotation = fruit.rotation;
-        
-        const p2Obj = new Fruit();
-        p2Obj.x = fruit.x; p2Obj.y = fruit.y;
-        p2Obj.vx = 5; p2Obj.vy = -5;
-        p2Obj.data = fruit.data;
-        p2Obj.isPart = true;
-        p2Obj.rotation = fruit.rotation;
-
-        fruits.push(p1Obj, p2Obj);
-        fruits.splice(index, 1);
-        
-        createExplosion(fruit.x, fruit.y, fruit.data.color);
-        
-        // Floater Text
-        let txt = "+1";
-        let col = "#fff";
-        if (combo > 1) {
-            txt = `${combo}x COMBO!`;
-            col = "#ffd700";
-        }
-        floaters.push(new Floater(fruit.x, fruit.y, txt, col));
-        
-        if (fruit.data.type === 'ice') {
-            difficultyMultiplier = 0.5;
-            document.body.style.backgroundColor = '#003333';
-            setTimeout(() => {
-                difficultyMultiplier = 1;
-                document.body.style.backgroundColor = '#050505';
-            }, 3000);
-        }
-    }
-}
-
-function updateHUD() {
-    scoreEl.innerText = score;
-    livesEl.innerHTML = '❤'.repeat(lives);
-    
-    if (combo > 1) {
-        comboEl.innerText = `x${combo} COMBO`;
-        comboEl.classList.add('combo-active');
-        // Reset animation trigger
-        comboEl.style.animation = 'none';
-        comboEl.offsetHeight; /* trigger reflow */
-        comboEl.style.animation = null; 
-    } else {
-        comboEl.classList.remove('combo-active');
-    }
-}
-
-function gameOver() {
-    gameState = 'GAMEOVER';
-    finalScoreEl.innerText = score;
-    gameOverScreen.classList.remove('hidden');
-    startBtn.innerText = "PLAY AGAIN";
-    fruits = [];
-    particles = [];
-}
-
-function resetGame() {
-    score = 0;
-    lives = 3;
-    combo = 0;
-    gameState = 'PLAYING';
-    hitStop = 0;
-    updateHUD();
-    gameOverScreen.classList.add('hidden');
-    startScreen.classList.add('hidden');
-}
-
-// --- MAIN LOOP ---
-
-function detectHand() {
-    if (!webcamRunning) return;
-
-    const nowInMs = Date.now();
-    const performanceNow = performance.now();
-
-    if (lastVideoTime !== video.currentTime) {
-        lastVideoTime = video.currentTime;
-        const dt = performanceNow - lastHandTime;
-        lastHandTime = performanceNow;
-
-        if (handLandmarker) {
-            const results = handLandmarker.detectForVideo(video, nowInMs);
-            if (results.landmarks && results.landmarks.length > 0) {
-                const landmarks = results.landmarks[0];
-                const indexTip = landmarks[8];
+            async joinGroup({ name, phone, cart, joinGroupId, isManual, pickupPointId, isEdit }) { 
+                if (!window.auth.currentUser) await window.signInAnonymously(window.auth);
                 
-                const targetX = (1 - indexTip.x) * width; 
-                const targetY = indexTip.y * height;
+                if (!pickupPointId) throw "Pickup Point Required"; 
 
-                const dx = targetX - handPos.x;
-                const dy = targetY - handPos.y;
-                const rawDist = Math.sqrt(dx*dx + dy*dy);
+                let groupId = joinGroupId;
+                if (!groupId) {
+                    groupId = window.fs.doc(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups")).id;
+                }
 
-                if (dt > 0) {
-                    velocity = (rawDist / dt) * 16.67; 
+                const groupRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", groupId);
+                const memberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", groupId, "members", phone);
+                const userUid = window.auth.currentUser.uid;
+                
+                const expectedAmount = Utils.Pricing.calculateOrderTotal(cart, false);
+
+                await window.fs.runTransaction(window.db, async (transaction) => {
+                    const groupSnap = await transaction.get(groupRef);
+                    const memberSnap = await transaction.get(memberRef);
+
+                    let gData;
+                    if (!groupSnap.exists()) {
+                        gData = { 
+                            id: groupId, ownerName: name, ownerPhone: phone, 
+                            expiresAt: Utils.Time.calculateInitialCutoff(),
+                            createdAt: window.fs.serverTimestamp(),
+                            status: 'FORMING', 
+                            memberCount: 0,
+                            verifiedAnchorKg: 0,
+                            pickupPoints: CONSTANTS.PREDEFINED_PICKUP_POINTS,
+                            pickupStats: { PP1: 0, PP2: 0, PP3: 0 } 
+                        };
+                        transaction.set(groupRef, gData);
+                    } else { 
+                        gData = groupSnap.data();
+                        if (gData.status === 'CANCELLED' || gData.status === 'CLOSED') throw "Deal Ended.";
+                        if (Utils.Time.isTimestampPast(gData.expiresAt)) throw "Too Late.";
+                    }
+
+                    if (memberSnap.exists() && !isEdit && !isManual) {
+                        throw "You have already joined this group. Use 'Edit Order'.";
+                    }
+
+                    if (isManual && memberSnap.exists()) throw "Phone already used in this group."; // ✅ OPS FIX 3: Unique Phone for Offline
+                    
+                    if (memberSnap.exists() && memberSnap.data().pickupPointId !== pickupPointId) {
+                        throw "Pickup point cannot be changed once joined.";
+                    }
+                    
+                    // ✅ OPS FIX 1: Pickup Stats Invariant Warning
+                    // WARNING: pickupStats currently assumes immutable pickupPointId.
+                    // If member removal/edit is added, decrement logic MUST be implemented here.
+
+                    const pStats = gData.pickupStats || { PP1: 0, PP2: 0, PP3: 0 };
+                    const currentPPCount = pStats[pickupPointId] || 0;
+                    
+                    if (!memberSnap.exists()) {
+                        if (currentPPCount >= CONSTANTS.PICKUP_LIMIT) {
+                             throw "Selected Pickup Point is Full. Please choose another.";
+                        }
+                        transaction.update(groupRef, { 
+                            memberCount: window.fs.increment(1),
+                            [`pickupStats.${pickupPointId}`]: window.fs.increment(1) 
+                        });
+                    }
+
+                    const isVerified = !isManual;
+                    if (isVerified) {
+                        const anchorId = CONSTANTS.TODAYS_PRODUCT.id;
+                        const newQty = cart[anchorId] || 0;
+                        const oldQty = memberSnap.exists() ? (memberSnap.data().cart[anchorId] || 0) : 0;
+                        const delta = newQty - oldQty;
+                        
+                        if (delta !== 0) {
+                            const newTotal = (gData.verifiedAnchorKg || 0) + delta;
+                            transaction.update(groupRef, { verifiedAnchorKg: newTotal });
+                            
+                            const currentMemberCount = (gData.memberCount || 0) + (memberSnap.exists() ? 0 : 1);
+                            
+                            // ✅ OPS FIX 6: FINAL SNAPSHOT ON LOCK
+                            if (newTotal >= CONSTANTS.ANCHOR_TARGET_KG && gData.status !== 'LOCKED') {
+                                if (currentMemberCount >= 2) {
+                                    transaction.update(groupRef, { 
+                                        status: 'LOCKED', 
+                                        lockedAt: window.fs.serverTimestamp(), 
+                                        finalPricePerKg: CONSTANTS.TODAYS_PRODUCT.price.target,
+                                        finalSnapshot: { // Frozen data for ops
+                                            totalKg: newTotal,
+                                            memberCount: currentMemberCount,
+                                            pickupStats: gData.pickupStats
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    transaction.set(memberRef, { 
+                        memberId: phone, name, phone, cart, 
+                        joinedAt: window.fs.serverTimestamp(),
+                        isLeader: (!joinGroupId && !memberSnap.exists()) || (gData.ownerPhone === phone),
+                        isManualEntry: isManual,
+                        verified: isVerified,
+                        paymentStatus: 'unpaid',
+                        amountExpected: expectedAmount,
+                        sharedOnce: memberSnap.exists() ? memberSnap.data().sharedOnce : false,
+                        pickupPointId: pickupPointId 
+                    }, { merge: true });
+                });
+
+                return { success: true, groupId };
+            },
+            
+            async verifyManualOrder(groupId, memberPhone, cart) {
+                 const requestingUserPhone = Store.state.user.phone;
+                 const anchorP = CONSTANTS.TODAYS_PRODUCT;
+                 const anchorId = anchorP.id;
+                 const groupRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", groupId);
+                 const memberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", groupId, "members", memberPhone);
+                 
+                 await window.fs.runTransaction(window.db, async (transaction) => {
+                    const gSnap = await transaction.get(groupRef);
+                    if (!gSnap.exists() || gSnap.data().ownerPhone !== requestingUserPhone) throw "Unauthorized"; 
+                    if (gSnap.data().status === 'LOCKED') throw "LOCKED";
+                    
+                    const mSnap = await transaction.get(memberRef);
+                    if (!mSnap.exists()) return;
+                    
+                    const isCurrentlyVerified = mSnap.data().verified;
+                    const newVerifiedState = !isCurrentlyVerified; 
+                    transaction.update(memberRef, { verified: newVerifiedState });
+                    
+                    const qty = cart[anchorId] || 0;
+                    const delta = newVerifiedState ? qty : -qty;
+                    const newTotal = (gSnap.data().verifiedAnchorKg || 0) + delta;
+                    
+                    transaction.update(groupRef, { verifiedAnchorKg: newTotal });
+                    
+                    const memberCount = gSnap.data().memberCount || 0;
+                    if (newTotal >= CONSTANTS.ANCHOR_TARGET_KG && gSnap.data().status !== 'LOCKED') {
+                        if (memberCount >= 2) {
+                            transaction.update(groupRef, { 
+                                status: 'LOCKED', 
+                                lockedAt: window.fs.serverTimestamp(), 
+                                finalPricePerKg: anchorP.price.target,
+                                finalSnapshot: {
+                                    totalKg: newTotal,
+                                    memberCount: memberCount,
+                                    pickupStats: gSnap.data().pickupStats
+                                }
+                            });
+                        }
+                    }
+                });
+            },
+
+            async togglePaymentStatus(groupId, memberPhone, currentStatus) {
+                const requestingUserPhone = Store.state.user.phone;
+                const groupRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", groupId);
+                
+                // ✅ OPS FIX 5: TRANSACTION FOR PAYMENT AUDIT
+                await window.fs.runTransaction(window.db, async (transaction) => {
+                    const gSnap = await transaction.get(groupRef);
+                    if (!gSnap.exists() || gSnap.data().ownerPhone !== requestingUserPhone) throw "Unauthorized";
+
+                    const memberRef = window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", groupId, "members", memberPhone);
+                    const mSnap = await transaction.get(memberRef);
+                    if (!mSnap.exists()) throw "Member not found";
+
+                    const newStatus = currentStatus === 'paid' ? 'unpaid' : 'paid';
+                    const paidAmount = newStatus === 'paid' ? (mSnap.data().amountExpected || 0) : 0;
+
+                    transaction.update(memberRef, { 
+                        paymentStatus: newStatus, 
+                        paymentUpdatedAt: window.fs.serverTimestamp(),
+                        paidAmount: paidAmount // ✅ Audit Trail
+                    });
+                });
+            }
+        };
+
+        // ==========================================
+        // 5. CLIENT SERVICES
+        // ==========================================
+        const Services = {
+            Data: {
+                listenToGroup(gid) {
+                    window.fs.onSnapshot(window.fs.doc(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid), (snap) => {
+                        if (snap.exists()) Store.update('groups', { ...Store.state.groups, [gid]: snap.data() });
+                    });
+                    window.fs.onSnapshot(window.fs.collection(window.db, 'artifacts', window.appId, 'public', 'data', "groups", gid, "members"), (snap) => {
+                        const mList = [];
+                        snap.forEach(d => mList.push({ ...d.data(), id: d.id }));
+                        mList.sort((a,b) => (a.isLeader === b.isLeader) ? 0 : a.isLeader ? -1 : 1);
+                        Store.update('members', { ...Store.state.members, [gid]: mList });
+                    });
+                }
+            }
+        };
+
+        // ==========================================
+        // 6. ACTIONS (PANIC LOGIC)
+        // ==========================================
+        const Actions = {
+            initApp() {
+                Store.loadFromStorage();
+                UI.startUniversalTimer();
+                
+                document.addEventListener('visibilitychange', async () => {
+                    if (!document.hidden) {
+                        const t = Store.state.shareInProgress;
+                        if (t && Date.now() - t > 3000) { 
+                            const gid = Store.state.currentGroupId;
+                            if (gid) {
+                                await Backend.markShared(gid, Store.state.user.phone);
+                                Store.update('shareInProgress', null); 
+                                UI.toast("INVITE SUCCESSFUL", "check");
+                            }
+                        } else if (t) {
+                            UI.toast("SHARING FAILED. TRY AGAIN.", "alert-triangle");
+                            Store.update('shareInProgress', null);
+                        }
+                    }
+                });
+
+                const params = new URLSearchParams(window.location.search);
+                const gid = params.get('group');
+                
+                const lastFail = localStorage.getItem('jodo_fail_ts');
+                if (lastFail && (Date.now() - parseInt(lastFail)) < 60 * 60 * 1000) {
+                    Store.update('hasFailedYesterday', true);
+                }
+
+                if (gid) {
+                    Store.update('currentGroupId', gid);
+                    Services.Data.listenToGroup(gid);
+                    Store.update('view', 'group');
                 } else {
-                    velocity = 0;
+                    Store.update('view', 'home');
+                }
+                Store.update('isAppInitialized', true);
+            },
+
+            async submitOrder(name, phone, qty, pickupPointId, isEdit = false) { 
+                if (!name || !phone) { UI.toast("NAME & PHONE REQUIRED", "alert-circle"); return; }
+                
+                if (!/^[6-9]\d{9}$/.test(phone)) { 
+                    UI.toast("INVALID PHONE NUMBER (10 digits)", "alert-circle"); 
+                    return; 
                 }
 
-                handPos.x += (targetX - handPos.x) * 0.8;
-                handPos.y += (targetY - handPos.y) * 0.8;
-                handPos.active = true;
+                if (!pickupPointId) { UI.toast("SELECT PICKUP POINT", "alert-circle"); return; } 
 
-                handHistory.push({x: handPos.x, y: handPos.y});
-                if (handHistory.length > TRAIL_LENGTH) handHistory.shift();
+                Store.updateUser('name', name); Store.updateUser('phone', phone); 
+                
+                const tp = CONSTANTS.TODAYS_PRODUCT;
+                const cart = { [tp.id]: qty };
+                const currentGroupId = Store.state.currentGroupId;
 
-            } else {
-                handPos.active = false;
-                velocity = 0;
-                handHistory = [];
-                // If hand lost, break combo
-                // combo = 0; // Optional: strict mode
+                try {
+                    const result = await Backend.joinGroup({ 
+                        name, phone, cart, 
+                        joinGroupId: currentGroupId, 
+                        isManual: false,
+                        pickupPointId: pickupPointId,
+                        isEdit: isEdit 
+                    });
+                    
+                    if (!currentGroupId) {
+                        const joined = [...Store.state.user.joinedGroupIds];
+                        joined.push(result.groupId);
+                        Store.updateUser('joinedGroupIds', joined);
+                        try { history.pushState({}, '', `?group=${result.groupId}`); } catch(e) {}
+                        Store.update('currentGroupId', result.groupId);
+                        Services.Data.listenToGroup(result.groupId);
+                        Store.update('view', 'group');
+                    } else {
+                        const joined = [...Store.state.user.joinedGroupIds];
+                        if(!joined.includes(currentGroupId)) { joined.push(currentGroupId); Store.updateUser('joinedGroupIds', joined); }
+                    }
+                    
+                    UI.closeModal();
+                    setTimeout(() => {
+                        UI.toast("WAITING FOR MORE MEMBERS...", "clock");
+                    }, 500);
+
+                } catch (e) {
+                    console.error(e);
+                    UI.toast("FAILED: " + e, "alert-circle");
+                }
+            },
+
+            async addOfflineMember(name, phone, qty, pickupPointId) {
+                if (!name || !phone || !qty || !pickupPointId) { 
+                    UI.toast("ALL FIELDS REQUIRED", "alert-circle"); return; 
+                }
+                
+                if (!/^[6-9]\d{9}$/.test(phone)) { 
+                    UI.toast("INVALID PHONE NUMBER", "alert-circle"); 
+                    return; 
+                }
+
+                const currentGroupId = Store.state.currentGroupId;
+                const tp = CONSTANTS.TODAYS_PRODUCT;
+                const cart = { [tp.id]: qty };
+
+                try {
+                    await Backend.joinGroup({ 
+                        name, phone, cart, 
+                        joinGroupId: currentGroupId, 
+                        isManual: true, 
+                        pickupPointId: pickupPointId,
+                        isEdit: false
+                    });
+                    
+                    UI.closeModal();
+                    UI.toast("OFFLINE MEMBER ADDED", "check");
+                } catch (e) {
+                    console.error(e);
+                    UI.toast("FAILED: " + e, "alert-circle");
+                }
+            },
+
+            async addPotato(groupId, qty) {
+                const memberList = Store.state.members[groupId] || [];
+                const userPhone = Store.state.user.phone;
+                const me = memberList.find(m => m.phone === userPhone);
+                
+                if (!me) return;
+                
+                const ap = CONSTANTS.ADDON_PRODUCT;
+                const newCart = { ...me.cart };
+                newCart[ap.id] = qty; 
+                
+                await Backend.joinGroup({
+                    name: me.name, phone: me.phone, 
+                    cart: newCart, joinGroupId: groupId, isManual: false,
+                    pickupPointId: me.pickupPointId,
+                    isEdit: true 
+                });
+                
+                UI.toast(`BONUS ${qty}KG ADDED`, "check");
             }
-        }
-    }
-    requestAnimationFrame(detectHand);
-}
+        };
 
-function render() {
-    ctx.fillStyle = 'rgba(5, 5, 5, 0.9)'; 
-    ctx.fillRect(0, 0, width, height);
+        // ==========================================
+        // 7. UI RENDERER (THE PANIC MACHINE)
+        // ==========================================
+        const UI = {
+            renderScheduled: false,
+            scheduleRender() {
+                if (this.renderScheduled) return;
+                this.renderScheduled = true;
+                requestAnimationFrame(() => { this.render(); this.renderScheduled = false; });
+            },
 
-    if (hitStop > 0) {
-        hitStop--;
-        for (let f of fruits) f.draw(ctx);
-        for (let p of particles) p.draw(ctx);
-        for (let fl of floaters) fl.draw(ctx);
-        drawBlade();
-        requestAnimationFrame(render);
-        return;
-    }
+            startUniversalTimer() {
+                setInterval(() => {
+                    const el = document.getElementById('global-timer');
+                    if (el) {
+                        const g = Store.state.groups[Store.state.currentGroupId];
+                        let targetTime;
+                        
+                        if (g && g.expiresAt) {
+                            targetTime = g.expiresAt.seconds * 1000;
+                        } else {
+                            targetTime = Utils.Time.getCutoffTimestamp();
+                        }
 
-    // Combo Timer Decay
-    if (gameState === 'PLAYING') {
-        spawnFruit();
-        if (combo > 0) {
-            comboTimer--;
-            if (comboTimer <= 0) {
-                combo = 0;
-                updateHUD();
+                        const now = Date.now();
+                        let diff = targetTime - now;
+                        if (diff < 0) diff = 0;
+                        
+                        const h = Math.floor(diff / (1000 * 60 * 60));
+                        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        el.innerText = `⏳ ${h}h ${m}m LEFT`;
+                        if (h === 0 && m < 60) el.classList.add('animate-pulse');
+                    }
+                }, 1000);
+            },
+
+            render() {
+                const app = document.getElementById('app');
+                if (!app) return;
+                const { view } = Store.state;
+                if (view === 'home') this.renderEntry(app);
+                else if (view === 'group') this.renderWarRoom(app);
+                if (window.lucide) window.lucide.createIcons();
+            },
+
+            // ENTRY: NO CHOICE.
+            renderEntry(container) {
+                const tp = CONSTANTS.TODAYS_PRODUCT;
+                const priceData = tp.price;
+                
+                const hasFailedYesterday = Store.state.hasFailedYesterday;
+                const headline = hasFailedYesterday 
+                    ? `<span class="text-red-500 bg-black px-2">YOU MISSED YESTERDAY'S DEAL</span><br>Today's price starts higher`
+                    : `${tp.name}<br><span class="text-red-500">Price Under Threat</span>`;
+                
+                const displayTargetPrice = hasFailedYesterday ? priceData.target + 2 : priceData.target;
+                
+                // Price Pain Matrix Logic (Ranges & Uncertainty)
+                const base = priceData.base;
+                const marketRange = `₹${base - 7} – ₹${base + 3}`;
+                const shopRange = `₹${base} – ₹${base + 10}`;
+
+                container.innerHTML = `
+                <div class="bg-gray-900 min-h-screen flex flex-col font-sans relative overflow-hidden">
+                    <div id="global-timer" class="sticky-timer">⏳ CALCULATING...</div>
+                    
+                    <div class="flex-1 flex flex-col items-center justify-center p-6 text-center z-10">
+                        <div class="w-full max-w-xs bg-red-600 p-1 mb-4 rounded animate-pulse">
+                            <div class="bg-black text-white text-xs font-black py-1 uppercase tracking-widest">Time is running out</div>
+                        </div>
+
+                        <div class="w-40 h-40 bg-white rounded-full border-4 border-red-600 mb-4 overflow-hidden relative shadow-[0_0_40px_rgba(220,38,38,0.6)]">
+                            <img src="${tp.imageSrc}" class="w-full h-full object-cover">
+                            <div class="absolute bottom-0 inset-x-0 bg-red-600 text-white text-lg font-black py-1">₹${displayTargetPrice} ⚠️</div>
+                        </div>
+
+                        <h1 class="text-3xl font-black text-white italic mb-1 uppercase tracking-tighter leading-none">
+                            ${headline}
+                        </h1>
+                        <p class="text-gray-400 text-xs font-bold mb-6 max-w-[200px]">Price jumps to ₹${priceData.base} if this fails.</p>
+
+                        <!-- PRICE PAIN MATRIX (The 3 Worlds) -->
+                        <div class="w-full max-w-xs bg-gray-800 rounded-lg p-3 mb-6 border border-gray-700 shadow-xl">
+                            <!-- World 1: Bike Vendor -->
+                            <div class="flex justify-between items-center text-xs text-gray-500 mb-2 border-b border-gray-700 pb-1">
+                                <div class="text-left">
+                                    <span class="block font-bold">Bike Vendor</span>
+                                    <span class="text-[9px] italic">"No change saar" • Morning drama</span>
+                                </div>
+                                <span class="text-red-400 font-bold line-through text-[10px]">${marketRange}/kg</span>
+                            </div>
+                            <!-- World 2: Local Shop -->
+                            <div class="flex justify-between items-center text-xs text-gray-500 mb-2 border-b border-gray-700 pb-1">
+                                <div class="text-left">
+                                    <span class="block font-bold">Local Shop</span>
+                                    <span class="text-[9px] italic">Fixed face • Flexible cheating</span>
+                                </div>
+                                <span class="text-red-400 font-bold line-through text-[10px]">${shopRange}/kg</span>
+                            </div>
+                            <!-- World 3: JODO -->
+                            <div class="flex justify-between items-center text-sm font-black text-white pt-1">
+                                <div class="text-left">
+                                    <span class="block text-red-500 italic tracking-tighter">⚡️ JODO WAR</span>
+                                    <span class="text-[9px] font-normal text-gray-300">Only if this survives today</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-green-400 text-2xl tracking-tighter">₹${displayTargetPrice}/kg</span>
+                                    <span class="text-xs">⚠️</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="window.JodoApp.UI.openJoinModal(true)" class="w-full bg-red-600 text-white h-16 rounded-xl font-black text-2xl uppercase tracking-tighter shadow-[0_10px_0_rgb(153,27,27)] active:shadow-none active:translate-y-[10px] transition-all animate-shake">
+                            Start & Lock
+                        </button>
+                    </div>
+                    
+                    <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), repeating-linear-gradient(45deg, #000 25%, #222 25%, #222 75%, #000 75%, #000); background-position: 0 0, 10px 10px; background-size: 20px 20px;"></div>
+                </div>`;
+            },
+
+            // WAR ROOM
+            renderWarRoom(container) {
+                const { currentGroupId, groups, members, user } = Store.state;
+                const g = groups[currentGroupId];
+                if (!g) return;
+
+                if (Utils.Time.isTimestampPast(g.expiresAt) && g.status !== 'LOCKED') {
+                    localStorage.setItem('jodo_fail_ts', Date.now().toString());
+                    this.showFailureScar(true);
+                    return;
+                }
+
+                const tp = CONSTANTS.TODAYS_PRODUCT;
+                const ap = CONSTANTS.ADDON_PRODUCT;
+                const priceData = tp.price;
+                const isLeader = g.ownerPhone === user.phone;
+                const isLocked = g.status === 'LOCKED';
+                const isMember = members[currentGroupId]?.some(m => m.phone === user.phone);
+                const myMember = members[currentGroupId]?.find(m => m.phone === user.phone);
+                
+                // ✅ FIX: LOCKED VIEW MODE (Leader sees stats, Member sees collapse)
+                if (isLocked) {
+                    // Resolve pickup point
+                    const ppId = myMember?.pickupPointId;
+                    const ppData = ppId ? g.pickupPoints?.[ppId] : null; // Safe fallback
+                    
+                    let lockedContent = `
+                    <div class="bg-green-800 p-6 text-center text-white relative z-50">
+                        <div class="animate-bounce text-6xl mb-4">✅</div>
+                        <h1 class="text-4xl font-black uppercase tracking-tighter mb-2 leading-none">PRICE LOCKED</h1>
+                        <p class="text-lg font-bold text-green-100 uppercase tracking-wide mb-6">Do not miss collection</p>
+                        
+                        ${isMember ? `
+                        <div class="bg-black/20 p-4 rounded-xl border-2 border-white/20 mb-4 w-full max-w-sm mx-auto">
+                            <div class="text-sm font-bold text-green-200 uppercase tracking-widest mb-1">Pickup Time</div>
+                            <div class="text-2xl font-black text-white">${ppData ? ppData.pickupTime : 'Tomorrow Morning'}</div>
+                            <div class="mt-3 text-sm font-bold text-green-200 uppercase tracking-widest mb-1">Location</div>
+                            <div class="text-lg font-bold text-white">${ppData ? ppData.name : 'Contact Leader'}</div>
+                        </div>` : ''}
+                    </div>`;
+
+                    // Leader Stats Injection (Still Visible)
+                    if (isLeader) {
+                        const optimisticTotal = members[currentGroupId].reduce((sum, m) => sum + (m.amountExpected || 0), 0);
+                        lockedContent += `
+                        <div class="bg-white p-4">
+                            <div class="text-center font-black text-gray-400 text-xs uppercase mb-4 tracking-widest">--- LEADER DASHBOARD (LOCKED) ---</div>
+                             <div class="px-3 py-2 bg-green-50 border border-green-200 rounded flex justify-between items-center mb-4">
+                                <div>
+                                    <div class="text-[9px] font-bold text-green-700 uppercase tracking-widest">Total to Collect</div>
+                                    <div class="text-lg font-black text-green-900">₹${optimisticTotal}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Members</div>
+                                    <div class="text-lg font-black text-gray-900">${members[currentGroupId].length}</div>
+                                </div>
+                            </div>
+                            <!-- Simple Member List for Leader -->
+                             <div class="divide-y divide-gray-100 bg-white border border-gray-100 rounded">
+                                ${(members[currentGroupId] || []).map(m => {
+                                    const payColor = m.paymentStatus === 'paid' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50';
+                                    return `
+                                    <div class="flex items-center justify-between px-3 py-3">
+                                        <div>
+                                            <div class="font-bold text-gray-900 text-xs">${m.name}</div>
+                                            <div class="text-[10px] text-gray-500">₹${m.amountExpected || 0}</div>
+                                        </div>
+                                        <button onclick="Backend.togglePaymentStatus('${g.id}', '${m.phone}', '${m.paymentStatus}')" class="text-[9px] font-bold ${payColor} px-2 py-1 rounded uppercase">${m.paymentStatus}</button>
+                                    </div>`;
+                                }).join('')}
+                            </div>
+                        </div>`;
+                    }
+                    
+                    container.innerHTML = `<div class="min-h-screen bg-gray-50">${lockedContent}</div>`;
+                    return;
+                }
+
+                // ... (Share Gate & Status Banner logic remains the same) ...
+                const hasShared = myMember && (myMember.sharedOnce === true || myMember.isManualEntry === true);
+                if (isMember && !isLocked && !hasShared) {
+                    container.innerHTML = `
+                    <div class="bg-red-900 min-h-screen flex flex-col items-center justify-center p-6 text-center text-white relative z-50">
+                        <div class="animate-bounce text-6xl mb-4">⚠️</div>
+                        <h1 class="text-4xl font-black uppercase tracking-tighter mb-4 leading-none">Your Group Is Unsafe</h1>
+                        <p class="text-lg font-bold text-red-200 mb-8 max-w-xs">Invite 1 person to continue. This will fail without you.</p>
+                        <button onclick="window.JodoApp.UI.shareGroup('${g.id}', false, 0)" class="w-full bg-white text-red-900 h-16 rounded-xl font-black text-2xl uppercase tracking-tighter shadow-xl animate-pulse">INVITE NOW</button>
+                    </div>`;
+                    return;
+                }
+
+                const statusBanner = `<div class="bg-red-600 text-white text-center p-6 font-black text-2xl uppercase tracking-tighter leading-none">
+                        ⚠️ UNSAFE<br><span class="text-sm font-bold opacity-80">Waiting for more members...</span>
+                       </div>`;
+
+                let shameBox = '';
+                if (isLeader && !isLocked) {
+                    // ... (Leader shame logic same) ...
+                     const timeLeft = Utils.Time.getCutoffTimestamp() - Date.now();
+                     const hoursLeft = timeLeft / (1000 * 60 * 60);
+                     if (hoursLeft < 2) {
+                        shameBox = `<div class="bg-black text-red-500 p-4 text-center text-sm font-black uppercase tracking-widest border-b-4 border-red-600 animate-pulse">⚠️ YOUR GROUP IS FAILING. OTHERS WILL REMEMBER THIS.</div>`;
+                     } else {
+                        shameBox = `<div class="bg-black text-red-500 p-3 text-center text-xs font-black uppercase tracking-widest border-b border-red-900">👀 People will remember this group. Don't look stupid.</div>`;
+                     }
+                }
+                
+                // ... (Pickup Section & Hostage Section same) ...
+                let pickupSection = '';
+                if (isMember) {
+                    const ppId = myMember.pickupPointId;
+                    const ppData = g.pickupPoints?.[ppId];
+                    if (ppData) {
+                        pickupSection = `
+                        <div class="mx-3 mt-3 bg-blue-50 border-2 border-blue-200 rounded p-3">
+                            <div class="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-1">📍 YOUR PICKUP POINT</div>
+                            <div class="text-sm font-bold text-gray-900">${ppData.name}</div>
+                            <div class="text-xs text-gray-600">${ppData.landmark}</div>
+                            <div class="text-xs font-black mt-1 text-blue-800 bg-blue-100 inline-block px-1 rounded">${ppData.pickupTime}</div>
+                            <div class="text-[9px] text-blue-400 font-telugu mt-1">📍 మీ పికప్ స్థానం</div>
+                        </div>`;
+                    } else {
+                         pickupSection = `<div class="mx-3 mt-3 bg-red-100 p-2 text-xs text-red-600 font-bold">⚠️ Pickup Point Error. Contact Leader.</div>`;
+                    }
+                } 
+
+                let hostageSection = '';
+                if (isMember) {
+                    if (hasShared) {
+                        const hasPotato = myMember.cart[ap.id] > 0;
+                        const apPrice = ap.price;
+                        const potatoQty = myMember.cart[ap.id] || 0;
+                        
+                        // AOV Logic
+                        const actionButton = !hasPotato 
+                            ? `<button onclick="window.JodoApp.UI.openBonusQtyModal('${g.id}')" class="bg-yellow-400 text-black text-xs font-black px-3 py-2 rounded shadow-sm uppercase border-b-2 border-yellow-600 active:border-b-0 active:translate-y-0.5">CLAIM BONUS</button>`
+                            : `<button onclick="window.JodoApp.UI.openBonusQtyModal('${g.id}')" class="text-xs font-black text-green-600 uppercase underline">Edit (${potatoQty}kg)</button>`;
+
+                        hostageSection = `
+                        <div class="mx-3 mt-4 bg-yellow-50 rounded-lg border-2 border-yellow-200 p-3 relative overflow-hidden">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-white rounded border border-yellow-300 overflow-hidden shrink-0"><img src="${ap.imageSrc}" class="w-full h-full object-cover"></div>
+                                <div class="flex-1">
+                                    <div class="text-[10px] font-black text-yellow-700 uppercase tracking-widest">🎁 POTATO UNLOCKED</div>
+                                    <div class="text-xs font-bold text-yellow-900 leading-tight">Wholesale price ₹${apPrice.target}/kg available now.</div>
+                                </div>
+                                ${actionButton}
+                            </div>
+                            ${!hasPotato ? `<div class="text-[8px] text-red-500 font-bold mt-1 uppercase text-right">Bonus disappears if tomato fails</div>` : ''}
+                        </div>`;
+                    }
+                }
+
+                let actionBtn = '';
+                if (!isMember && !isLocked) {
+                    actionBtn = `<button onclick="window.JodoApp.UI.openJoinModal(false)" class="main-cta w-full bg-red-600 text-white h-14 rounded-lg font-black text-xl uppercase shadow-lg animate-shake">PREVENT FAILURE</button>`;
+                } else if (isMember && !isLocked) {
+                    actionBtn = `<button onclick="window.JodoApp.UI.shareGroup('${g.id}')" class="main-cta w-full bg-green-600 text-white h-14 rounded-lg font-black text-xl uppercase shadow-lg">INVITE TO SAVE</button>`;
+                } else {
+                    actionBtn = `<div class="text-center font-black text-gray-400 uppercase">Deal Closed</div>`;
+                }
+
+                const memberHtml = (members[currentGroupId] || []).map(m => `
+                    <div class="flex items-center gap-2 bg-white p-2 rounded shadow-sm border-l-4 ${m.verified ? 'border-green-500' : 'border-gray-200'}">
+                        <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                        <div class="font-bold text-sm text-gray-900">${m.name} ${m.isManualEntry ? '<span class="text-[10px] bg-gray-100 text-gray-500 px-1 rounded ml-1">OFFLINE</span>' : ''}</div>
+                    </div>
+                `).join('');
+
+                // ✅ FIX 5: REDUNDANT REMINDER
+                let persistentReminder = '';
+                if (isMember) {
+                    const ppId = myMember.pickupPointId;
+                    const ppData = g.pickupPoints?.[ppId];
+                    if (ppData) {
+                         persistentReminder = `<div class="text-center text-[9px] text-gray-400 mt-2 font-bold tracking-widest border-t border-gray-100 pt-2 w-full">📍 PICKUP: ${ppData.name} <span class="text-[9px] opacity-50 block">${ppData.landmark}</span><span class="text-[9px] opacity-50 block font-telugu">📍 మీ పికప్ స్థానం</span></div>`;
+                    }
+                }
+
+                container.innerHTML = `
+                <div class="bg-gray-50 min-h-screen pb-safe relative">
+                    <div id="global-timer" class="sticky-timer">⏳ LOADING...</div>
+                    ${statusBanner}
+                    ${shameBox}
+                    <div class="p-4 flex flex-col items-center border-b border-gray-200 bg-white">
+                        <div class="w-32 h-32 rounded-full border-4 border-red-100 overflow-hidden mb-2">
+                            <img src="${tp.imageSrc}" class="w-full h-full object-cover">
+                        </div>
+                        <h1 class="text-2xl font-black text-gray-900 uppercase">${tp.name}</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-red-600 font-black text-4xl">₹${priceData.target}</span>
+                            <span class="text-gray-400 font-bold line-through text-lg">₹${priceData.base}</span>
+                        </div>
+                        ${!isLocked ? `<div class="mt-2 bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-black uppercase">You are blocking the deal</div>` : ''}
+                    </div>
+                    ${pickupSection}
+                    ${hostageSection}
+                    <div class="p-4">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase mb-2">Who is fighting</div>
+                        <div class="space-y-2">${memberHtml}</div>
+                        ${!isLocked ? `<div class="text-center text-xs font-bold text-gray-400 mt-2 italic">Waiting for more...</div>` : ''}
+                    </div>
+                    <div class="fixed bottom-0 inset-x-0 p-4 bg-white border-t border-gray-200 z-40">
+                        ${actionBtn}
+                        ${!isLocked && isMember ? `
+                        <div class="flex justify-between items-center text-xs font-black text-gray-900 mt-2 px-2">
+                            <span>Total Payable:</span>
+                            <span class="text-lg">₹${myMember.amountExpected || 0}</span>
+                        </div>
+                        <div class="text-center text-[10px] font-black text-red-500 mt-1 uppercase">Share or lose the discount</div>` : ''}
+                        
+                        <div class="text-center text-[9px] text-gray-300 mt-2">If this makes you uncomfortable, don’t join again.</div>
+                        ${persistentReminder}
+                    </div>
+                </div>`;
+            },
+            
+            // ✅ OPS: OPEN OFFLINE MEMBER MODAL
+            openOfflineMemberModal() {
+                const node = document.createElement('div');
+                node.className = "flex flex-col h-[75vh] bg-white relative"; 
+                
+                const gid = Store.state.currentGroupId;
+                let sourcePoints = Store.state.groups[gid]?.pickupPoints || CONSTANTS.PREDEFINED_PICKUP_POINTS;
+                let stats = Store.state.groups[gid]?.pickupStats || {};
+
+                let ppHtml = '';
+                Object.values(sourcePoints).forEach(pp => {
+                    const count = stats[pp.id] || 0;
+                    const isFull = count >= CONSTANTS.PICKUP_LIMIT;
+                    const disabledClass = isFull ? 'opacity-50 grayscale cursor-not-allowed bg-gray-100' : 'cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50';
+                    const label = isFull ? '(FULL)' : '';
+                    
+                    ppHtml += `
+                    <label class="flex items-start gap-3 p-3 border rounded-lg ${disabledClass}">
+                        <input type="radio" name="offline_pickup_point" value="${pp.id}" class="mt-1" ${isFull ? 'disabled' : ''}>
+                        <div>
+                            <div class="font-bold text-sm text-gray-900">${pp.name} <span class="text-red-600 font-black">${label}</span></div>
+                            <div class="text-xs text-gray-500">${pp.landmark}</div>
+                            <div class="text-[10px] text-gray-400 mt-1">${count}/${CONSTANTS.PICKUP_LIMIT} orders</div>
+                        </div>
+                    </label>`;
+                });
+
+                node.innerHTML = `
+                    <div class="bg-blue-600 text-white p-4 text-center font-black uppercase tracking-widest text-sm">Add Offline Member</div>
+                    <div class="p-6 flex-1 flex flex-col gap-4 overflow-y-auto">
+                        <div class="grid grid-cols-3 gap-3 mb-2">
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-blue-600 rounded-lg p-4 font-black text-xl" data-qty="1">1kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-blue-600 rounded-lg p-4 font-black text-xl" data-qty="2">2kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-blue-600 rounded-lg p-4 font-black text-xl" data-qty="5">5kg</button>
+                        </div>
+                        
+                        <input id="off-name" placeholder="MEMBER NAME" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        <input id="off-phone" type="tel" placeholder="PHONE NUMBER" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        
+                        <div class="mt-2">
+                            <div class="text-xs font-black text-gray-500 uppercase mb-2">Choose Pickup Point (Required)</div>
+                            <div class="space-y-2">
+                                ${ppHtml}
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-off-submit" disabled class="w-full bg-gray-300 text-white h-16 font-black text-xl uppercase shrink-0">ADD MEMBER</button>
+                `;
+
+                this.showModal(node);
+
+                let selectedQty = 0;
+                const btns = node.querySelectorAll('.qty-btn');
+                const submit = node.querySelector('#btn-off-submit');
+                
+                btns.forEach(b => {
+                    b.onclick = () => {
+                        btns.forEach(x => x.classList.remove('bg-blue-100', 'border-blue-600', 'text-blue-600'));
+                        b.classList.add('bg-blue-100', 'border-blue-600', 'text-blue-600');
+                        selectedQty = parseFloat(b.dataset.qty);
+                        submit.classList.remove('bg-gray-300');
+                        submit.classList.add('bg-blue-600');
+                        submit.disabled = false;
+                    }
+                });
+
+                submit.onclick = () => {
+                    const name = node.querySelector('#off-name').value;
+                    const phone = node.querySelector('#off-phone').value;
+                    const ppRadio = node.querySelector('input[name="offline_pickup_point"]:checked');
+
+                    if(!ppRadio) {
+                        UI.toast("SELECT PICKUP POINT", "alert-circle");
+                        return;
+                    }
+
+                    if(name && phone && selectedQty > 0) {
+                        // ✅ FIX: DISABLE DOUBLE SUBMIT
+                        submit.disabled = true;
+                        submit.innerText = "ADDING...";
+                        Actions.addOfflineMember(name, phone, selectedQty, ppRadio.value);
+                    }
+                };
+            },
+
+            openJoinModal(isNew) {
+                const node = document.createElement('div');
+                node.className = "flex flex-col h-[75vh] bg-white relative"; 
+                
+                const gid = Store.state.currentGroupId;
+                let sourcePoints = CONSTANTS.PREDEFINED_PICKUP_POINTS;
+                let stats = {};
+
+                if (!isNew && gid && Store.state.groups[gid]) {
+                    sourcePoints = Store.state.groups[gid].pickupPoints || sourcePoints;
+                    stats = Store.state.groups[gid].pickupStats || {};
+                }
+
+                let ppHtml = '';
+                Object.values(sourcePoints).forEach(pp => {
+                    const count = stats[pp.id] || 0;
+                    const isFull = count >= CONSTANTS.PICKUP_LIMIT;
+                    const disabledClass = isFull ? 'opacity-50 grayscale cursor-not-allowed bg-gray-100' : 'cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50';
+                    const label = isFull ? '(FULL)' : '';
+                    
+                    ppHtml += `
+                    <label class="flex items-start gap-3 p-3 border rounded-lg ${disabledClass}">
+                        <input type="radio" name="pickup_point" value="${pp.id}" class="mt-1" ${isFull ? 'disabled' : ''}>
+                        <div>
+                            <div class="font-bold text-sm text-gray-900">${pp.name} <span class="text-red-600 font-black">${label}</span></div>
+                            <div class="text-xs text-gray-500">${pp.landmark}</div>
+                            <div class="text-[10px] text-gray-400 mt-1">${count}/${CONSTANTS.PICKUP_LIMIT} orders</div>
+                        </div>
+                    </label>`;
+                });
+
+                node.innerHTML = `
+                    <div class="bg-red-600 text-white p-4 text-center font-black uppercase tracking-widest text-sm">Don't Let This Fail</div>
+                    <div class="p-6 flex-1 flex flex-col gap-4 overflow-y-auto">
+                        <div class="grid grid-cols-3 gap-3 mb-2">
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-red-600 rounded-lg p-4 font-black text-xl" data-qty="1">1kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-red-600 rounded-lg p-4 font-black text-xl" data-qty="2">2kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-red-600 rounded-lg p-4 font-black text-xl" data-qty="5">5kg</button>
+                        </div>
+                        
+                        <input id="inp-name" placeholder="YOUR NAME" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        <input id="inp-phone" type="tel" placeholder="PHONE NUMBER" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        <!-- ✅ REMOVED TEXTAREA ADDRESS -->
+                        
+                        <div class="mt-2">
+                            <div class="text-xs font-black text-gray-500 uppercase mb-2">Choose Pickup Point (Required)</div>
+                            <div class="space-y-2">
+                                ${ppHtml}
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-submit" disabled class="w-full bg-gray-300 text-white h-16 font-black text-xl uppercase shrink-0">SELECT QUANTITY</button>
+                `;
+
+                this.showModal(node);
+
+                let selectedQty = 0;
+                const btns = node.querySelectorAll('.qty-btn');
+                const submit = node.querySelector('#btn-submit');
+                
+                btns.forEach(b => {
+                    b.onclick = () => {
+                        btns.forEach(x => x.classList.remove('bg-red-100', 'border-red-600', 'text-red-600'));
+                        b.classList.add('bg-red-100', 'border-red-600', 'text-red-600');
+                        selectedQty = parseFloat(b.dataset.qty);
+                        submit.innerText = `JOIN WITH ${selectedQty}KG`;
+                        submit.classList.remove('bg-gray-300');
+                        submit.classList.add('bg-red-600');
+                        submit.disabled = false;
+                    }
+                });
+
+                submit.onclick = () => {
+                    const name = node.querySelector('#inp-name').value;
+                    const phone = node.querySelector('#inp-phone').value;
+                    // ✅ REMOVED addr GETTER
+                    const ppRadio = node.querySelector('input[name="pickup_point"]:checked');
+
+                    if(!ppRadio) {
+                        UI.toast("SELECT PICKUP POINT", "alert-circle");
+                        return;
+                    }
+
+                    if(name && phone && selectedQty > 0) { // ✅ REMOVED addr CHECK
+                        submit.innerText = "LOCKING...";
+                        Actions.submitOrder(name, phone, selectedQty, ppRadio.value); // ✅ REMOVED addr ARG
+                    }
+                };
+            },
+
+            showFailureScar(permanent = false) {
+                const overlay = document.getElementById('failure-overlay');
+                const msg = document.getElementById('fail-msg');
+                // ✅ FIX: SHORTER, BRUTAL COPY
+                msg.innerText = "This failed. You pay more next time.";
+                overlay.classList.remove('hidden');
+                // ✅ FIX: 1 HOUR SCAR DURATION
+                if(!permanent) setTimeout(() => overlay.classList.add('hidden'), 60 * 60 * 1000);
+            },
+            
+            // ✅ AOV UPDATE: BONUS QUANTITY MODAL
+            openBonusQtyModal(groupId) {
+                const node = document.createElement('div');
+                node.className = "flex flex-col h-[40vh] bg-white relative rounded-t-xl overflow-hidden";
+                
+                node.innerHTML = `
+                    <div class="bg-yellow-500 text-black p-4 text-center font-black uppercase tracking-widest text-sm">Select Potato Quantity</div>
+                    <div class="p-6 flex-1 flex flex-col gap-4 justify-center">
+                        <div class="grid grid-cols-3 gap-3">
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-yellow-500 rounded-lg p-4 font-black text-xl" data-qty="1">1kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-yellow-500 rounded-lg p-4 font-black text-xl" data-qty="2">2kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-yellow-500 rounded-lg p-4 font-black text-xl" data-qty="5">5kg</button>
+                        </div>
+                    </div>
+                `;
+
+                this.showModal(node);
+
+                node.querySelectorAll('.qty-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const qty = parseInt(btn.dataset.qty);
+                        // Visual feedback
+                        node.querySelectorAll('.qty-btn').forEach(b => b.classList.remove('bg-yellow-100', 'border-yellow-500'));
+                        btn.classList.add('bg-yellow-100', 'border-yellow-500');
+                        
+                        setTimeout(() => {
+                            this.closeModal();
+                            window.JodoApp.Actions.addPotato(groupId, qty);
+                        }, 200);
+                    };
+                });
+            },
+            
+            // ✅ OPS: OPEN OFFLINE MEMBER MODAL
+            openOfflineMemberModal() {
+                const node = document.createElement('div');
+                node.className = "flex flex-col h-[75vh] bg-white relative"; 
+                
+                const gid = Store.state.currentGroupId;
+                let sourcePoints = Store.state.groups[gid]?.pickupPoints || CONSTANTS.PREDEFINED_PICKUP_POINTS;
+                let stats = Store.state.groups[gid]?.pickupStats || {};
+
+                let ppHtml = '';
+                Object.values(sourcePoints).forEach(pp => {
+                    const count = stats[pp.id] || 0;
+                    const isFull = count >= CONSTANTS.PICKUP_LIMIT;
+                    const disabledClass = isFull ? 'opacity-50 grayscale cursor-not-allowed bg-gray-100' : 'cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50';
+                    const label = isFull ? '(FULL)' : '';
+                    
+                    ppHtml += `
+                    <label class="flex items-start gap-3 p-3 border rounded-lg ${disabledClass}">
+                        <input type="radio" name="offline_pickup_point" value="${pp.id}" class="mt-1" ${isFull ? 'disabled' : ''}>
+                        <div>
+                            <div class="font-bold text-sm text-gray-900">${pp.name} <span class="text-red-600 font-black">${label}</span></div>
+                            <div class="text-xs text-gray-500">${pp.landmark}</div>
+                            <div class="text-[10px] text-gray-400 mt-1">${count}/${CONSTANTS.PICKUP_LIMIT} orders</div>
+                        </div>
+                    </label>`;
+                });
+
+                node.innerHTML = `
+                    <div class="bg-blue-600 text-white p-4 text-center font-black uppercase tracking-widest text-sm">Add Offline Member</div>
+                    <div class="p-6 flex-1 flex flex-col gap-4 overflow-y-auto">
+                        <div class="grid grid-cols-3 gap-3 mb-2">
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-blue-600 rounded-lg p-4 font-black text-xl" data-qty="1">1kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-blue-600 rounded-lg p-4 font-black text-xl" data-qty="2">2kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-blue-600 rounded-lg p-4 font-black text-xl" data-qty="5">5kg</button>
+                        </div>
+                        
+                        <input id="off-name" placeholder="MEMBER NAME" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        <input id="off-phone" type="tel" placeholder="PHONE NUMBER" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        
+                        <div class="mt-2">
+                            <div class="text-xs font-black text-gray-500 uppercase mb-2">Choose Pickup Point (Required)</div>
+                            <div class="space-y-2">
+                                ${ppHtml}
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-off-submit" disabled class="w-full bg-gray-300 text-white h-16 font-black text-xl uppercase shrink-0">ADD MEMBER</button>
+                `;
+
+                this.showModal(node);
+
+                let selectedQty = 0;
+                const btns = node.querySelectorAll('.qty-btn');
+                const submit = node.querySelector('#btn-off-submit');
+                
+                btns.forEach(b => {
+                    b.onclick = () => {
+                        btns.forEach(x => x.classList.remove('bg-blue-100', 'border-blue-600', 'text-blue-600'));
+                        b.classList.add('bg-blue-100', 'border-blue-600', 'text-blue-600');
+                        selectedQty = parseFloat(b.dataset.qty);
+                        submit.classList.remove('bg-gray-300');
+                        submit.classList.add('bg-blue-600');
+                        submit.disabled = false;
+                    }
+                });
+
+                submit.onclick = () => {
+                    const name = node.querySelector('#off-name').value;
+                    const phone = node.querySelector('#off-phone').value;
+                    const ppRadio = node.querySelector('input[name="offline_pickup_point"]:checked');
+
+                    if(!ppRadio) {
+                        UI.toast("SELECT PICKUP POINT", "alert-circle");
+                        return;
+                    }
+
+                    if(name && phone && selectedQty > 0) {
+                        // ✅ FIX: DISABLE DOUBLE SUBMIT
+                        submit.disabled = true;
+                        submit.innerText = "ADDING...";
+                        Actions.addOfflineMember(name, phone, selectedQty, ppRadio.value);
+                    }
+                };
+            },
+
+            openJoinModal(isNew) {
+                const node = document.createElement('div');
+                node.className = "flex flex-col h-[75vh] bg-white relative"; 
+                
+                const gid = Store.state.currentGroupId;
+                let sourcePoints = CONSTANTS.PREDEFINED_PICKUP_POINTS;
+                let stats = {};
+
+                if (!isNew && gid && Store.state.groups[gid]) {
+                    sourcePoints = Store.state.groups[gid].pickupPoints || sourcePoints;
+                    stats = Store.state.groups[gid].pickupStats || {};
+                }
+
+                let ppHtml = '';
+                Object.values(sourcePoints).forEach(pp => {
+                    const count = stats[pp.id] || 0;
+                    const isFull = count >= CONSTANTS.PICKUP_LIMIT;
+                    const disabledClass = isFull ? 'opacity-50 grayscale cursor-not-allowed bg-gray-100' : 'cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50';
+                    const label = isFull ? '(FULL)' : '';
+                    
+                    ppHtml += `
+                    <label class="flex items-start gap-3 p-3 border rounded-lg ${disabledClass}">
+                        <input type="radio" name="pickup_point" value="${pp.id}" class="mt-1" ${isFull ? 'disabled' : ''}>
+                        <div>
+                            <div class="font-bold text-sm text-gray-900">${pp.name} <span class="text-red-600 font-black">${label}</span></div>
+                            <div class="text-xs text-gray-500">${pp.landmark}</div>
+                            <div class="text-[10px] text-gray-400 mt-1">${count}/${CONSTANTS.PICKUP_LIMIT} orders</div>
+                        </div>
+                    </label>`;
+                });
+
+                node.innerHTML = `
+                    <div class="bg-red-600 text-white p-4 text-center font-black uppercase tracking-widest text-sm">Don't Let This Fail</div>
+                    <div class="p-6 flex-1 flex flex-col gap-4 overflow-y-auto">
+                        <div class="grid grid-cols-3 gap-3 mb-2">
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-red-600 rounded-lg p-4 font-black text-xl" data-qty="1">1kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-red-600 rounded-lg p-4 font-black text-xl" data-qty="2">2kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-red-600 rounded-lg p-4 font-black text-xl" data-qty="5">5kg</button>
+                        </div>
+                        
+                        <input id="inp-name" placeholder="YOUR NAME" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        <input id="inp-phone" type="tel" placeholder="PHONE NUMBER" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        
+                        <div class="mt-2">
+                            <div class="text-xs font-black text-gray-500 uppercase mb-2">Choose Pickup Point (Required)</div>
+                            <div class="space-y-2">
+                                ${ppHtml}
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-submit" disabled class="w-full bg-gray-300 text-white h-16 font-black text-xl uppercase shrink-0">SELECT QUANTITY</button>
+                `;
+
+                this.showModal(node);
+
+                let selectedQty = 0;
+                const btns = node.querySelectorAll('.qty-btn');
+                const submit = node.querySelector('#btn-submit');
+                
+                btns.forEach(b => {
+                    b.onclick = () => {
+                        btns.forEach(x => x.classList.remove('bg-red-100', 'border-red-600', 'text-red-600'));
+                        b.classList.add('bg-red-100', 'border-red-600', 'text-red-600');
+                        selectedQty = parseFloat(b.dataset.qty);
+                        submit.innerText = `JOIN WITH ${selectedQty}KG`;
+                        submit.classList.remove('bg-gray-300');
+                        submit.classList.add('bg-red-600');
+                        submit.disabled = false;
+                    }
+                });
+
+                submit.onclick = () => {
+                    const name = node.querySelector('#inp-name').value;
+                    const phone = node.querySelector('#inp-phone').value;
+                    const ppRadio = node.querySelector('input[name="pickup_point"]:checked');
+
+                    if(!ppRadio) {
+                        UI.toast("SELECT PICKUP POINT", "alert-circle");
+                        return;
+                    }
+
+                    if(name && phone && selectedQty > 0) { 
+                        // ✅ FIX: DISABLE DOUBLE SUBMIT
+                        submit.disabled = true;
+                        submit.innerText = "LOCKING...";
+                        Actions.submitOrder(name, phone, selectedQty, ppRadio.value, false); 
+                    }
+                };
+            },
+
+            showFailureScar(permanent = false) {
+                const overlay = document.getElementById('failure-overlay');
+                const msg = document.getElementById('fail-msg');
+                // ✅ FIX: SHORTER, BRUTAL COPY
+                msg.innerText = "This failed. You pay more next time.";
+                overlay.classList.remove('hidden');
+                // ✅ FIX: 1 HOUR SCAR DURATION
+                if(!permanent) setTimeout(() => overlay.classList.add('hidden'), 60 * 60 * 1000);
+            },
+            
+            // ✅ AOV UPDATE: BONUS QUANTITY MODAL
+            openBonusQtyModal(groupId) {
+                const node = document.createElement('div');
+                node.className = "flex flex-col h-[40vh] bg-white relative rounded-t-xl overflow-hidden";
+                
+                node.innerHTML = `
+                    <div class="bg-yellow-500 text-black p-4 text-center font-black uppercase tracking-widest text-sm">Select Potato Quantity</div>
+                    <div class="p-6 flex-1 flex flex-col gap-4 justify-center">
+                        <div class="grid grid-cols-3 gap-3">
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-yellow-500 rounded-lg p-4 font-black text-xl" data-qty="1">1kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-yellow-500 rounded-lg p-4 font-black text-xl" data-qty="2">2kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-yellow-500 rounded-lg p-4 font-black text-xl" data-qty="5">5kg</button>
+                        </div>
+                    </div>
+                `;
+
+                this.showModal(node);
+
+                node.querySelectorAll('.qty-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const qty = parseInt(btn.dataset.qty);
+                        // Visual feedback
+                        node.querySelectorAll('.qty-btn').forEach(b => b.classList.remove('bg-yellow-100', 'border-yellow-500'));
+                        btn.classList.add('bg-yellow-100', 'border-yellow-500');
+                        
+                        setTimeout(() => {
+                            this.closeModal();
+                            window.JodoApp.Actions.addPotato(groupId, qty);
+                        }, 200);
+                    };
+                });
+            },
+            
+            // ✅ OPS: OPEN OFFLINE MEMBER MODAL
+            openOfflineMemberModal() {
+                const node = document.createElement('div');
+                node.className = "flex flex-col h-[75vh] bg-white relative"; 
+                
+                const gid = Store.state.currentGroupId;
+                let sourcePoints = Store.state.groups[gid]?.pickupPoints || CONSTANTS.PREDEFINED_PICKUP_POINTS;
+                let stats = Store.state.groups[gid]?.pickupStats || {};
+
+                let ppHtml = '';
+                Object.values(sourcePoints).forEach(pp => {
+                    const count = stats[pp.id] || 0;
+                    const isFull = count >= CONSTANTS.PICKUP_LIMIT;
+                    const disabledClass = isFull ? 'opacity-50 grayscale cursor-not-allowed bg-gray-100' : 'cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50';
+                    const label = isFull ? '(FULL)' : '';
+                    
+                    ppHtml += `
+                    <label class="flex items-start gap-3 p-3 border rounded-lg ${disabledClass}">
+                        <input type="radio" name="offline_pickup_point" value="${pp.id}" class="mt-1" ${isFull ? 'disabled' : ''}>
+                        <div>
+                            <div class="font-bold text-sm text-gray-900">${pp.name} <span class="text-red-600 font-black">${label}</span></div>
+                            <div class="text-xs text-gray-500">${pp.landmark}</div>
+                            <div class="text-[10px] text-gray-400 mt-1">${count}/${CONSTANTS.PICKUP_LIMIT} orders</div>
+                        </div>
+                    </label>`;
+                });
+
+                node.innerHTML = `
+                    <div class="bg-blue-600 text-white p-4 text-center font-black uppercase tracking-widest text-sm">Add Offline Member</div>
+                    <div class="p-6 flex-1 flex flex-col gap-4 overflow-y-auto">
+                        <div class="grid grid-cols-3 gap-3 mb-2">
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-blue-600 rounded-lg p-4 font-black text-xl" data-qty="1">1kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-blue-600 rounded-lg p-4 font-black text-xl" data-qty="2">2kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-blue-600 rounded-lg p-4 font-black text-xl" data-qty="5">5kg</button>
+                        </div>
+                        
+                        <input id="off-name" placeholder="MEMBER NAME" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        <input id="off-phone" type="tel" placeholder="PHONE NUMBER" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        
+                        <div class="mt-2">
+                            <div class="text-xs font-black text-gray-500 uppercase mb-2">Choose Pickup Point (Required)</div>
+                            <div class="space-y-2">
+                                ${ppHtml}
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-off-submit" disabled class="w-full bg-gray-300 text-white h-16 font-black text-xl uppercase shrink-0">ADD MEMBER</button>
+                `;
+
+                this.showModal(node);
+
+                let selectedQty = 0;
+                const btns = node.querySelectorAll('.qty-btn');
+                const submit = node.querySelector('#btn-off-submit');
+                
+                btns.forEach(b => {
+                    b.onclick = () => {
+                        btns.forEach(x => x.classList.remove('bg-blue-100', 'border-blue-600', 'text-blue-600'));
+                        b.classList.add('bg-blue-100', 'border-blue-600', 'text-blue-600');
+                        selectedQty = parseFloat(b.dataset.qty);
+                        submit.classList.remove('bg-gray-300');
+                        submit.classList.add('bg-blue-600');
+                        submit.disabled = false;
+                    }
+                });
+
+                submit.onclick = () => {
+                    const name = node.querySelector('#off-name').value;
+                    const phone = node.querySelector('#off-phone').value;
+                    const ppRadio = node.querySelector('input[name="offline_pickup_point"]:checked');
+
+                    if(!ppRadio) {
+                        UI.toast("SELECT PICKUP POINT", "alert-circle");
+                        return;
+                    }
+
+                    if(name && phone && selectedQty > 0) {
+                        submit.innerText = "ADDING...";
+                        Actions.addOfflineMember(name, phone, selectedQty, ppRadio.value);
+                    }
+                };
+            },
+
+            openJoinModal(isNew) {
+                const node = document.createElement('div');
+                node.className = "flex flex-col h-[75vh] bg-white relative"; // Taller for PP list
+                
+                // ✅ OPS: DYNAMIC PICKUP POINT SELECTION UI
+                const gid = Store.state.currentGroupId;
+                let sourcePoints = CONSTANTS.PREDEFINED_PICKUP_POINTS;
+                let stats = {};
+
+                if (!isNew && gid && Store.state.groups[gid]) {
+                    sourcePoints = Store.state.groups[gid].pickupPoints || sourcePoints;
+                    stats = Store.state.groups[gid].pickupStats || {};
+                }
+
+                let ppHtml = '';
+                Object.values(sourcePoints).forEach(pp => {
+                    const count = stats[pp.id] || 0;
+                    const isFull = count >= CONSTANTS.PICKUP_LIMIT;
+                    const disabledClass = isFull ? 'opacity-50 grayscale cursor-not-allowed bg-gray-100' : 'cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50';
+                    const label = isFull ? '(FULL)' : '';
+                    
+                    ppHtml += `
+                    <label class="flex items-start gap-3 p-3 border rounded-lg ${disabledClass}">
+                        <input type="radio" name="pickup_point" value="${pp.id}" class="mt-1" ${isFull ? 'disabled' : ''}>
+                        <div>
+                            <div class="font-bold text-sm text-gray-900">${pp.name} <span class="text-red-600 font-black">${label}</span></div>
+                            <div class="text-xs text-gray-500">${pp.landmark}</div>
+                            <div class="text-[10px] text-gray-400 mt-1">${count}/${CONSTANTS.PICKUP_LIMIT} orders</div>
+                        </div>
+                    </label>`;
+                });
+
+                node.innerHTML = `
+                    <div class="bg-red-600 text-white p-4 text-center font-black uppercase tracking-widest text-sm">Don't Let This Fail</div>
+                    <div class="p-6 flex-1 flex flex-col gap-4 overflow-y-auto">
+                        <div class="grid grid-cols-3 gap-3 mb-2">
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-red-600 rounded-lg p-4 font-black text-xl" data-qty="1">1kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-red-600 rounded-lg p-4 font-black text-xl" data-qty="2">2kg</button>
+                            <button class="qty-btn bg-gray-100 border-2 border-transparent hover:border-red-600 rounded-lg p-4 font-black text-xl" data-qty="5">5kg</button>
+                        </div>
+                        
+                        <input id="inp-name" placeholder="YOUR NAME" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        <input id="inp-phone" type="tel" placeholder="PHONE NUMBER" class="w-full p-4 bg-gray-50 rounded font-black border-2 border-gray-200 uppercase focus:border-black outline-none">
+                        <!-- ✅ REMOVED TEXTAREA ADDRESS -->
+                        
+                        <div class="mt-2">
+                            <div class="text-xs font-black text-gray-500 uppercase mb-2">Choose Pickup Point (Required)</div>
+                            <div class="space-y-2">
+                                ${ppHtml}
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-submit" disabled class="w-full bg-gray-300 text-white h-16 font-black text-xl uppercase shrink-0">SELECT QUANTITY</button>
+                `;
+
+                this.showModal(node);
+
+                let selectedQty = 0;
+                const btns = node.querySelectorAll('.qty-btn');
+                const submit = node.querySelector('#btn-submit');
+                
+                btns.forEach(b => {
+                    b.onclick = () => {
+                        btns.forEach(x => x.classList.remove('bg-red-100', 'border-red-600', 'text-red-600'));
+                        b.classList.add('bg-red-100', 'border-red-600', 'text-red-600');
+                        selectedQty = parseFloat(b.dataset.qty);
+                        submit.innerText = `JOIN WITH ${selectedQty}KG`;
+                        submit.classList.remove('bg-gray-300');
+                        submit.classList.add('bg-red-600');
+                        submit.disabled = false;
+                    }
+                });
+
+                submit.onclick = () => {
+                    const name = node.querySelector('#inp-name').value;
+                    const phone = node.querySelector('#inp-phone').value;
+                    // ✅ REMOVED addr GETTER
+                    const ppRadio = node.querySelector('input[name="pickup_point"]:checked');
+
+                    if(!ppRadio) {
+                        UI.toast("SELECT PICKUP POINT", "alert-circle");
+                        return;
+                    }
+
+                    if(name && phone && selectedQty > 0) { // ✅ REMOVED addr CHECK
+                        submit.innerText = "LOCKING...";
+                        Actions.submitOrder(name, phone, selectedQty, ppRadio.value); // ✅ REMOVED addr ARG
+                    }
+                };
+            },
+
+            showFailureScar(permanent = false) {
+                const overlay = document.getElementById('failure-overlay');
+                const msg = document.getElementById('fail-msg');
+                msg.innerText = "This failed. You pay more next time.";
+                overlay.classList.remove('hidden');
+                if(!permanent) setTimeout(() => overlay.classList.add('hidden'), 24 * 60 * 60 * 1000);
+            },
+
+            showModal(node) {
+                const o = document.getElementById('modal-overlay'), c = document.getElementById('modal-content');
+                c.innerHTML=''; c.appendChild(node); o.classList.remove('hidden');
+                setTimeout(()=> { o.classList.remove('opacity-0'); c.classList.remove('translate-y-full'); }, 10);
+            },
+            closeModal() {
+                const o = document.getElementById('modal-overlay'), c = document.getElementById('modal-content');
+                c.classList.add('translate-y-full'); o.classList.add('opacity-0');
+                setTimeout(()=> { o.classList.add('hidden'); c.innerHTML=''; }, 200);
+            },
+            toast(msg, icon) {
+                const t = document.getElementById('toast');
+                t.innerText = msg;
+                t.classList.remove('hidden');
+                setTimeout(() => t.classList.add('hidden'), 3000);
+            },
+
+            shareGroup(gid) {
+                const url = `${CONSTANTS.PUBLIC_SHARE_URL}?group=${gid}`;
+                const anchorP = CONSTANTS.TODAYS_PRODUCT;
+                const priceData = anchorP.price;
+
+                const messages = [
+                    `⚠️ I joined a tomato group. If this fails, I pay ₹${priceData.base}/kg. Please join so my price stays low.`,
+                    `⏳ Need help. Tomato price jumps tonight if group fails. Join my group – takes 10 seconds.`,
+                    `🙏 Don't ignore this. Tomato price is locked only if more people join today.`
+                ];
+                let text = messages[Math.floor(Math.random() * messages.length)];
+                
+                Store.update('shareInProgress', Date.now());
+                
+                window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`, '_blank');
             }
-        }
-    }
+        };
 
-    for (let i = fruits.length - 1; i >= 0; i--) {
-        const f = fruits[i];
-        f.update();
-        f.draw(ctx);
-        
-        if (gameState === 'PLAYING' && handPos.active && velocity > VELOCITY_THRESHOLD) {
-            handleSlice(f, i);
-        }
-        if (!f.active) fruits.splice(i, 1);
-    }
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.update();
-        p.draw(ctx);
-        if (p.life <= 0) particles.splice(i, 1);
-    }
-
-    for (let i = floaters.length - 1; i >= 0; i--) {
-        const f = floaters[i];
-        f.update();
-        f.draw(ctx);
-        if (f.life <= 0) floaters.splice(i, 1);
-    }
-
-    drawBlade();
-    requestAnimationFrame(render);
-}
-
-function drawBlade() {
-    if (handPos.active && handHistory.length > 2) {
-        ctx.beginPath();
-        ctx.moveTo(handHistory[0].x, handHistory[0].y);
-        for (let i = 1; i < handHistory.length; i++) {
-                ctx.lineTo(handHistory[i].x, handHistory[i].y);
-        }
-
-        // DYNAMIC BLADE COLOR BASED ON COMBO
-        if (velocity > VELOCITY_THRESHOLD * 1.5) {
-            ctx.strokeStyle = '#d500f9'; // Purple (Speed)
-        } else if (combo > 6) {
-            ctx.strokeStyle = '#ffd700'; // Gold (High Combo)
-            ctx.shadowBlur = 30;
-            ctx.shadowColor = '#ffd700';
-        } else if (combo > 3) {
-            ctx.strokeStyle = '#00ff00'; // Green (Med Combo)
-        } else if (velocity > VELOCITY_THRESHOLD) {
-            ctx.strokeStyle = '#00ffff'; // Cyan (Normal)
-        } else {
-            ctx.strokeStyle = '#555';
-        }
-
-        if (velocity > VELOCITY_THRESHOLD) {
-             ctx.lineWidth = 6 + (combo * 0.5); // Blade gets thicker with combo
-             ctx.shadowBlur = 15 + (combo * 2);
-             ctx.shadowColor = ctx.strokeStyle;
-        } else {
-            ctx.lineWidth = 3;
-            ctx.shadowBlur = 0;
-        }
-
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(handPos.x, handPos.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
-
-function resize() {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
-}
-
-window.addEventListener('resize', resize);
-resize();
-
-startBtn.addEventListener('click', async () => {
-    AudioSys.init(); 
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { width: 1280, height: 720, frameRate: { ideal: 60 } } 
-        });
-        video.srcObject = stream;
-        video.addEventListener("loadeddata", () => {
-            webcamRunning = true;
-            lastHandTime = performance.now();
-            resetGame();
-            
-            // Fix: Hide start screen immediately upon load
-            startScreen.classList.add('hidden');
-            statusText.innerText = "Camera Active — Start Slicing";
-            
-            detectHand();
-        });
-    } catch (e) {
-        alert("Camera access denied or error: " + e.message);
-    }
-});
-
-restartBtn.addEventListener('click', resetGame);
-render();
-
-</script>
+        window.JodoApp = { Actions, UI };
+        window.Backend = Backend;
+        document.addEventListener('DOMContentLoaded', Actions.initApp);
+    </script>
 </body>
 </html>
